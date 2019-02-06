@@ -220,8 +220,10 @@ do_revise_docs_from_folder(DbName, Sleep, [H|T]) ->
                               data_error().
 maybe_update_doc(DbName, JObj) ->
     case should_update(DbName, JObj) of
-        'false' -> {'ok', JObj};
-        'undefined' -> save_doc(DbName, JObj);
+        'false' ->
+            {'ok', JObj};
+        'undefined' ->
+            save_doc(DbName, JObj);
         'true' ->
             Updates = kz_json:to_proplist(kz_json:flatten(JObj)),
             Update = [{'update', Updates}
@@ -580,7 +582,7 @@ update_cache_doc(DbName, DocId, Fun) when is_function(Fun, 1) ->
             NewJObj = Fun(JObj),
             maybe_save_doc(DbName, NewJObj, JObj);
         {'error', _Reason} = Else ->
-            lager:error("Can't open doc ~s/~s coz ~p", [DbName, DocId, _Reason]),
+            lager:error("can't open doc ~s/~s coz ~p", [DbName, DocId, _Reason]),
             Else
     end.
 
