@@ -3954,7 +3954,7 @@
                 },
                 "billing_seconds": {
                     "description": "The number of seconds the call leg can be billed for (typically from when the call leg is answered",
-                    "type": "string"
+                    "type": "integer"
                 },
                 "call_direction": {
                     "description": "Direction of the call, relative to the media switch",
@@ -3983,6 +3983,10 @@
                 "caller_id_number": {
                     "description": "The indicated number of the caller",
                     "type": "string"
+                },
+                "custom_application_vars": {
+                    "description": "Any custom-set values",
+                    "type": "object"
                 },
                 "custom_channel_vars": {
                     "additionalProperties": {
@@ -4022,7 +4026,7 @@
                 },
                 "duration_seconds": {
                     "description": "The duration of the call leg, in seconds",
-                    "type": "string"
+                    "type": "integer"
                 },
                 "fax_bad_rows": {
                     "type": "string"
@@ -4052,6 +4056,10 @@
                     "description": "Built by Kazoo, depending on direction, to represent the From user",
                     "type": "string"
                 },
+                "from_tag": {
+                    "description": "SIP From TAG",
+                    "type": "string"
+                },
                 "from_uri": {
                     "description": "The From SIP URI",
                     "type": "string"
@@ -4062,6 +4070,10 @@
                 },
                 "hangup_code": {
                     "description": "The SIP hangup code, if available",
+                    "type": "string"
+                },
+                "interaction_id": {
+                    "description": "correlating ID among related call legs",
                     "type": "string"
                 },
                 "local_sdp": {
@@ -4110,14 +4122,18 @@
                 },
                 "ringing_seconds": {
                     "description": "How many seconds the leg was ringing (pre-answer)",
-                    "type": "string"
+                    "type": "integer"
                 },
                 "timestamp": {
                     "description": "UTC timestamp, in Gregorian seconds, of when the CDR was generated",
-                    "type": "string"
+                    "type": "integer"
                 },
                 "to": {
                     "description": "Built by Kazoo, depending on direction, to represent the To user",
+                    "type": "string"
+                },
+                "to_tag": {
+                    "description": "SIP TO Tag",
                     "type": "string"
                 },
                 "to_uri": {
@@ -4263,6 +4279,59 @@
                 "extension",
                 "name"
             ],
+            "type": "object"
+        },
+        "comment": {
+            "description": "Schema for a single comment",
+            "properties": {
+                "account_id": {
+                    "description": "Account ID of the commenter.",
+                    "type": "string"
+                },
+                "action_required": {
+                    "default": false,
+                    "description": "Specficied if an action is required by the user.",
+                    "type": "boolean"
+                },
+                "author": {
+                    "description": "Full name of the author",
+                    "type": "string"
+                },
+                "content": {
+                    "description": "Content of the comment",
+                    "type": "string"
+                },
+                "is_private": {
+                    "default": false,
+                    "description": "Specified if this comment is private",
+                    "type": "boolean"
+                },
+                "timestamp": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "description": "User ID of the commenter",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "author",
+                "content",
+                "timestamp"
+            ],
+            "type": "object"
+        },
+        "comments": {
+            "description": "Schema for comments",
+            "properties": {
+                "comments": {
+                    "description": "The history of comments made on a object",
+                    "items": {
+                        "$ref": "#/definitions/comment"
+                    },
+                    "type": "array"
+                }
+            },
             "type": "object"
         },
         "conferences": {
@@ -6162,6 +6231,39 @@
             ],
             "type": "object"
         },
+        "ip": {
+            "description": "IP address assigned to the cluster",
+            "properties": {
+                "host": {
+                    "description": "The hostname the IP belongs to",
+                    "minLength": 1,
+                    "type": "string"
+                },
+                "ip": {
+                    "description": "The IP addresses",
+                    "oneOf": [
+                        {
+                            "format": "ipv4",
+                            "type": "string"
+                        },
+                        {
+                            "format": "ipv6",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "zone": {
+                    "description": "The zone name the IP belongs to",
+                    "minLength": 1,
+                    "type": "string"
+                }
+            },
+            "required": [
+                "ip",
+                "zone",
+                "host"
+            ]
+        },
         "ips": {
             "description": "IP addresses assigned to the account",
             "properties": {
@@ -6169,7 +6271,16 @@
                     "description": "List of IP addresses",
                     "items": {
                         "description": "IP address",
-                        "type": "string"
+                        "oneOf": [
+                            {
+                                "format": "ipv4",
+                                "type": "string"
+                            },
+                            {
+                                "format": "ipv6",
+                                "type": "string"
+                            }
+                        ]
                     },
                     "minItems": 1,
                     "type": "array"
@@ -8995,6 +9106,83 @@
                 "Status",
                 "Transaction-DB",
                 "Transaction-ID"
+            ],
+            "type": "object"
+        },
+        "kapi.bookkeepers.standing_req_definition": {
+            "description": "AMQP API for bookkeepers.standing_req_definition",
+            "properties": {
+                "Account-ID": {
+                    "type": "string"
+                },
+                "Bookkeeper-ID": {
+                    "type": "string"
+                },
+                "Bookkeeper-Type": {
+                    "type": "string"
+                },
+                "Estimated-Withdrawal": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "bookkeepers"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "standing_req"
+                    ],
+                    "type": "string"
+                },
+                "Items": {
+                    "type": "string"
+                },
+                "Vendor-ID": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Account-ID",
+                "Bookkeeper-ID",
+                "Bookkeeper-Type",
+                "Estimated-Withdrawal",
+                "Items",
+                "Vendor-ID"
+            ],
+            "type": "object"
+        },
+        "kapi.bookkeepers.standing_resp_definition": {
+            "description": "AMQP API for bookkeepers.standing_resp_definition",
+            "properties": {
+                "Details": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "bookkeepers"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "standing_resp"
+                    ],
+                    "type": "string"
+                },
+                "Message": {
+                    "type": "string"
+                },
+                "Reason": {
+                    "type": "string"
+                },
+                "Status": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Status"
             ],
             "type": "object"
         },
@@ -18021,6 +18209,9 @@
                 },
                 "To": {
                     "type": "string"
+                },
+                "Version": {
+                    "type": "string"
                 }
             },
             "required": [
@@ -18101,6 +18292,9 @@
                     "type": "string"
                 },
                 "To": {
+                    "type": "string"
+                },
+                "Version": {
                     "type": "string"
                 }
             },
@@ -18260,6 +18454,9 @@
                     "type": "string"
                 },
                 "To": {
+                    "type": "string"
+                },
+                "Version": {
                     "type": "string"
                 }
             },
@@ -18584,6 +18781,9 @@
                     "type": "string"
                 },
                 "To": {
+                    "type": "string"
+                },
+                "Version": {
                     "type": "string"
                 }
             },
@@ -24269,6 +24469,14 @@
                     "description": "Determines if the account would like to allow per-minute calls if they have no available credit",
                     "type": "boolean"
                 },
+                "authz_resource_types": {
+                    "default": [],
+                    "description": "List of Resource-Types that will authorize the call; bypassing limit checks and billing",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
                 "burst_trunks": {
                     "description": "The number of two-way, flat-rate trunks used only if no other trunks are available",
                     "minimum": 0,
@@ -25771,12 +25979,16 @@
                 "bill": {
                     "description": "Billing information of the losing carrier",
                     "properties": {
-                        "carrier": {
-                            "description": "The name of the losing carrier",
+                        "account_number": {
+                            "description": "Account Number to identify account",
                             "type": "string"
                         },
-                        "extended_address": {
-                            "description": "The suite/floor/apt of the billing address the losing carrier has on record",
+                        "btn": {
+                            "description": "Billing Telephone Number (BTN) to identify account",
+                            "type": "string"
+                        },
+                        "carrier": {
+                            "description": "The name of the losing carrier",
                             "type": "string"
                         },
                         "locality": {
@@ -25785,6 +25997,10 @@
                         },
                         "name": {
                             "description": "The losing carrier billing/account name",
+                            "type": "string"
+                        },
+                        "pin": {
+                            "description": "Personal Identification Number (PIN) to identify account",
                             "type": "string"
                         },
                         "postal_code": {
@@ -25803,6 +26019,34 @@
                             "description": "The street number of the billing address the losing carrier has on record",
                             "type": "string"
                         },
+                        "street_post_dir": {
+                            "description": "Street Post-Direction",
+                            "enum": [
+                                "E",
+                                "N",
+                                "NE",
+                                "NW",
+                                "S",
+                                "SE",
+                                "SW",
+                                "W"
+                            ],
+                            "type": "string"
+                        },
+                        "street_pre_dir": {
+                            "description": "Street Pre-Direction",
+                            "enum": [
+                                "E",
+                                "N",
+                                "NE",
+                                "NW",
+                                "S",
+                                "SE",
+                                "SW",
+                                "W"
+                            ],
+                            "type": "string"
+                        },
                         "street_type": {
                             "description": "The street type of the billing address the losing carrier has on record",
                             "type": "string"
@@ -25813,7 +26057,7 @@
                 "comments": {
                     "description": "The history of comments made on a port request",
                     "items": {
-                        "type": "object"
+                        "$ref": "#/definitions/comment"
                     },
                     "type": "array"
                 },
@@ -25856,18 +26100,8 @@
                     "minProperties": 1,
                     "type": "object"
                 },
-                "port_state": {
-                    "default": "unconfirmed",
-                    "description": "What state the port request is currently in",
-                    "enum": [
-                        "unconfirmed",
-                        "pending",
-                        "submitted",
-                        "scheduled",
-                        "completed",
-                        "rejected",
-                        "canceled"
-                    ],
+                "reference_number": {
+                    "description": "Winning carrier reference number or order ID",
                     "type": "string"
                 },
                 "signee_name": {
@@ -25881,6 +26115,10 @@
                 "transfer_date": {
                     "description": "Requested transfer date in Gregorian timestamp",
                     "type": "integer"
+                },
+                "winning_carrier": {
+                    "description": "The name of winning carrier",
+                    "type": "string"
                 }
             },
             "required": [
@@ -27305,6 +27543,7 @@
             "description": "Describes a service plan item",
             "properties": {
                 "activation_charge": {
+                    "default": 0.0,
                     "description": "What to charge when activating an Item",
                     "type": "number"
                 },
@@ -27313,6 +27552,7 @@
                     "type": "string"
                 },
                 "cascade": {
+                    "default": false,
                     "description": "Whether to count quantities among all sub-accounts or just the account",
                     "type": "boolean"
                 },
@@ -27327,6 +27567,10 @@
                                 "rate": {
                                     "description": "The discount to apply, up to maximum Items (if applicable)",
                                     "type": "number"
+                                },
+                                "rates": {
+                                    "description": "Takes precedence over rate, sets the discount based on the billable quantity",
+                                    "type": "object"
                                 }
                             },
                             "type": "object"
@@ -27334,13 +27578,27 @@
                         "single": {
                             "properties": {
                                 "rate": {
-                                    "description": "A single discount amount to apply if there are more than 0 units",
+                                    "description": "A single discount amount to apply if there are more than 0 units and no match in rates",
                                     "type": "number"
+                                },
+                                "rates": {
+                                    "description": "Takes precedence over rate, sets the discount based on the billable quantity",
+                                    "type": "object"
                                 }
                             },
                             "type": "object"
                         }
                     },
+                    "type": "object"
+                },
+                "flat_rate": {
+                    "default": 0.0,
+                    "description": "Takes precedence over rates and rate, charges only the provided amount",
+                    "type": "number"
+                },
+                "flat_rates": {
+                    "default": {},
+                    "description": "Takes precedence over flat_rate, rates and rate, charges only the provided amount",
                     "type": "object"
                 },
                 "markup_type": {
@@ -27352,25 +27610,38 @@
                     ],
                     "type": "string"
                 },
+                "maximum": {
+                    "description": "The maximum quantity of items to bill for",
+                    "type": "integer"
+                },
                 "minimum": {
-                    "description": "The minimum quantity to charge for, if 'quantity' is less than 'minimum'",
+                    "default": 0,
+                    "description": "The minimum quantity of items to bill for",
                     "type": "integer"
                 },
                 "name": {
                     "description": "Friendly name for this Item",
                     "type": "string"
                 },
-                "quantity": {
-                    "description": "How many of the item are allowed",
-                    "type": "integer"
+                "prorate": {
+                    "default": false,
+                    "description": "Should this item be prorated",
+                    "type": "boolean"
                 },
                 "rate": {
-                    "description": "The rate to charge",
+                    "default": 0.0,
+                    "description": "Used if no flat_rates, flat_rate or rates apply, resulting charges is billable quantity multipled with rate",
                     "type": "number"
                 },
                 "rates": {
-                    "description": "Tiers of rates based on quantities",
+                    "default": {},
+                    "description": "Takes precedence over rate, resulting charges is billable quantity multipled with tiered rate",
                     "type": "object"
+                },
+                "step": {
+                    "default": 1,
+                    "description": "Step size for quantity",
+                    "type": "integer"
                 },
                 "taxes": {
                     "items": {
@@ -29827,6 +30098,27 @@
             },
             "type": "object"
         },
+        "system_config.crossbar.users": {
+            "description": "Schema for crossbar.users system_config",
+            "properties": {
+                "generate_password_if_empty": {
+                    "default": false,
+                    "description": "crossbar users generate_password_if_empty",
+                    "type": "boolean"
+                },
+                "generate_username_if_empty": {
+                    "default": true,
+                    "description": "crossbar users generate_username_if_empty",
+                    "type": "boolean"
+                },
+                "reset_identity_secret_on_rehash": {
+                    "default": true,
+                    "description": "crossbar users reset_identity_secret_on_rehash",
+                    "type": "boolean"
+                }
+            },
+            "type": "object"
+        },
         "system_config.crossbar.voicemail": {
             "description": "Schema for crossbar.voicemail system_config",
             "properties": {
@@ -29987,6 +30279,11 @@
                     "default": {},
                     "description": "ecallmgr acls",
                     "type": "object"
+                },
+                "allow_endless_recording": {
+                    "default": false,
+                    "description": "ecallmgr allow_endless_recording",
+                    "type": "boolean"
                 },
                 "authz_default_action": {
                     "default": "deny",
@@ -30990,6 +31287,11 @@
         "system_config.jonny5": {
             "description": "Schema for jonny5 system_config",
             "properties": {
+                "check_service_standing": {
+                    "default": true,
+                    "description": "jonny5 check_service_standing",
+                    "type": "boolean"
+                },
                 "default_allow_postpay": {
                     "description": "jonny5 default_allow_postpay",
                     "type": "boolean"
@@ -31020,6 +31322,16 @@
                     "default": false,
                     "description": "lookup flat rate regexps per resource",
                     "type": "boolean"
+                },
+                "service_standing_cache_acceptable": {
+                    "default": true,
+                    "description": "jonny5 service_standing_cache_acceptable",
+                    "type": "boolean"
+                },
+                "service_standing_cache_expiration_s": {
+                    "default": 1800,
+                    "description": "jonny5 service_standing_cache_expiration_s",
+                    "type": "integer"
                 }
             },
             "type": "object"
@@ -33094,9 +33406,59 @@
                     },
                     "type": "object"
                 },
+                "firebase": {
+                    "default": {},
+                    "description": "pusher firebase",
+                    "properties": {
+                        "api_key": {
+                            "description": "API Key for firebase",
+                            "type": "string"
+                        },
+                        "extra_headers": {
+                            "default": {},
+                            "description": "Additional headers for INVITEs sent to push devices in the UA",
+                            "properties": {
+                                "Invite-Format": {
+                                    "description": "When set to push_and_invite, sets the X-KAZOO-PUSHER-Invite-Format header to push_and_invite, resulting in both a push notification and a SIP INVITE being sent to the endpoint.",
+                                    "enum": [
+                                        "invite",
+                                        "push",
+                                        "push_and_invite"
+                                    ],
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "type": "object"
+                },
                 "google": {
+                    "default": {},
                     "description": "pusher google",
-                    "type": "string"
+                    "properties": {
+                        "api_key": {
+                            "description": "API Key for gcm",
+                            "type": "string"
+                        },
+                        "extra_headers": {
+                            "default": {},
+                            "description": "Additional headers for INVITEs sent to push devices in the UA",
+                            "properties": {
+                                "Invite-Format": {
+                                    "description": "When set to push_and_invite, sets the X-KAZOO-PUSHER-Invite-Format header to push_and_invite, resulting in both a push notification and a SIP INVITE being sent to the endpoint.",
+                                    "enum": [
+                                        "invite",
+                                        "push",
+                                        "push_and_invite"
+                                    ],
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "type": "object"
                 },
                 "modules": {
                     "default": [],
@@ -35443,7 +35805,7 @@
                     "description": "Parameters related to white-labeling port requests",
                     "properties": {
                         "authority": {
-                            "description": "The email(s) to be used for admin port requests",
+                            "description": "The account ID(s) to be used for administrating port requests",
                             "oneOf": [
                                 {
                                     "type": "string"
@@ -37807,6 +38169,14 @@
             "put": {
                 "parameters": [
                     {
+                        "in": "body",
+                        "name": "comments",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/comments"
+                        }
+                    },
+                    {
                         "$ref": "#/parameters/auth_token_header"
                     },
                     {
@@ -37859,6 +38229,14 @@
             },
             "post": {
                 "parameters": [
+                    {
+                        "in": "body",
+                        "name": "comments",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/comments"
+                        }
+                    },
                     {
                         "$ref": "#/parameters/auth_token_header"
                     },
@@ -39521,6 +39899,21 @@
             }
         },
         "/accounts/{ACCOUNT_ID}/ips": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
             "get": {
                 "parameters": [
                     {
@@ -41827,126 +42220,7 @@
                 }
             }
         },
-        "/accounts/{ACCOUNT_ID}/port_requests/canceled": {
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/accounts/{ACCOUNT_ID}/port_requests/completed": {
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
         "/accounts/{ACCOUNT_ID}/port_requests/last_submitted": {
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/accounts/{ACCOUNT_ID}/port_requests/pending": {
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/accounts/{ACCOUNT_ID}/port_requests/rejected": {
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/accounts/{ACCOUNT_ID}/port_requests/scheduled": {
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/accounts/{ACCOUNT_ID}/port_requests/submitted": {
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/accounts/{ACCOUNT_ID}/port_requests/unconfirmed": {
             "get": {
                 "parameters": [
                     {

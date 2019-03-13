@@ -96,6 +96,8 @@
                  ,interaction_id :: kz_term:api_ne_binary() | '$5' | '_'
                  ,callee_number :: kz_term:api_ne_binary() | '$5' | '_'
                  ,callee_name :: kz_term:api_ne_binary() | '$5' | '_'
+                 ,caller_number :: kz_term:api_ne_binary() | '_'
+                 ,caller_name :: kz_term:api_ne_binary() | '_'
                  ,is_loopback :: boolean() | '_'
                  ,loopback_leg_name :: kz_term:api_ne_binary() | '_'
                  ,loopback_other_leg :: kz_term:api_ne_binary() | '_'
@@ -182,6 +184,7 @@
 %% message
 -define(CHANNEL_VAR_PREFIX, "ecallmgr_").
 -define(APPLICATION_VAR_PREFIX, "cav_").
+-define(JSON_APPLICATION_VAR_PREFIX, "json_cav_").
 
 -define(CCV(Key), <<?CHANNEL_VAR_PREFIX, Key/binary>>).
 -define(GET_CCV(Key), <<"variable_", ?CHANNEL_VAR_PREFIX, Key/binary>>).
@@ -195,6 +198,9 @@
 -define(GET_CAV(Key), <<"variable_", ?APPLICATION_VAR_PREFIX, Key/binary>>).
 -define(SET_CAV(Key, Value), <<?APPLICATION_VAR_PREFIX, Key/binary, "=", Value/binary>>).
 -define(GET_CAV_HEADER(Key), <<"variable_sip_h_X-", ?APPLICATION_VAR_PREFIX, Key/binary>>).
+
+-define(JSON_CAV(Key), <<?JSON_APPLICATION_VAR_PREFIX, Key/binary>>).
+-define(GET_JSON_CAV(Key), <<"variable_", ?JSON_APPLICATION_VAR_PREFIX, Key/binary>>).
 
 -define(CREDS_KEY(Realm, Username), {'authn', Username, Realm}).
 

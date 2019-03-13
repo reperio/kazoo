@@ -478,13 +478,14 @@ get_fs_app(Node, UUID, JObj, <<"set">>) ->
         'true' ->
             ChannelVars = kz_json:to_proplist(kz_json:get_json_value(<<"Custom-Channel-Vars">>, JObj, kz_json:new())),
             CallVars = kz_json:to_proplist(kz_json:get_json_value(<<"Custom-Call-Vars">>, JObj, kz_json:new())),
-            AppVars = kz_json:to_proplist(kz_json:get_json_value(<<"Custom-Application-Vars">>, JObj, kz_json:new())),
+            {JSONAppVars, AppVars} = split_json_cavs(kz_json:to_proplist(kz_json:get_json_value(<<"Custom-Application-Vars">>, JObj, kz_json:new()))),
 
             Command = get_set_command(JObj),
 
             props:filter_undefined(
               [{Command, maybe_multi_set(Node, UUID, ChannelVars)}
               ,{Command, maybe_multi_set(Node, UUID, [{?CAV(K), V} || {K, V} <- AppVars])}
+              ,{Command, maybe_multi_set(Node, UUID, [{?JSON_CAV(K), V} || {K, V} <- JSONAppVars])}
                %% CallVars are always exported
               ,{<<"kz_export">>, maybe_multi_set(Node, UUID, CallVars)}
               ])
@@ -579,6 +580,10 @@ get_fs_app(_Node, _UUID, _JObj, _App) ->
 media_macro_to_file_string(Macro) ->
     Paths = lists:map(fun ecallmgr_util:media_path/1, Macro),
     list_to_binary(["file_string://", kz_binary:join(Paths, <<"!">>)]).
+
+-spec split_json_cavs(kz_term:proplist()) -> {kz_term:proplist(), kz_term:proplist()}.
+split_json_cavs(AppVars) ->
+    lists:partition(fun({_, V}) -> kz_json:is_json_object(V) end, AppVars).
 
 -spec get_set_command(kz_json:object()) -> kz_term:ne_binary().
 get_set_command(JObj) ->
@@ -1502,12 +1507,14 @@ record_call(Node, UUID, <<"start">>, JObj) ->
     RecordingName = ecallmgr_util:recording_filename(MediaName),
     RecodingBaseName = filename:basename(RecordingName),
     RecordingId = kz_json:get_ne_binary_value(<<"Media-Recording-ID">>, JObj),
+    TimeLimit = record_call_limit(JObj),
+    RecordArg = kz_binary:strip(list_to_binary([RecordingName, " +", kz_term:to_binary(TimeLimit)])),
 
     [{<<"kz_multiset">>, AppArgs}
     ,{<<"unshift">>, <<"media_recordings=", RecordingName/binary>>}
     ,{<<"unshift">>, <<(?CCV(<<"Media-Names">>))/binary, "=", RecodingBaseName/binary>>}
     ,{<<"unshift">>, <<(?CCV(<<"Media-Recordings">>))/binary, "=", RecordingId/binary>>}
-    ,{<<"record_session">>, RecordingName}
+    ,{<<"record_session">>, RecordArg}
     ];
 record_call(_Node, _UUID, <<"stop">>, JObj) ->
     RecordingName = case kz_json:get_ne_binary_value(<<"Media-Name">>, JObj) of
@@ -1515,6 +1522,15 @@ record_call(_Node, _UUID, <<"stop">>, JObj) ->
                         MediaName -> ecallmgr_util:recording_filename(MediaName)
                     end,
     {<<"stop_record_session">>, RecordingName}.
+
+-spec record_call_limit(kz_json:object()) -> integer().
+record_call_limit(JObj) ->
+    AllowInfinity = kapps_config:get_boolean(?APP_NAME, <<"allow_endless_recording">>, 'false'),
+    case kz_json:get_integer_value(<<"Time-Limit">>, JObj, ?SECONDS_IN_HOUR) of
+        0 when AllowInfinity -> 0;
+        0 -> ?SECONDS_IN_HOUR;
+        Limit -> Limit
+    end.
 
 -spec record_call_vars(kz_json:object()) -> kz_term:proplist().
 record_call_vars(JObj) ->
@@ -1536,7 +1552,6 @@ record_call_vars(JObj) ->
                 ,{<<"Record-Min-Sec">>, RecordMinSec}
                 ,{<<"record_sample_rate">>, kz_term:to_binary(SampleRate)}
                 ,{<<"Media-Recorder">>, kz_json:get_value(<<"Media-Recorder">>, JObj)}
-                ,{<<"Time-Limit">>, kz_json:get_value(<<"Time-Limit">>, JObj)}
                 ,{<<"Media-Name">>, kz_json:get_value(<<"Media-Name">>, JObj)}
                 ,{<<"Media-Recording-ID">>, kz_json:get_ne_binary_value(<<"Media-Recording-ID">>, JObj)}
                 ,{<<"Media-Recording-Endpoint-ID">>, kz_json:get_ne_binary_value(<<"Media-Recording-Endpoint-ID">>, JObj)}

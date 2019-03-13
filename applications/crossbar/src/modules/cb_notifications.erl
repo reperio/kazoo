@@ -529,6 +529,8 @@ maybe_add_extra_data(<<"transaction_failed">>, API) ->
     props:set_value(<<"Success">>, 'false', API);
 maybe_add_extra_data(<<"port_", _/binary>>, API) ->
     props:set_value(<<"Reason">>, kz_json:new(), API);
+maybe_add_extra_data(<<"ported">>, API) ->
+    props:set_value(<<"Reason">>, kz_json:new(), API);
 maybe_add_extra_data(_Id, API) -> API.
 
 -spec publish_fun(kz_term:ne_binary()) -> fun((kz_term:api_terms()) -> 'ok').
@@ -1323,7 +1325,7 @@ normalize_available_port(Value, Acc, Context) ->
     AuthAccountId = cb_context:auth_account_id(Context),
 
     case kz_services_reseller:is_reseller(AuthAccountId)
-        andalso cb_port_requests:authority(AccountId)
+        andalso kzd_port_requests:find_port_authority(AccountId)
     of
         'false' -> Acc;
 
@@ -1471,34 +1473,34 @@ load_smtp_log_doc(?MATCH_MODB_PREFIX(YYYY,MM,_) = Id, Context) ->
                           ),
     case cb_context:resp_status(C1) of
         'success' ->
-            TemplateId = kz_json:get_ne_binary_value(<<"template_id">>, cb_context:doc(C1)),
-            maybe_remove_private_comment(C1, TemplateId, IsSuperAdmin);
+            Doc = cb_context:doc(C1),
+            TemplateId = kz_json:get_ne_binary_value(<<"template_id">>, Doc),
+            JObj = maybe_remove_private_data(Doc, TemplateId, IsSuperAdmin),
+            Setters = [{fun cb_context:set_doc/2, JObj}
+                      ,{fun cb_context:set_resp_data/2, JObj}
+                      ],
+            cb_context:setters(C1, Setters);
         _ ->
             C1
     end.
 
--spec maybe_remove_private_comment(cb_context:context(), kz_term:ne_binary(), boolean()) -> cb_context:context().
-maybe_remove_private_comment(Context, <<"port_comment">>, 'false') ->
-    case kz_json:is_true([<<"macros">>, <<"port_request">>, <<"comment">>, <<"superduper_comment">>]
-                        ,cb_context:doc(Context)
-                        ,'false'
-                        )
-    of
+-spec maybe_remove_private_data(kz_json:object(), kz_term:ne_binary(), boolean()) -> kz_json:object().
+maybe_remove_private_data(JObj, <<"port_comment">>, 'false') ->
+    CommentPath = [<<"macros">>, <<"port_request">>, <<"comment">>],
+    SuperPaths = [CommentPath ++ [<<"superduper_comment">>]
+                 ,CommentPath ++ [<<"is_private">>]
+                 ],
+    case kz_term:is_true(kz_json:get_first_defined(SuperPaths, JObj, 'false')) of
         'true' ->
-            Doc = kz_json:delete_keys([[<<"macros">>, <<"port_request">>, <<"comment">>]
-                                      ,<<"rendered_templates">>
-                                      ]
-                                     ,cb_context:doc(Context)
-                                     ),
-            Setters = [{fun cb_context:set_doc/2, Doc}
-                      ,{fun cb_context:set_resp_data/2, Doc}
-                      ],
-            cb_context:setters(Context, Setters);
+            DeletePaths = [CommentPath
+                          ,<<"rendered_templates">>
+                          ],
+            kz_json:delete_keys(DeletePaths, JObj);
         'false' ->
-            Context
+            JObj
     end;
-maybe_remove_private_comment(Context, _, _) ->
-    Context.
+maybe_remove_private_data(JObj, _, _) ->
+    JObj.
 
 -spec maybe_update_db(cb_context:context()) -> cb_context:context().
 maybe_update_db(Context) ->

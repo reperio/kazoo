@@ -429,6 +429,8 @@ custom_application_vars_fold({?CAV(Key), V}, Acc) ->
     props:set_value(Key, V, Acc);
 custom_application_vars_fold({?GET_CAV_HEADER(Key), V}, Acc) ->
     props:insert_value(Key, V, Acc);
+custom_application_vars_fold({?GET_JSON_CAV(Key), V}, Acc) ->
+    props:set_value(Key, kz_json:decode(V), Acc);
 custom_application_vars_fold(_KV, Acc) -> Acc.
 
 -spec application_var_map({kz_term:ne_binary(), kz_term:ne_binary()}) -> {kz_term:ne_binary(), kz_term:ne_binary() | kz_term:ne_binaries()}.
@@ -563,11 +565,11 @@ fs_args_to_binary(Args, Sep, Prefix) ->
 fs_arg_encode(Source = ?NE_BINARY) ->
     fs_arg_encode(Source, <<>>, <<>>).
 
--spec fs_arg_encode(kz_term:ne_binary(), kz_term:ne_binary()) -> kz_term:ne_binary().
+-spec fs_arg_encode(kz_term:ne_binary(), binary()) -> kz_term:ne_binary().
 fs_arg_encode(Source = ?NE_BINARY, Sep) ->
     fs_arg_encode(Source, Sep, <<>>).
 
--spec fs_arg_encode(kz_term:ne_binary(), kz_term:ne_binary(), binary()) -> kz_term:ne_binary().
+-spec fs_arg_encode(binary(), binary() | byte(), binary()) -> binary().
 fs_arg_encode(<<>>, _Sep, Acc) -> Acc;
 
 fs_arg_encode(<<C, R/binary>>, C, Acc) ->
@@ -659,6 +661,7 @@ get_fs_kv(Key, Val, _) ->
 -spec get_fs_key(kz_term:ne_binary()) -> binary().
 get_fs_key(?CCV(Key)) -> get_fs_key(Key);
 get_fs_key(?CAV(_)=CAV) -> CAV;
+get_fs_key(?JSON_CAV(_)=JSONCAV) -> JSONCAV;
 get_fs_key(<<"X-", _/binary>>=Key) -> <<"sip_h_", Key/binary>>;
 get_fs_key(Key) ->
     case lists:keyfind(Key, 1, ?SPECIAL_CHANNEL_VARS) of
@@ -694,6 +697,8 @@ get_fs_key_and_value(<<"ringback">>=Key, Value, _UUID) ->
     ];
 get_fs_key_and_value(?CCV(Key), Val, UUID) ->
     get_fs_key_and_value(Key, Val, UUID);
+get_fs_key_and_value(?JSON_CAV(_)=JSONCAV, Val, _UUID) ->
+    {get_fs_key(JSONCAV), maybe_sanitize_fs_value(JSONCAV, kz_json:encode(Val))};
 get_fs_key_and_value(Key, Val, _UUID)
   when is_binary(Val);
        is_atom(Val);
