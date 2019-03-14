@@ -292,7 +292,7 @@ handle_cast({'finished_db', CallId, Db, [FRow | _]}, State) ->
     Processed = maps:get('processed', Stats, 'undefined'),
     NewState =
         case Stats =/= 'undefined'
-             andalso not lists:member(Db, Processed)
+            andalso not lists:member(Db, Processed)
         of
             'false' ->
                 State;
@@ -323,7 +323,7 @@ handle_cast({'skipped_db', CallId, Db}, State) ->
     Stats = maps:get(CallId, State, 'undefined'),
     NewState =
         case Stats =/= 'undefined'
-             andalso not lists:member(Db, maps:get('processed', Stats))
+            andalso not lists:member(Db, maps:get('processed', Stats))
         of
             'false' ->
                 State;
