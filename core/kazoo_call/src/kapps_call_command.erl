@@ -1544,7 +1544,7 @@ b_seek(Direction, Duration, Call) ->
     wait_for_noop(Call, seek(Direction, Duration, Call)).
 
 -spec seek(atom(), kz_term:api_pos_integer(), kapps_call:call()) -> kapps_api_std_return().
-seek(_Direction, 0, _Call) -> 
+seek(_Direction, 0, _Call) ->
     ok;
 seek(Direction, Duration, Call) ->
     NoopId = noop_id(),
@@ -2481,7 +2481,6 @@ collect_digits(MaxDigits, Timeout, Interdigit, NoopId, Terminators, FlushOnDigit
                                          ,terminators=Terminators
                                          ,call=Call
                                          ,flush_on_digit=FlushOnDigit
-                                         ,after_timeout=kz_term:to_integer(Timeout)
                                          }).
 
 -spec do_collect_digits(wcc_collect_digits()) -> collect_digits_return().
@@ -2512,7 +2511,7 @@ do_collect_digits(#wcc_collect_digits{max_digits=MaxDigits
                     do_collect_digits(Collect#wcc_collect_digits{after_timeout=kz_time:decr_timeout(After, Start)});
                 {'ok', Digit} ->
                     %% DTMF received, collect and start interdigit timeout
-                    FlushOnDigit 
+                    FlushOnDigit
                         andalso Digits =:= <<>>
                             andalso flush(Call),
 
