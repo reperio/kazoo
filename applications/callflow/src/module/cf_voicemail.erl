@@ -45,10 +45,10 @@
 -define(MAX_INVALID_PIN_LOOPS, 3).
 
 -define(VM_MESSAGE_TERMINATORS, [<<"1">>, <<"2">>, <<"3">>
-                   ,<<"4">>,  <<"6">>
-                   ,<<"7">>,  <<"9">>
-                   ,<<"*">>, <<"0">>, <<"#">>
-                   ]).
+                                 ,<<"4">>, <<"6">>
+                                 ,<<"7">>, <<"9">>
+                                 ,<<"*">>, <<"0">>, <<"#">>
+                                ]).
 
 -define(MAILBOX_DEFAULT_SIZE
        ,kapps_config:get_integer(?CF_CONFIG_CAT
