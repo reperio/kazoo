@@ -1529,16 +1529,16 @@ seek(_Direction, 0, _Call) ->
     ok;
 seek(Direction, Duration, Call) ->
     NoopId = noop_id(),
-    %Commands = [kz_json:from_list([{<<"Application-Name">>, <<"noop">>}
-    %                               ,{<<"Call-ID">>, kapps_call:call_id(Call)}
-    %                               ,{<<"Msg-ID">>, NoopId}
-    %                              ])
-    %            ,seek_command(Direction, Duration)
-    %           ],
-    %Command = [{<<"Application-Name">>, <<"queue">>}
-    %           ,{<<"Commands">>, Commands}
-    %           ,{<<"Insert-At">>, <<"now">>}
-    %          ],
+                                                %Commands = [kz_json:from_list([{<<"Application-Name">>, <<"noop">>}
+                                                %                               ,{<<"Call-ID">>, kapps_call:call_id(Call)}
+                                                %                               ,{<<"Msg-ID">>, NoopId}
+                                                %                              ])
+                                                %            ,seek_command(Direction, Duration)
+                                                %           ],
+                                                %Command = [{<<"Application-Name">>, <<"queue">>}
+                                                %           ,{<<"Commands">>, Commands}
+                                                %           ,{<<"Insert-At">>, <<"now">>}
+                                                %          ],
     Command = seek_command(Direction, Duration),
     send_command(Command, Call),
     NoopId.
@@ -1546,9 +1546,9 @@ seek(Direction, Duration, Call) ->
 -spec seek_command(atom(), kz_term:api_pos_integer()) -> kz_json:object().
 seek_command(Direction, Duration) ->
     kz_json:from_list([{<<"Application-Name">>, <<"playseek">>}
-                       ,{<<"Direction">>,Direction}
-                       ,{<<"Duration">>,Duration}
-                       ,{<<"Insert-At">>, <<"now">>}
+                      ,{<<"Direction">>,Direction}
+                      ,{<<"Duration">>,Duration}
+                      ,{<<"Insert-At">>, <<"now">>}
                       ]).
 
 %%------------------------------------------------------------------------------
@@ -2494,7 +2494,7 @@ do_collect_digits(#wcc_collect_digits{max_digits=MaxDigits
                     %% DTMF received, collect and start interdigit timeout
                     FlushOnDigit
                         andalso Digits =:= <<>>
-                            andalso flush(Call),
+                        andalso flush(Call),
 
                     case lists:member(Digit, Terminators) of
                         'true' ->
