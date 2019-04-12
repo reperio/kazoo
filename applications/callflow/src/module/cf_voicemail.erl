@@ -146,8 +146,8 @@
               ,prev = <<"4">> :: kz_term:ne_binary()
               ,next = <<"6">> :: kz_term:ne_binary()
               ,delete = <<"7">> :: kz_term:ne_binary()
-              ,rw = <<"5">> :: kz_term:ne_binary()
-              ,ff = <<"8">> :: kz_term:ne_binary()
+              ,rewind = <<"5">> :: kz_term:ne_binary()
+              ,fastforward = <<"8">> :: kz_term:ne_binary()
 
                                %% Greeting or instructions
               ,continue = 'undefined' :: kz_term:api_ne_binary()
@@ -820,27 +820,29 @@ message_count_prompts(New, Saved) ->
                             kapps_call_command:audio_macro_prompts().
 message_prompt([H|_]=Messages, Message, Count, #mailbox{timezone=Timezone
                                                        ,skip_envelope='false'
+                                                       ,keys=Keys
                                                        ,allow_ff_rw=AllowFfRw
                                                        }) ->
     [{'prompt', <<"vm-message_number">>}
     ,{'say', kz_term:to_binary(Count - length(Messages) + 1), <<"number">>}
-    ,play_prompt(Message, AllowFfRw)
+    ,play_prompt(Message, AllowFfRw, Keys)
     ,{'prompt', <<"vm-received">>}
     ,{'say',  get_unix_epoch(kz_json:get_integer_value(<<"timestamp">>, H), Timezone), <<"current_date_time">>}
     ,{'prompt', <<"vm-message_menu">>}
     ];
 message_prompt(Messages, Message, Count, #mailbox{allow_ff_rw=AllowFfRw
+                                                 ,keys=Keys
                                                  ,skip_envelope='true'}) ->
     lager:debug("mailbox is set to skip playing message envelope"),
     [{'prompt', <<"vm-message_number">>}
     ,{'say', kz_term:to_binary(Count - length(Messages) + 1), <<"number">>}
-    ,play_prompt(Message, AllowFfRw)
+    ,play_prompt(Message, AllowFfRw, Keys)
     ,{'prompt', <<"vm-message_menu">>}
     ].
 
-play_prompt(Message, true=_AllowFfRw) ->
-    {'play', Message, ?VM_MESSAGE_TERMINATORS};
-play_prompt(Message, false) ->
+play_prompt(Message, 'true'=_AllowFfRw, #keys{rewind=RW, fastforward=FF}=_Keys) ->
+    {'play', Message, ?ANY_DIGIT -- [RW, FF]};
+play_prompt(Message, 'false', _Keys) ->
     {'play', Message}.
 
 %%------------------------------------------------------------------------------
@@ -1081,8 +1083,8 @@ message_menu(Prompt, #mailbox{keys=#keys{replay=Replay
                                         ,prev=Prev
                                         ,next=Next
                                         ,return_main=ReturnMain
-                                        ,rw=RW
-                                        ,ff=FF
+                                        ,rewind=RW
+                                        ,fastforward=FF
                                         }
                              ,allow_ff_rw=AllowFfRw
                              ,interdigit_timeout=Interdigit
@@ -1751,8 +1753,8 @@ populate_keys(Call) ->
          ,replay = kz_json:get_binary_value(<<"replay">>, JObj, Default#keys.replay)
          ,prev = kz_json:get_binary_value(<<"prev">>, JObj, Default#keys.prev)
          ,next = kz_json:get_binary_value(<<"next">>, JObj, Default#keys.next)
-         ,ff = kz_json:get_binary_value(<<"ff">>, JObj, Default#keys.ff)
-         ,rw = kz_json:get_binary_value(<<"rw">>, JObj, Default#keys.rw)
+         ,fastforward = kz_json:get_binary_value(<<"fastforward">>, JObj, Default#keys.fastforward)
+         ,rewind = kz_json:get_binary_value(<<"rewind">>, JObj, Default#keys.rewind)
          ,delete = kz_json:get_binary_value(<<"delete">>, JObj, Default#keys.delete)
          ,continue = kz_json:get_binary_value(<<"continue">>, JObj, Default#keys.continue)
          }.
