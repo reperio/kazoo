@@ -13808,6 +13808,51 @@
             ],
             "type": "object"
         },
+        "kapi.dialplan.playseek": {
+            "description": "AMQP API for dialplan.playseek",
+            "properties": {
+                "Application-Name": {
+                    "enum": [
+                        "playseek"
+                    ],
+                    "type": "string"
+                },
+                "Call-ID": {
+                    "type": "string"
+                },
+                "Direction": {
+                    "type": "string"
+                },
+                "Duration": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "call"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "command"
+                    ],
+                    "type": "string"
+                },
+                "Insert-At": {
+                    "enum": [
+                        "now"
+                    ],
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Application-Name",
+                "Call-ID",
+                "Direction",
+                "Duration"
+            ],
+            "type": "object"
+        },
         "kapi.dialplan.playstop": {
             "description": "AMQP API for dialplan.playstop",
             "properties": {
@@ -29322,6 +29367,11 @@
                 },
                 "voicemail": {
                     "properties": {
+                        "allow_ff_rw": {
+                            "default": false,
+                            "description": "callflow allow fastforward and rewind during voicemail message playback",
+                            "type": "boolean"
+                        },
                         "delete_after_notify": {
                             "default": false,
                             "description": "callflow delete after notify",
