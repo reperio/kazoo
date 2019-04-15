@@ -900,13 +900,13 @@ play_messages([H|T]=Messages, PrevMessages, Count, Box, Call) ->
             {_, NMessage} = kvm_message:set_folder(?VM_FOLDER_SAVED, H, AccountId),
             _ = kapps_call_command:prompt(<<"vm-saved">>, Call),
             play_messages(T, [NMessage|PrevMessages], Count, Box, Call);
-        {ok, rewind} ->
-            lager:notice("caller chose to rewind 10 sec of the message"),
-            _ = kapps_call_command:seek(rewind, 10000, Call),
+        {ok, 'rewind'} ->
+            lager:info("caller chose to rewind 10 sec of the message"),
+            _ = kapps_call_command:seek('rewind', 10000, Call),
             play_messages(Messages, PrevMessages, Count, Box, Call);
-        {ok, fastforward} ->
-            lager:notice("caller chose to fastforward 10 sec of the message"),
-            _ = kapps_call_command:seek(fastforward, 10000, Call),
+        {ok, 'fastforward'} ->
+            lager:info("caller chose to fastforward 10 sec of the message"),
+            _ = kapps_call_command:seek('fastforward', 10000, Call),
             play_messages(Messages, PrevMessages, Count, Box, Call);
         {'error', _} ->
             _ = kapps_call_command:flush(Call),
@@ -1682,7 +1682,7 @@ should_require_pin(MailboxJObj) ->
 allow_ff_rw(MailboxJObj) ->
     case ?DEFAULT_ALLOW_FF_RW of
         'true' -> 'true';
-        'false' -> kzd_voicemail_box:pin_required(MailboxJObj)
+        'false' -> kzd_voicemail_box:allow_ff_rw(MailboxJObj)
     end.
 
 -spec after_notify_action(kz_json:object()) -> atom().

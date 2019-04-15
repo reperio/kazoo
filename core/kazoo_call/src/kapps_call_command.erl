@@ -1533,11 +1533,11 @@ seek(Call) ->
 
 -spec seek(kz_term:api_integer(), kapps_call:call()) -> kapps_api_std_return().
 seek(Duration, Call) when Duration > 0 ->
-    seek(fastforward, Duration, Call);
+    seek('fastforward', Duration, Call);
 seek(Duration, Call) when Duration < 0 ->
-    seek(rewind, -Duration, Call);
+    seek('rewind', -Duration, Call);
 seek(_Duration, _Call) ->
-    ok.
+    'ok'.
 
 -spec b_seek(atom(), kz_term:api_pos_integer(), kapps_call:call()) -> kapps_api_std_return().
 b_seek(Direction, Duration, Call) ->
@@ -1545,19 +1545,9 @@ b_seek(Direction, Duration, Call) ->
 
 -spec seek(atom(), kz_term:api_pos_integer(), kapps_call:call()) -> kapps_api_std_return().
 seek(_Direction, 0, _Call) ->
-    ok;
+    'ok';
 seek(Direction, Duration, Call) ->
     NoopId = noop_id(),
-                                                %Commands = [kz_json:from_list([{<<"Application-Name">>, <<"noop">>}
-                                                %                               ,{<<"Call-ID">>, kapps_call:call_id(Call)}
-                                                %                               ,{<<"Msg-ID">>, NoopId}
-                                                %                              ])
-                                                %            ,seek_command(Direction, Duration)
-                                                %           ],
-                                                %Command = [{<<"Application-Name">>, <<"queue">>}
-                                                %           ,{<<"Commands">>, Commands}
-                                                %           ,{<<"Insert-At">>, <<"now">>}
-                                                %          ],
     Command = seek_command(Direction, Duration),
     send_command(Command, Call),
     NoopId.
@@ -1565,8 +1555,8 @@ seek(Direction, Duration, Call) ->
 -spec seek_command(atom(), kz_term:api_pos_integer()) -> kz_json:object().
 seek_command(Direction, Duration) ->
     kz_json:from_list([{<<"Application-Name">>, <<"playseek">>}
-                      ,{<<"Direction">>,Direction}
-                      ,{<<"Duration">>,Duration}
+                      ,{<<"Direction">>, Direction}
+                      ,{<<"Duration">>, Duration}
                       ,{<<"Insert-At">>, <<"now">>}
                       ]).
 
@@ -2511,9 +2501,7 @@ do_collect_digits(#wcc_collect_digits{max_digits=MaxDigits
                     do_collect_digits(Collect#wcc_collect_digits{after_timeout=kz_time:decr_timeout(After, Start)});
                 {'ok', Digit} ->
                     %% DTMF received, collect and start interdigit timeout
-                    FlushOnDigit
-                        andalso Digits =:= <<>>
-                        andalso flush(Call),
+                    _ = maybe_flash_on_digit(FlushOnDigit, Digits, Call),
 
                     case lists:member(Digit, Terminators) of
                         'true' ->
@@ -2582,6 +2570,10 @@ handle_collect_digit_event(JObj, _NoopId, {<<"call_event">>, <<"DTMF">>, _}) ->
 handle_collect_digit_event(_JObj, _NoopId, _EventType) ->
     {'decrement'}.
 
+-spec maybe_flash_on_digit(boolean(), binary(), kapps_call:call()) ->
+    kapps_api_std_return().
+maybe_flash_on_digit('true', <<>>, Call) -> flush(Call);
+maybe_flash_on_digit(_FlushOnDigit, _Digits, _Call) -> 'ok'.
 %%------------------------------------------------------------------------------
 %% @doc Low level function to consume call events, looping until a specific
 %% one occurs.  If the channel is hungup or no call events are received
