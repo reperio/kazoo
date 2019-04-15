@@ -595,7 +595,7 @@
                               ,{<<"Application-Name">>, <<"playseek">>}
                               ,{<<"Insert-At">>, <<"now">>}
                               ]).
--define(PLAY_SEEK_REQ_TYPES, []).
+-define(PLAY_SEEK_REQ_TYPES, [{<<"Duration">>, fun is_integer/1}]).
 
 %% Record Request
 -define(RECORD_REQ_HEADERS, [<<"Application-Name">>, <<"Call-ID">>, <<"Media-Name">>]).

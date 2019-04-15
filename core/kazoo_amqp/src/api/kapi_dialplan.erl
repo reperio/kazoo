@@ -30,7 +30,7 @@
         ,execute_extension/1, execute_extension_v/1
         ,break/1, break_v/1
         ,play/1, play_v/1, playstop/1, playstop_v/1
-        ,playseek/1, playseek_v/1 %TODO
+        ,playseek/1, playseek_v/1
         ,tts/1, tts_v/1
         ,record/1, record_v/1
         ,record_call/1, record_call_v/1
