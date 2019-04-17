@@ -149,7 +149,7 @@
               ,rewind = <<"5">> :: kz_term:ne_binary()
               ,fastforward = <<"8">> :: kz_term:ne_binary()
 
-                               %% Greeting or instructions
+                                        %% Greeting or instructions
               ,continue = 'undefined' :: kz_term:api_ne_binary()
               }).
 -type vm_keys() :: #keys{}.
