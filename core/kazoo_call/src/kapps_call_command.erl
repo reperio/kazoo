@@ -2571,7 +2571,7 @@ handle_collect_digit_event(_JObj, _NoopId, _EventType) ->
     {'decrement'}.
 
 -spec maybe_flash_on_digit(boolean(), binary(), kapps_call:call()) ->
-    kapps_api_std_return().
+                                  kapps_api_std_return().
 maybe_flash_on_digit('true', <<>>, Call) -> flush(Call);
 maybe_flash_on_digit(_FlushOnDigit, _Digits, _Call) -> 'ok'.
 %%------------------------------------------------------------------------------
