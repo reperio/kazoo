@@ -42,7 +42,9 @@
 -define(KEY_SAVE_AFTER_NOTIFY, <<"save_after_notify">>).
 -define(KEY_FORCE_REQUIRE_PIN, <<"force_require_pin">>).
 -define(KEY_ALLOW_FF_RW, <<"allow_ff_rw">>).
+-define(KEY_SEEK_DURATION, <<"seek_duration">>).
 -define(MAX_INVALID_PIN_LOOPS, 3).
+-define(DEFAULT_SEEK_DURATION, 10000).
 
 -define(VM_MESSAGE_TERMINATORS, [<<"1">>, <<"2">>, <<"3">>
                                 ,<<"4">>, <<"6">>
@@ -101,6 +103,11 @@
                                 ,'false'
                                 )).
 
+-define(MAILBOX_SEEK_DURATION
+       ,kapps_config:get_non_neg_integer(?CF_CONFIG_CAT
+                                        ,[?KEY_VOICEMAIL, ?KEY_SEEK_DURATION]
+                                        ,?DEFAULT_SEEK_DURATION
+                                        )).
 -define(DEFAULT_FORWARD_TYPE
        ,kapps_config:get_ne_binary(?CF_CONFIG_CAT
                                   ,[?KEY_VOICEMAIL, <<"vm_message_forward_type">>]
@@ -181,6 +188,7 @@
                  ,notifications :: kz_term:api_object()
                  ,after_notify_action = 'nothing' :: 'nothing' | 'delete' | 'save'
                  ,allow_ff_rw = false :: boolean()
+                 ,seek_duration = ?DEFAULT_SEEK_DURATION :: non_neg_integer()
                  ,interdigit_timeout = kapps_call_command:default_interdigit_timeout() :: pos_integer()
                  ,play_greeting_intro = 'false' :: boolean()
                  ,use_person_not_available = 'false' :: boolean()
@@ -861,7 +869,7 @@ play_messages(Messages, Count, Box, Call) ->
 
 -spec play_messages(kz_json:objects(), kz_json:objects(), non_neg_integer(), mailbox(), kapps_call:call()) ->
                            'ok' | 'complete'.
-play_messages([H|T]=Messages, PrevMessages, Count, Box, Call) ->
+play_messages([H|T]=Messages, PrevMessages, Count, #mailbox{seek_duration=SeekDuration}=Box, Call) ->
     AccountId = kapps_call:account_id(Call),
     Message = kvm_message:media_url(AccountId, H),
     lager:info("playing mailbox message ~p (~s)", [Count, Message]),
@@ -906,11 +914,11 @@ play_messages([H|T]=Messages, PrevMessages, Count, Box, Call) ->
             play_messages(T, [NMessage|PrevMessages], Count, Box, Call);
         {ok, 'rewind'} ->
             lager:info("caller chose to rewind 10 sec of the message"),
-            _ = kapps_call_command:seek('rewind', 10000, Call),
+            _ = kapps_call_command:seek('rewind', SeekDuration, Call),
             play_messages(Messages, PrevMessages, Count, Box, Call);
         {ok, 'fastforward'} ->
             lager:info("caller chose to fastforward 10 sec of the message"),
-            _ = kapps_call_command:seek('fastforward', 10000, Call),
+            _ = kapps_call_command:seek('fastforward', SeekDuration, Call),
             play_messages(Messages, PrevMessages, Count, Box, Call);
         {'error', _} ->
             _ = kapps_call_command:flush(Call),
@@ -1616,6 +1624,7 @@ get_mailbox_profile(Data, Call) ->
                       ),
 
             AllowFfRw = allow_ff_rw(MailboxJObj),
+            SeekDuration = seek_duration(MailboxJObj),
             AfterNotifyAction = after_notify_action(MailboxJObj),
 
             #mailbox{mailbox_id = MailboxId
@@ -1658,6 +1667,7 @@ get_mailbox_profile(Data, Call) ->
                          kz_json:get_json_value(<<"notifications">>, MailboxJObj)
                     ,after_notify_action = AfterNotifyAction
                     ,allow_ff_rw = AllowFfRw
+                    ,seek_duration = SeekDuration
                     ,interdigit_timeout =
                          kz_json:find(<<"interdigit_timeout">>, [MailboxJObj, Data], kapps_call_command:default_interdigit_timeout())
                     ,play_greeting_intro =
@@ -1688,6 +1698,13 @@ allow_ff_rw(MailboxJObj) ->
     case ?DEFAULT_ALLOW_FF_RW of
         'true' -> 'true';
         'false' -> kzd_voicemail_box:allow_ff_rw(MailboxJObj)
+    end.
+
+-spec seek_duration(kz_json:object()) -> non_neg_integer().
+seek_duration(MailboxJObj) ->
+    case ?MAILBOX_SEEK_DURATION of
+        ?DEFAULT_SEEK_DURATION -> kzd_voicemail_box:seek_duration(MailboxJObj);
+        Duration -> Duration
     end.
 
 -spec after_notify_action(kz_json:object()) -> atom().
