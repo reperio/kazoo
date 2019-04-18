@@ -177,6 +177,11 @@
                     "description": "callflow save after notify",
                     "type": "boolean"
                 },
+                "seek_duration": {
+                    "default": 10000,
+                    "description": "callflow fastforward and rewind seek duration",
+                    "type": "integer"
+                },
                 "vm_message_forward_type": {
                     "default": "only_forward",
                     "description": "Enable or disable the ability to prepend a message when forwarding a voicemail message",
