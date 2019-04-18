@@ -29445,6 +29445,7 @@
                         "seek_duration": {
                             "default": 10000,
                             "description": "callflow fastforward and rewind seek duration",
+                            "minimum": 0,
                             "type": "integer"
                         },
                         "vm_message_forward_type": {
