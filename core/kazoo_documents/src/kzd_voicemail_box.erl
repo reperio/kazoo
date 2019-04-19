@@ -18,6 +18,7 @@
         ,mailbox_number/1, mailbox_number/2
         ,pin_required/1, pin_required/2
         ,allow_ff_rw/1, allow_ff_rw/2
+        ,seek_duration/1, seek_duration/2
         ,check_if_owner/1, check_if_owner/2
         ,is_setup/1, is_setup/2
 
@@ -41,10 +42,12 @@
 -define(KEY_MAILBOX_NUMBER, <<"mailbox">>).
 -define(KEY_PIN_REQUIRED, <<"require_pin">>).
 -define(KEY_ALLOW_FF_RW, <<"allow_ff_rw">>).
+-define(KEY_SEEK_DURATION, <<"seek_duration">>).
 -define(KEY_CHECK_IF_OWNER, <<"check_if_owner">>).
 -define(KEY_IS_SETUP, <<"is_setup">>).
 
 -define(PVT_TYPE, <<"vmbox">>).
+-define(DEFAULT_SEEK_DURATION, 10000).
 
 -define(ACCOUNT_VM_EXTENSION(AccountId),
         kapps_account_config:get_global(AccountId
@@ -170,6 +173,14 @@ allow_ff_rw(Box) ->
 -spec allow_ff_rw(doc(), Default) -> boolean() | Default.
 allow_ff_rw(Box, Default) ->
     kz_json:is_true(?KEY_ALLOW_FF_RW, Box, Default).
+
+-spec seek_duration(doc()) -> boolean().
+seek_duration(Box) ->
+    seek_duration(Box, ?DEFAULT_SEEK_DURATION).
+
+-spec seek_duration(doc(), Default) -> boolean() | Default.
+seek_duration(Box, Default) ->
+    kz_json:get_integer_value(?KEY_SEEK_DURATION, Box, Default).
 
 -spec check_if_owner(doc()) -> boolean().
 check_if_owner(Box) ->
