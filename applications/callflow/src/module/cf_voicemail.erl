@@ -42,9 +42,9 @@
 -define(KEY_SAVE_AFTER_NOTIFY, <<"save_after_notify">>).
 -define(KEY_FORCE_REQUIRE_PIN, <<"force_require_pin">>).
 -define(KEY_ALLOW_FF_RW, <<"allow_ff_rw">>).
--define(KEY_SEEK_DURATION, <<"seek_duration">>).
+-define(KEY_SEEK_DURATION, <<"seek_duration_ms">>).
 -define(MAX_INVALID_PIN_LOOPS, 3).
--define(DEFAULT_SEEK_DURATION, 10000).
+-define(DEFAULT_SEEK_DURATION, 10 * ?MILLISECONDS_IN_SECOND).
 
 -define(VM_MESSAGE_TERMINATORS, [<<"1">>, <<"2">>, <<"3">>
                                 ,<<"4">>, <<"6">>
@@ -1696,8 +1696,8 @@ should_require_pin(MailboxJObj) ->
 -spec allow_ff_rw(kz_json:object()) -> boolean().
 allow_ff_rw(MailboxJObj) ->
     case ?DEFAULT_ALLOW_FF_RW of
-        'true' -> 'true';
-        'false' -> kzd_voicemail_box:allow_ff_rw(MailboxJObj)
+        'true' -> kzd_voicemail_box:allow_ff_rw(MailboxJObj);
+        'false' -> 'false'
     end.
 
 -spec seek_duration(kz_json:object()) -> non_neg_integer().
