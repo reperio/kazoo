@@ -197,7 +197,7 @@
                     "description": "callflow save after notify",
                     "type": "boolean"
                 },
-                "seek_duration": {
+                "seek_duration_ms": {
                     "default": 10000,
                     "description": "callflow fastforward and rewind seek duration",
                     "minimum": 0,
