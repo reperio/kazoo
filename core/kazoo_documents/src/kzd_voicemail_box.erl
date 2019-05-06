@@ -42,7 +42,7 @@
 -define(KEY_MAILBOX_NUMBER, <<"mailbox">>).
 -define(KEY_PIN_REQUIRED, <<"require_pin">>).
 -define(KEY_ALLOW_FF_RW, <<"allow_ff_rw">>).
--define(KEY_SEEK_DURATION, <<"seek_duration">>).
+-define(KEY_SEEK_DURATION, <<"seek_duration_ms">>).
 -define(KEY_CHECK_IF_OWNER, <<"check_if_owner">>).
 -define(KEY_IS_SETUP, <<"is_setup">>).
 
