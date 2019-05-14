@@ -1619,7 +1619,6 @@ get_mailbox_profile(Data, Call) ->
                       ,[MaxMessageCount, MsgCount]
                       ),
 
-            AllowFfRw = allow_ff_rw(MailboxJObj),
             SeekDuration = seek_duration(MailboxJObj),
             AfterNotifyAction = after_notify_action(MailboxJObj),
 
@@ -1662,7 +1661,7 @@ get_mailbox_profile(Data, Call) ->
                     ,notifications =
                          kz_json:get_json_value(<<"notifications">>, MailboxJObj)
                     ,after_notify_action = AfterNotifyAction
-                    ,allow_ff_rw = AllowFfRw
+                    ,allow_ff_rw = ?DEFAULT_ALLOW_FF_RW
                     ,seek_duration = SeekDuration
                     ,interdigit_timeout =
                          kz_json:find(<<"interdigit_timeout">>, [MailboxJObj, Data], kapps_call_command:default_interdigit_timeout())
@@ -1686,13 +1685,6 @@ should_require_pin(MailboxJObj) ->
     case ?FORCE_REQUIRE_PIN of
         'true' -> 'true';
         'false' -> kzd_voicemail_box:pin_required(MailboxJObj)
-    end.
-
--spec allow_ff_rw(kz_json:object()) -> boolean().
-allow_ff_rw(MailboxJObj) ->
-    case ?DEFAULT_ALLOW_FF_RW of
-        'true' -> kzd_voicemail_box:allow_ff_rw(MailboxJObj);
-        'false' -> 'false'
     end.
 
 -spec seek_duration(kz_json:object()) -> non_neg_integer().
