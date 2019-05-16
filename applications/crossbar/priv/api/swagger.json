@@ -35150,6 +35150,10 @@
                     "$ref": "#/definitions/voicemail_keys.dtmf_key",
                     "description": "DTMF key which will exit the main menu when pressed"
                 },
+                "fastforward": {
+                    "$ref": "#/definitions/voicemail_keys.dtmf_key",
+                    "description": "DTMF key which will seek the playback forward for seek_duration_ms ms"
+                },
                 "hear_new": {
                     "$ref": "#/definitions/voicemail_keys.dtmf_key",
                     "description": "DTMF key which will play new voicemail messages when pressed at the main menu"
@@ -35201,6 +35205,10 @@
                 "return_main": {
                     "$ref": "#/definitions/voicemail_keys.dtmf_key",
                     "description": "DTMF key which will return to the main menu when pressed at the config menu"
+                },
+                "rewind": {
+                    "$ref": "#/definitions/voicemail_keys.dtmf_key",
+                    "description": "DTMF key which will seek the playback backward for seek_duration_ms ms"
                 },
                 "save": {
                     "$ref": "#/definitions/voicemail_keys.dtmf_key",
