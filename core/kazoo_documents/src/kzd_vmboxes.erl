@@ -9,6 +9,7 @@
 -export([check_if_owner/1, check_if_owner/2, set_check_if_owner/2]).
 -export([delete_after_notify/1, delete_after_notify/2, set_delete_after_notify/2]).
 -export([is_setup/1, is_setup/2, set_is_setup/2]).
+-export([is_voicemail_ff_rw_enabled/1, is_voicemail_ff_rw_enabled/2, set_is_voicemail_ff_rw_enabled/2]).
 -export([mailbox/1, mailbox/2, set_mailbox/2]).
 -export([media/1, media/2, set_media/2]).
 -export([media_unavailable/1, media_unavailable/2, set_media_unavailable/2]).
@@ -70,6 +71,18 @@ is_setup(Doc) ->
 -spec is_setup(doc(), Default) -> boolean() | Default.
 is_setup(Doc, Default) ->
     kz_json:get_boolean_value([<<"is_setup">>], Doc, Default).
+
+-spec is_voicemail_ff_rw_enabled(doc()) -> boolean().
+is_voicemail_ff_rw_enabled(Doc) ->
+    is_voicemail_ff_rw_enabled(Doc, false).
+
+-spec is_voicemail_ff_rw_enabled(doc(), Default) -> boolean() | Default.
+is_voicemail_ff_rw_enabled(Doc, Default) ->
+    kz_json:get_boolean_value([<<"is_voicemail_ff_rw_enabled">>], Doc, Default).
+
+-spec set_is_voicemail_ff_rw_enabled(doc(), boolean()) -> doc().
+set_is_voicemail_ff_rw_enabled(Doc, IsVoicemailFfRwEnabled) ->
+    kz_json:set_value([<<"is_voicemail_ff_rw_enabled">>], IsVoicemailFfRwEnabled, Doc).
 
 -spec set_is_setup(doc(), boolean()) -> doc().
 set_is_setup(Doc, IsSetup) ->
