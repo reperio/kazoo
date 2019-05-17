@@ -24,6 +24,7 @@
 -export([pin/1, pin/2, set_pin/2]).
 -export([require_pin/1, require_pin/2, set_require_pin/2]).
 -export([save_after_notify/1, save_after_notify/2, set_save_after_notify/2]).
+-export([seek_duration_ms/1, seek_duration_ms/2, set_seek_duration_ms/2]).
 -export([skip_envelope/1, skip_envelope/2, set_skip_envelope/2]).
 -export([skip_greeting/1, skip_greeting/2, set_skip_greeting/2]).
 -export([skip_instructions/1, skip_instructions/2, set_skip_instructions/2]).
@@ -256,6 +257,18 @@ save_after_notify(Doc, Default) ->
 -spec set_save_after_notify(doc(), boolean()) -> doc().
 set_save_after_notify(Doc, SaveAfterNotify) ->
     kz_json:set_value([<<"save_after_notify">>], SaveAfterNotify, Doc).
+
+-spec seek_duration_ms(doc()) -> integer().
+seek_duration_ms(Doc) ->
+    seek_duration_ms(Doc, 10000).
+
+-spec seek_duration_ms(doc(), Default) -> integer() | Default.
+seek_duration_ms(Doc, Default) ->
+    kz_json:get_integer_value([<<"seek_duration_ms">>], Doc, Default).
+
+-spec set_seek_duration_ms(doc(), integer()) -> doc().
+set_seek_duration_ms(Doc, SeekDurationMs) ->
+    kz_json:set_value([<<"seek_duration_ms">>], SeekDurationMs, Doc).
 
 -spec skip_envelope(doc()) -> boolean().
 skip_envelope(Doc) ->
