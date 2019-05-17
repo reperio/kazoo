@@ -906,11 +906,11 @@ play_messages([H|T]=Messages, PrevMessages, Count, #mailbox{seek_duration=SeekDu
             {_, NMessage} = kvm_message:set_folder(?VM_FOLDER_SAVED, H, AccountId),
             _ = kapps_call_command:prompt(<<"vm-saved">>, Call),
             play_messages(T, [NMessage|PrevMessages], Count, Box, Call);
-        {ok, 'rewind'} ->
+        {'ok', 'rewind'} ->
             lager:info("caller chose to rewind 10 sec of the message"),
             _ = kapps_call_command:seek('rewind', SeekDuration, Call),
             play_messages(Messages, PrevMessages, Count, Box, Call);
-        {ok, 'fastforward'} ->
+        {'ok', 'fastforward'} ->
             lager:info("caller chose to fastforward 10 sec of the message"),
             _ = kapps_call_command:seek('fastforward', SeekDuration, Call),
             play_messages(Messages, PrevMessages, Count, Box, Call);
