@@ -91,7 +91,7 @@
                                 ,'false'
                                 )).
 
--define(DEFAULT_IS_FF_RW_ENABLED
+-define(IS_FF_RW_ENABLED
        ,kapps_config:get_is_true(?CF_CONFIG_CAT
                                 ,[?KEY_VOICEMAIL, ?KEY_ALLOW_FF_RW]
                                 ,'false'
@@ -1684,9 +1684,9 @@ should_require_pin(MailboxJObj) ->
 
 -spec is_ff_rw_enabled(kz_json:object()) -> boolean().
 is_ff_rw_enabled(MailboxJObj) ->
-    case ?DEFAULT_IS_FF_RW_ENABLED of
-        'true' -> 'true';
-        'false' -> kzd_voicemail_box:is_ff_rw_enabled(MailboxJObj)
+    case ?IS_FF_RW_ENABLED of
+        'true' -> kzd_voicemail_box:is_ff_rw_enabled(MailboxJObj);
+        'false' -> 'false'
     end.
 
 -spec seek_duration(kz_json:object()) -> non_neg_integer().
