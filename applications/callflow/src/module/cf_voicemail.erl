@@ -41,16 +41,10 @@
 -define(KEY_DELETE_AFTER_NOTIFY, <<"delete_after_notify">>).
 -define(KEY_SAVE_AFTER_NOTIFY, <<"save_after_notify">>).
 -define(KEY_FORCE_REQUIRE_PIN, <<"force_require_pin">>).
--define(KEY_ALLOW_FF_RW, <<"allow_ff_rw">>).
+-define(KEY_ALLOW_FF_RW, <<"is_voicemail_ff_rw_enabled">>).
 -define(KEY_SEEK_DURATION, <<"seek_duration_ms">>).
 -define(MAX_INVALID_PIN_LOOPS, 3).
 -define(DEFAULT_SEEK_DURATION, 10 * ?MILLISECONDS_IN_SECOND).
-
--define(VM_MESSAGE_TERMINATORS, [<<"1">>, <<"2">>, <<"3">>
-                                ,<<"4">>, <<"6">>
-                                ,<<"7">>, <<"9">>
-                                ,<<"*">>, <<"0">>, <<"#">>
-                                ]).
 
 -define(MAILBOX_DEFAULT_SIZE
        ,kapps_config:get_integer(?CF_CONFIG_CAT
@@ -97,7 +91,7 @@
                                 ,'false'
                                 )).
 
--define(DEFAULT_ALLOW_FF_RW
+-define(DEFAULT_IS_FF_RW_ENABLED
        ,kapps_config:get_is_true(?CF_CONFIG_CAT
                                 ,[?KEY_VOICEMAIL, ?KEY_ALLOW_FF_RW]
                                 ,'false'
@@ -187,7 +181,7 @@
                  ,transcribe_voicemail = 'false' :: boolean()
                  ,notifications :: kz_term:api_object()
                  ,after_notify_action = 'nothing' :: 'nothing' | 'delete' | 'save'
-                 ,allow_ff_rw = false :: boolean()
+                 ,is_ff_rw_enabled = false :: boolean()
                  ,seek_duration = ?DEFAULT_SEEK_DURATION :: non_neg_integer()
                  ,interdigit_timeout = kapps_call_command:default_interdigit_timeout() :: pos_integer()
                  ,play_greeting_intro = 'false' :: boolean()
@@ -830,7 +824,7 @@ message_count_prompts(New, Saved) ->
 message_prompt([H|_]=Messages, Message, Count, #mailbox{timezone=Timezone
                                                        ,skip_envelope='false'
                                                        ,keys=Keys
-                                                       ,allow_ff_rw=AllowFfRw
+                                                       ,is_ff_rw_enabled=AllowFfRw
                                                        }) ->
     [{'prompt', <<"vm-message_number">>}
     ,{'say', kz_term:to_binary(Count - length(Messages) + 1), <<"number">>}
@@ -839,7 +833,7 @@ message_prompt([H|_]=Messages, Message, Count, #mailbox{timezone=Timezone
     ,{'say',  get_unix_epoch(kz_json:get_integer_value(<<"timestamp">>, H), Timezone), <<"current_date_time">>}
     ,{'prompt', <<"vm-message_menu">>}
     ];
-message_prompt(Messages, Message, Count, #mailbox{allow_ff_rw=AllowFfRw
+message_prompt(Messages, Message, Count, #mailbox{is_ff_rw_enabled=AllowFfRw
                                                  ,keys=Keys
                                                  ,skip_envelope='true'}) ->
     lager:debug("mailbox is set to skip playing message envelope"),
@@ -1098,7 +1092,7 @@ message_menu(Prompt, #mailbox{keys=#keys{replay=Replay
                                         ,rewind=RW
                                         ,fastforward=FF
                                         }
-                             ,allow_ff_rw=AllowFfRw
+                             ,is_ff_rw_enabled=AllowFfRw
                              ,interdigit_timeout=Interdigit
                              }=Box, Call) ->
     lager:info("playing message menu"),
@@ -1625,6 +1619,7 @@ get_mailbox_profile(Data, Call) ->
 
             SeekDuration = seek_duration(MailboxJObj),
             AfterNotifyAction = after_notify_action(MailboxJObj),
+            IsFfRwEnabled = is_ff_rw_enabled(MailboxJObj),
 
             #mailbox{mailbox_id = MailboxId
                     ,exists = 'true'
@@ -1665,7 +1660,7 @@ get_mailbox_profile(Data, Call) ->
                     ,notifications =
                          kz_json:get_json_value(<<"notifications">>, MailboxJObj)
                     ,after_notify_action = AfterNotifyAction
-                    ,allow_ff_rw = ?DEFAULT_ALLOW_FF_RW
+                    ,is_ff_rw_enabled = IsFfRwEnabled
                     ,seek_duration = SeekDuration
                     ,interdigit_timeout =
                          kz_json:find(<<"interdigit_timeout">>, [MailboxJObj, Data], kapps_call_command:default_interdigit_timeout())
@@ -1692,12 +1687,16 @@ should_require_pin(MailboxJObj) ->
         'false' -> kzd_voicemail_box:pin_required(MailboxJObj)
     end.
 
+-spec is_ff_rw_enabled(kz_json:object()) -> boolean().
+is_ff_rw_enabled(MailboxJObj) ->
+    case ?DEFAULT_IS_FF_RW_ENABLED of
+        'true' -> 'true';
+        'false' -> kzd_voicemail_box:is_ff_rw_enabled(MailboxJObj)
+    end.
+
 -spec seek_duration(kz_json:object()) -> non_neg_integer().
 seek_duration(MailboxJObj) ->
-    case ?MAILBOX_SEEK_DURATION of
-        ?DEFAULT_SEEK_DURATION -> kzd_voicemail_box:seek_duration(MailboxJObj);
-        Duration -> Duration
-    end.
+    kzd_voicemail_box:seek_duration(MailboxJObj, ?MAILBOX_SEEK_DURATION).
 
 -spec after_notify_action(kz_json:object()) -> atom().
 after_notify_action(MailboxJObj) ->
