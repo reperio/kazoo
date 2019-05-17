@@ -35024,6 +35024,11 @@
                     "description": "Determines if the user has completed the initial configuration",
                     "type": "boolean"
                 },
+                "is_voicemail_ff_rw_enabled": {
+                    "default": false,
+                    "description": "callflow allow fastforward and rewind during voicemail message playback",
+                    "type": "boolean"
+                },
                 "mailbox": {
                     "description": "The voicemail box number",
                     "maxLength": 30,
