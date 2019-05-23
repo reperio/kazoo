@@ -76,7 +76,7 @@
         ]).
 -export([prompt/2, prompt/3]).
 
--export([b_seek/3, seek/1, seek/2, seek/3]).
+-export([seek/1, seek/2, seek/3]).
 
 -export([tts/2, tts/3, tts/4, tts/5, tts/6
         ,b_tts/2, b_tts/3, b_tts/4, b_tts/5, b_tts/6
@@ -1538,10 +1538,6 @@ seek(Duration, Call) when Duration < 0 ->
     seek('rewind', -Duration, Call);
 seek(_Duration, _Call) ->
     'ok'.
-
--spec b_seek(atom(), kz_term:api_pos_integer(), kapps_call:call()) -> kapps_api_std_return().
-b_seek(Direction, Duration, Call) ->
-    wait_for_noop(Call, seek(Direction, Duration, Call)).
 
 -spec seek(atom(), kz_term:api_pos_integer(), kapps_call:call()) -> kapps_api_std_return().
 seek(_Direction, 0, _Call) ->
