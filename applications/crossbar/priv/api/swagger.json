@@ -25069,9 +25069,9 @@
                     "type": "object"
                 },
                 "amount": {
-                    "description": "Ledger amount",
+                    "description": "Ledger amount, in currency amount",
                     "minimum": 1,
-                    "type": "integer"
+                    "type": "number"
                 },
                 "description": {
                     "description": "Useful description for ledger",
@@ -36016,7 +36016,7 @@
                     "description": "The email of the user",
                     "format": "email",
                     "maxLength": 254,
-                    "minLength": 1,
+                    "minLength": 3,
                     "type": "string"
                 },
                 "enabled": {
