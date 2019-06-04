@@ -564,7 +564,7 @@ record_voicemail(AttachmentName, #mailbox{max_message_length=MaxMessageLength
     case kapps_call_command:b_record(AttachmentName, ?ANY_DIGIT, kz_term:to_binary(MaxMessageLength), Call) of
         {'ok', Msg} ->
             Length = kz_json:get_integer_value(<<"Length">>, Msg, 0),
-            case kz_call_event:hangup_cause(Msg) =:= 'undefined'
+            case kz_call_event:channel_answer_state(Msg) =:= <<"answered">>
                 andalso review_recording(AttachmentName, 'true', Box, Call)
             of
                 'false' ->
@@ -907,11 +907,11 @@ play_messages([H|T]=Messages, PrevMessages, Count, #mailbox{seek_duration=SeekDu
             _ = kapps_call_command:prompt(<<"vm-saved">>, Call),
             play_messages(T, [NMessage|PrevMessages], Count, Box, Call);
         {'ok', 'rewind'} ->
-            lager:info("caller chose to rewind 10 sec of the message"),
+            lager:info("caller chose to rewind part of the message"),
             _ = kapps_call_command:seek('rewind', SeekDuration, Call),
             play_messages(Messages, PrevMessages, Count, Box, Call);
         {'ok', 'fastforward'} ->
-            lager:info("caller chose to fastforward 10 sec of the message"),
+            lager:info("caller chose to fast forward part of the message"),
             _ = kapps_call_command:seek('fastforward', SeekDuration, Call),
             play_messages(Messages, PrevMessages, Count, Box, Call);
         {'error', _} ->
@@ -1021,7 +1021,7 @@ record_forward(AttachmentName, Message, SrcBoxId, #mailbox{media_extension=Ext
     case kapps_call_command:b_record(AttachmentName, ?ANY_DIGIT, kz_term:to_binary(MaxMessageLength), Call) of
         {'ok', Msg} ->
             Length = kz_json:get_integer_value(<<"Length">>, Msg, 0),
-            case kz_call_event:hangup_cause(Msg) =:= 'undefined'
+            case kz_call_event:channel_answer_state(Msg) =:= <<"answered">>
                 andalso review_recording(AttachmentName, 'false', DestBox, Call)
             of
                 'false' ->

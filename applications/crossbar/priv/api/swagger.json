@@ -323,6 +323,11 @@
                             "default": 5,
                             "description": "media storage retry times",
                             "type": "integer"
+                        },
+                        "workers": {
+                            "default": 1,
+                            "description": "media call_recording workers",
+                            "type": "integer"
                         }
                     }
                 }
@@ -9798,6 +9803,9 @@
                 "Caller-ID-Number": {
                     "type": "string"
                 },
+                "Channel-Answer-State": {
+                    "type": "string"
+                },
                 "Channel-Call-State": {
                     "type": "string"
                 },
@@ -14310,6 +14318,9 @@
                 },
                 "Record-Sample-Rate": {
                     "type": "integer"
+                },
+                "Recording-Variables": {
+                    "type": "string"
                 },
                 "Time-Limit": {
                     "type": "integer"
@@ -22655,6 +22666,9 @@
                 "Caller-ID-Number": {
                     "type": "string"
                 },
+                "Channel-Answer-State": {
+                    "type": "string"
+                },
                 "Channel-Call-State": {
                     "type": "string"
                 },
@@ -22932,6 +22946,9 @@
                     "type": "string"
                 },
                 "Caller-ID-Number": {
+                    "type": "string"
+                },
+                "Channel-Answer-State": {
                     "type": "string"
                 },
                 "Channel-Call-State": {
@@ -26205,6 +26222,10 @@
                 "target": {
                     "description": "The target extension/DID",
                     "type": "string"
+                },
+                "timeout": {
+                    "description": "timeout to establish call",
+                    "type": "integer"
                 },
                 "transfer_type": {
                     "default": "blind",
@@ -29800,6 +29821,16 @@
             },
             "type": "object"
         },
+        "system_config.cluster": {
+            "description": "Schema for cluster system_config",
+            "properties": {
+                "cluster_id": {
+                    "description": "provisioner cluster id",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "system_config.conferences": {
             "description": "Schema for conferences system_config",
             "properties": {
@@ -30387,7 +30418,8 @@
                 },
                 "maximum_range": {
                     "default": 2682000,
-                    "description": "crossbar.cdrs maximum range",
+                    "description": "maximum range (in seconds) prior to the current date allowed for CDR requests",
+                    "minimum": 1,
                     "type": "integer"
                 }
             },
@@ -30591,10 +30623,6 @@
         "system_config.crossbar.phonebook": {
             "description": "Schema for crossbar.phonebook system_config",
             "properties": {
-                "cluster_id": {
-                    "description": "the kazoo cluster_id",
-                    "type": "string"
-                },
                 "enabled": {
                     "default": false,
                     "description": "phonebook integration enabled",
@@ -32621,6 +32649,11 @@
                             "default": 5,
                             "description": "media storage retry times",
                             "type": "integer"
+                        },
+                        "workers": {
+                            "default": 1,
+                            "description": "media call_recording workers",
+                            "type": "integer"
                         }
                     }
                 },
@@ -34055,10 +34088,6 @@
         "system_config.provisioner": {
             "description": "Schema for provisioner system_config",
             "properties": {
-                "cluster_id": {
-                    "description": "provisioner cluster id",
-                    "type": "string"
-                },
                 "combo_keys": {
                     "default": {
                         "cisco": {
@@ -34187,6 +34216,11 @@
                             "description": "PEM-encoded key and certificate",
                             "type": "string"
                         },
+                        "headers": {
+                            "default": {},
+                            "description": "pusher apple headers",
+                            "type": "object"
+                        },
                         "host": {
                             "default": "api.push.apple.com",
                             "description": "APNs server host",
@@ -34202,6 +34236,11 @@
                         "api_key": {
                             "description": "API Key for firebase",
                             "type": "string"
+                        },
+                        "headers": {
+                            "default": {},
+                            "description": "pusher firebase headers",
+                            "type": "object"
                         }
                     },
                     "type": "object"
@@ -34213,6 +34252,11 @@
                         "api_key": {
                             "description": "API Key for gcm",
                             "type": "string"
+                        },
+                        "headers": {
+                            "default": {},
+                            "description": "pusher google headers",
+                            "type": "object"
                         }
                     },
                     "type": "object"
@@ -35122,6 +35166,43 @@
             },
             "type": "object"
         },
+        "system_config.tasks.ledger_rollover": {
+            "description": "Schema for tasks.ledger_rollover system_config",
+            "properties": {
+                "refresh_in_parallel": {
+                    "default": 50,
+                    "description": "tasks ledger_rollover refresh_in_parallel",
+                    "type": "integer"
+                },
+                "refresh_view_enabled": {
+                    "default": false,
+                    "description": "tasks ledger_rollover refresh_view_enabled",
+                    "type": "boolean"
+                },
+                "rollover_in_parallel": {
+                    "default": 10,
+                    "description": "How many accounts to rollover per-pass (in parallel)",
+                    "type": "integer"
+                }
+            },
+            "type": "object"
+        },
+        "system_config.tasks.modb_creation": {
+            "description": "Schema for tasks.modb_creation system_config",
+            "properties": {
+                "create_in_parallel": {
+                    "default": 1,
+                    "description": "How many accounts to process per pass (in parallel).",
+                    "type": "integer"
+                },
+                "creation_day": {
+                    "default": 28,
+                    "description": "Which day of the month (of current month) to create next month's MODBs on",
+                    "type": "integer"
+                }
+            },
+            "type": "object"
+        },
         "system_config.tasks.notify_resend": {
             "description": "Schema for tasks.notify_resend system_config",
             "properties": {
@@ -35196,6 +35277,17 @@
                     "default": "knm_local",
                     "description": "carrier module to use if none provided during numbers import",
                     "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "system_config.tasks.services_rollover": {
+            "description": "Schema for tasks.services_rollover system_config",
+            "properties": {
+                "rollover_in_parallel": {
+                    "default": 10,
+                    "description": "How many accounts to rollover services for per pass (in parallel)",
+                    "type": "integer"
                 }
             },
             "type": "object"
@@ -37195,6 +37287,12 @@
             "minLength": 32,
             "name": "RESOURCE_TEMPLATE_ID",
             "pattern": "^[0-9a-f]+$",
+            "required": true,
+            "type": "string"
+        },
+        "SAMPLE_ID": {
+            "in": "path",
+            "name": "SAMPLE_ID",
             "required": true,
             "type": "string"
         },
@@ -46692,6 +46790,43 @@
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/webhooks/samples": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/webhooks/samples/{SAMPLE_ID}": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/SAMPLE_ID"
                     },
                     {
                         "$ref": "#/parameters/ACCOUNT_ID"

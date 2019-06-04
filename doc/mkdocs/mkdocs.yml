@@ -151,6 +151,11 @@ pages:
     - 'applications/webhooks/doc/README.md'
     - 'Administration': 'applications/webhooks/doc/maintenance.md'
     - 'API': 'applications/crossbar/doc/webhooks.md'
+    - 'Webhook Events':
+      - 'Channel Event Webhooks': 'applications/webhooks/doc/events/channels.md'
+      - 'Channel Parking Event Webhook': 'applications/webhooks/doc/events/parking.md'
+      - 'Notification Event Webhooks': 'applications/webhooks/doc/events/notifications.md'
+      - 'Object Change Event Webhook': 'applications/webhooks/doc/events/object.md'
 - 'Internationalization':
   - 'Phone Numbers':
     - 'Overview': 'doc/internationalization/numbers.md'
@@ -348,9 +353,12 @@ pages:
     - 'applications/tasks/doc/fax_cleanup.md'
     - 'applications/tasks/doc/kazoo_bill_early_task.md'
     - 'applications/tasks/doc/kz_notify_resender.md'
+    - 'applications/tasks/doc/ledger_rollover.md'
     - 'applications/tasks/doc/maintenance.md'
+    - 'applications/tasks/doc/modb_creation.md'
     - 'applications/tasks/doc/notify_resend_maintenance.md'
     - 'applications/tasks/doc/rates.md'
+    - 'applications/tasks/doc/services_rollover.md'
   - 'Teletype':
     - 'applications/teletype/doc/README.md'
     - 'applications/teletype/doc/maintenance.md'

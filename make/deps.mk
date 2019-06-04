@@ -46,7 +46,7 @@ ifeq ($(USER),travis)
 endif
 
 dep_amqp_client = hex 3.7.14
-dep_apns = git https://github.com/inaka/apns4erl.git 2.3.0
+dep_apns = git https://github.com/2600hz/erlang-apns4erl.git aba1fa96a4abbbb2c1628ad5d604f482aad4d12f # latest commit SHA to 2600hz branch
 
 # dep_certifi = hex 0.3.0
 # Used by hackney, let it pull in certifi
@@ -54,7 +54,7 @@ dep_apns = git https://github.com/inaka/apns4erl.git 2.3.0
 # dep_chatterbox = hex 0.7.0
 # used by apns4erl
 
-dep_couchbeam = git https://github.com/2600hz/couchbeam 2600hz #bumped to match upstream 1.4.2
+dep_couchbeam = git https://github.com/2600hz/erlang-couchbeam 28fce6c340de83f4792d45224c29ec729b8e264d # latest commit SHA to 2600hz branch
 ### https://github.com/benoitc/couchbeam/pull/158 - _list functions fix
 ### https://github.com/benoitc/couchbeam/pull/164 - allow 202 in put_attachment
 ### https://github.com/benoitc/couchbeam/pull/165 - fetch couchdb config

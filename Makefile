@@ -299,10 +299,14 @@ schemas:
 DOCS_ROOT=$(ROOT)/doc/mkdocs
 docs: docs-validate docs-report docs-setup docs-build
 
+admonitions:
+	@ERL_LIBS=deps:core:applications $(ROOT)/scripts/check-admonitions.escript $(shell grep -rlE '^!!! ' scripts applications core doc)
+
 docs-validate:
 	@$(ROOT)/scripts/check-scripts-readme.bash
 	@$(ROOT)/scripts/empty_schema_descriptions.bash
 	@$(ROOT)/scripts/check-ref-docs.bash
+	@ERL_LIBS=deps:core:applications $(ROOT)/scripts/check-admonitions.escript $(CHANGED)
 
 docs-report:
 	@$(ROOT)/scripts/reconcile_docs_to_index.bash
@@ -310,7 +314,6 @@ docs-report:
 docs-setup:
 	@$(ROOT)/scripts/validate_mkdocs.py
 	@$(ROOT)/scripts/setup_docs.bash
-	@mkdir -p $(DOCS_ROOT)/theme
 
 docs-build:
 	@$(MAKE) -C $(DOCS_ROOT) DOCS_ROOT=$(DOCS_ROOT) docs-build
