@@ -2387,7 +2387,7 @@ b_privacy(Mode, Call) ->
                             ,call :: kapps_call:call()
                             ,digits_collected = <<>> :: binary()
                             ,after_timeout = ?MILLISECONDS_IN_DAY :: pos_integer()
-                            ,flush_on_digit = true
+                            ,flush_on_digit = 'true'
                             }).
 -type wcc_collect_digits() :: #wcc_collect_digits{}.
 

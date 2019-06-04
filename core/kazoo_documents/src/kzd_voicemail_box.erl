@@ -17,8 +17,6 @@
         ,pin/1, pin/2
         ,mailbox_number/1, mailbox_number/2
         ,pin_required/1, pin_required/2
-        ,is_ff_rw_enabled/1, is_ff_rw_enabled/2
-        ,seek_duration/1, seek_duration/2
         ,check_if_owner/1, check_if_owner/2
         ,is_setup/1, is_setup/2
 
@@ -165,22 +163,6 @@ pin_required(Box) ->
 -spec pin_required(doc(), Default) -> boolean() | Default.
 pin_required(Box, Default) ->
     kz_json:is_true(?KEY_PIN_REQUIRED, Box, Default).
-
--spec is_ff_rw_enabled(doc()) -> boolean().
-is_ff_rw_enabled(Box) ->
-    is_ff_rw_enabled(Box, 'false').
-
--spec is_ff_rw_enabled(doc(), Default) -> boolean() | Default.
-is_ff_rw_enabled(Box, Default) ->
-    kz_json:is_true(?KEY_IS_FF_RW_ENABLED, Box, Default).
-
--spec seek_duration(doc()) -> boolean().
-seek_duration(Box) ->
-    seek_duration(Box, ?DEFAULT_SEEK_DURATION).
-
--spec seek_duration(doc(), Default) -> boolean() | Default.
-seek_duration(Box, Default) ->
-    kz_json:get_integer_value(?KEY_SEEK_DURATION, Box, Default).
 
 -spec check_if_owner(doc()) -> boolean().
 check_if_owner(Box) ->

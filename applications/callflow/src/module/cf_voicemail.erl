@@ -181,7 +181,7 @@
                  ,transcribe_voicemail = 'false' :: boolean()
                  ,notifications :: kz_term:api_object()
                  ,after_notify_action = 'nothing' :: 'nothing' | 'delete' | 'save'
-                 ,is_ff_rw_enabled = false :: boolean()
+                 ,is_ff_rw_enabled = 'false' :: boolean()
                  ,seek_duration = ?DEFAULT_SEEK_DURATION :: non_neg_integer()
                  ,interdigit_timeout = kapps_call_command:default_interdigit_timeout() :: pos_integer()
                  ,play_greeting_intro = 'false' :: boolean()
@@ -1099,7 +1099,7 @@ message_menu(Prompt, #mailbox{keys=#keys{replay=Replay
                                           ,Interdigit
                                           ,NoopId
                                           ,[<<"#">>]
-                                          ,false
+                                          ,'false'
                                           ,Call
                                           )
     of
@@ -1685,13 +1685,13 @@ should_require_pin(MailboxJObj) ->
 -spec is_ff_rw_enabled(kz_json:object()) -> boolean().
 is_ff_rw_enabled(MailboxJObj) ->
     case ?IS_FF_RW_ENABLED of
-        'true' -> kzd_voicemail_box:is_ff_rw_enabled(MailboxJObj);
+        'true' -> kzd_vmboxes:is_voicemail_ff_rw_enabled(MailboxJObj);
         'false' -> 'false'
     end.
 
 -spec seek_duration(kz_json:object()) -> non_neg_integer().
 seek_duration(MailboxJObj) ->
-    kzd_voicemail_box:seek_duration(MailboxJObj, ?MAILBOX_SEEK_DURATION).
+    kzd_vmboxes:seek_duration_ms(MailboxJObj, ?MAILBOX_SEEK_DURATION).
 
 -spec after_notify_action(kz_json:object()) -> atom().
 after_notify_action(MailboxJObj) ->

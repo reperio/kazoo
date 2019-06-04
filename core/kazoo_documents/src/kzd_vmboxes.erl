@@ -75,7 +75,7 @@ is_setup(Doc, Default) ->
 
 -spec is_voicemail_ff_rw_enabled(doc()) -> boolean().
 is_voicemail_ff_rw_enabled(Doc) ->
-    is_voicemail_ff_rw_enabled(Doc, false).
+    is_voicemail_ff_rw_enabled(Doc, 'false').
 
 -spec is_voicemail_ff_rw_enabled(doc(), Default) -> boolean() | Default.
 is_voicemail_ff_rw_enabled(Doc, Default) ->
