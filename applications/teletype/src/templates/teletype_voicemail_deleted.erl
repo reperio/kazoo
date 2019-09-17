@@ -1,10 +1,10 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2014-2020, 2600Hz
+%%% @copyright (C) 2014-2019, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
 %%% @end
 %%%-----------------------------------------------------------------------------
--module(teletype_voicemail_to_email).
+-module(teletype_voicemail_deleted).
 -behaviour(teletype_gen_email_template).
 
 -export([id/0
@@ -21,7 +21,7 @@
 
 -spec id() -> kz_term:ne_binary().
 id() ->
-    <<"voicemail_to_email">>.
+    <<"voicemail_deleted">>.
 
 -spec macros() -> kz_json:object().
 macros() ->
@@ -33,19 +33,20 @@ macros() ->
       ,?MACRO_VALUE(<<"voicemail.file_name">>, <<"voicemail_file_name">>, <<"Voicemail File Name">>, <<"Name of the voicemail file">>)
       ,?MACRO_VALUE(<<"voicemail.file_type">>, <<"voicemail_file_type">>, <<"Voicemail File Type">>, <<"Type of the voicemail file">>)
       ,?MACRO_VALUE(<<"voicemail.file_size">>, <<"voicemail_file_size">>, <<"Voicemail File Size">>, <<"Size of the voicemail file in bytes">>)
+      ,?MACRO_VALUE(<<"reason">>, <<"voicemail_delete_reason">>, <<"Voicemail Delete Reason">>, <<"Why the voicemail was deleted">>)
        | ?DEFAULT_CALL_MACROS
        ++ ?USER_MACROS
        ++ ?COMMON_TEMPLATE_MACROS
       ]).
 
 -spec subject() -> kz_term:ne_binary().
-subject() -> <<"New voicemail from {{caller_id.name_number}}">>.
+subject() -> <<"Voicemail from {{caller_id.name_number}} was deleted">>.
 
 -spec category() -> kz_term:ne_binary().
 category() -> <<"voicemail">>.
 
 -spec friendly_name() -> kz_term:ne_binary().
-friendly_name() -> <<"Voicemail To Email">>.
+friendly_name() -> <<"Deleted Voicemail To Email">>.
 
 -spec to() -> kz_json:object().
 to() -> ?CONFIGURED_EMAILS(?EMAIL_ORIGINAL).
@@ -66,11 +67,11 @@ reply_to() -> teletype_util:default_reply_to().
 init() ->
     kz_util:put_callid(?MODULE),
     teletype_templates:init(?MODULE),
-    teletype_bindings:bind(<<"voicemail_new">>, ?MODULE, 'handle_req').
+    teletype_bindings:bind(<<"voicemail_deleted">>, ?MODULE, 'handle_req').
 
 -spec handle_req(kz_json:object()) -> template_response().
 handle_req(JObj) ->
-            handle_req(JObj, kapi_notifications:voicemail_new_v(JObj)).
+    handle_req(JObj, kapi_notifications:voicemail_deleted_v(JObj)).
 
 -spec handle_req(kz_json:object(), boolean()) -> template_response().
 handle_req(_, 'false') ->
@@ -170,6 +171,7 @@ do_process_req(DataJObj) ->
 -spec macros(kz_json:object()) -> kz_term:proplist().
 macros(DataJObj) ->
     TemplateData = template_data(DataJObj),
+    lager:debug("TemplateData: ~p", [TemplateData]),
     EmailAttachements = email_attachments(DataJObj, TemplateData),
     Macros = maybe_add_file_data(TemplateData, EmailAttachements),
     props:set_value(<<"attachments">>, EmailAttachements, Macros).
@@ -256,6 +258,7 @@ build_template_data(DataJObj) ->
     ,{<<"account">>, teletype_util:account_params(DataJObj)}
     ,{<<"user">>, teletype_util:user_params(kz_json:get_value(<<"user">>, DataJObj))}
     ,{<<"owner">>, teletype_util:user_params(kz_json:get_value(<<"user">>, DataJObj))}
+    ,{<<"reason">>, render_vm_delete_reason(DataJObj)}
      | teletype_util:build_call_data(DataJObj, Timezone)
     ].
 
@@ -271,6 +274,14 @@ build_voicemail_data(DataJObj) ->
       ,{<<"transcription">>, get_transcription(DataJObj)}
       ,{<<"length">>, pretty_print_length(DataJObj)}
       ]).
+
+-spec render_vm_delete_reason(kz_json:object()) -> kz_term:api_ne_binary().
+render_vm_delete_reason(DataJObj) -> 
+    case kz_json:get_atom_value(<<"reason">>, DataJObj) of
+        'dtmf' -> <<"user pressed DTMF key">>;
+        'delete_after_notify' -> <<"due to 'Deleted after notify'">>;
+        'crossbar_action' -> <<"due to crossbar action (webhook)">>
+    end.
 
 -spec get_transcription(kz_json:object()) -> kz_term:api_ne_binary().
 get_transcription(DataJObj) ->
