@@ -1121,7 +1121,6 @@ voicemail_full_definition() ->
                                ,<<"From-User">>
                                ,<<"To-Realm">>
                                ,<<"To-User">>
-                               ,<<"Reason">>
                                ,<<"Voicemail-Box">>
                                ,<<"Voicemail-ID">>
                                ,<<"Voicemail-Timestamp">>
@@ -1133,6 +1132,23 @@ voicemail_full_definition() ->
                                         ,<<"Voicemail-Transcription">>
                                              | ?DEFAULT_OPTIONAL_HEADERS
                                         ]).
+-define(VOICEMAIL_DELETED_HEADERS, [<<"Account-ID">>
+                                    ,<<"From-Realm">>
+                                    ,<<"From-User">>
+                                    ,<<"To-Realm">>
+                                    ,<<"To-User">>
+                                    ,<<"Reason">>
+                                    ,<<"Voicemail-Box">>
+                                    ,<<"Voicemail-ID">>
+                                    ,<<"Voicemail-Timestamp">>
+                                   ]).
+-define(OPTIONAL_VOICEMAIL_DELETED_HEADERS, [<<"Call-ID">>
+                                             ,<<"Caller-ID-Name">>
+                                             ,<<"Caller-ID-Number">>
+                                             ,<<"Voicemail-Length">>
+                                             ,<<"Voicemail-Transcription">>
+                                             | ?DEFAULT_OPTIONAL_HEADERS
+                                            ]).
 %%------------------------------------------------------------------------------
 %% @doc Get Voicemail New Notification API definition.
 %% @end
@@ -1186,8 +1202,8 @@ voicemail_deleted_definition() ->
                     ,publish_fun = fun publish_voicemail_deleted/1
                     ,binding = ?BINDING_STRING(<<"voicemail">>, <<"deleted">>)
                     ,restrict_to = 'voicemail_deleted'
-                    ,required_headers = ?VOICEMAIL_NEW_HEADERS
-                    ,optional_headers = ?OPTIONAL_VOICEMAIL_NEW_HEADERS
+                    ,required_headers = ?VOICEMAIL_DELETED_HEADERS 
+                    ,optional_headers = ?OPTIONAL_VOICEMAIL_DELETED_HEADERS
                     ,values = ?NOTIFY_VALUES(<<"voicemail_deleted">>)
                     ,types = []
                     }.
