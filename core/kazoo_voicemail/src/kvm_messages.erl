@@ -356,8 +356,10 @@ change_folder(Folder, Msgs, AccountId, BoxId) ->
                                                  AccountId :: kz_term:ne_binary(),
                                                  BoxId :: kz_term:ne_binary(),
                                                  Functions :: update_funs().
-change_folder(Folder, Msgs, AccountId, BoxId, Funs) ->
-    Fun = [fun(JObj) -> kzd_box_message:apply_folder(Folder, JObj) end
+change_folder(_Folder, Msgs, AccountId, BoxId, Funs) ->
+    Fun = [fun(JObj) -> 
+                   JObj %kzd_box_message:apply_folder(Folder, JObj) 
+           end
            | Funs
           ],
     update(AccountId, BoxId, Msgs, Fun).
