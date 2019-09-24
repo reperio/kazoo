@@ -19543,6 +19543,14 @@
                 "Preview": {
                     "type": "string"
                 },
+                "Reason": {
+                    "enum": [
+                        "dtmf",
+                        "delete_after_notify",
+                        "crossbar_action"
+                    ],
+                    "type": "string"
+                },
                 "Reply-To": {
                     "type": "string"
                 },
@@ -19581,6 +19589,7 @@
                 "Account-ID",
                 "From-Realm",
                 "From-User",
+                "Reason",
                 "To-Realm",
                 "To-User",
                 "Voicemail-Box",
@@ -19712,6 +19721,9 @@
                 "Preview": {
                     "type": "string"
                 },
+                "Reason": {
+                    "type": "string"
+                },
                 "Reply-To": {
                     "type": "string"
                 },
@@ -19810,6 +19822,9 @@
                     "type": "string"
                 },
                 "Preview": {
+                    "type": "string"
+                },
+                "Reason": {
                     "type": "string"
                 },
                 "Reply-To": {
