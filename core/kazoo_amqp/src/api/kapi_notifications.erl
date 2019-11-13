@@ -1196,7 +1196,7 @@ voicemail_deleted_definition() ->
                     ,publish_fun = fun publish_voicemail_deleted/1
                     ,binding = ?BINDING_STRING(<<"voicemail">>, <<"deleted">>)
                     ,restrict_to = 'voicemail_deleted'
-                    ,required_headers = ?VOICEMAIL_DELETED_HEADERS 
+                    ,required_headers = ?VOICEMAIL_DELETED_HEADERS
                     ,optional_headers = ?OPTIONAL_VOICEMAIL_DELETED_HEADERS
                     ,values = ?NOTIFY_VALUES(<<"voicemail_deleted">>)
                     ,types = []
