@@ -3,6 +3,11 @@
 %%% @doc Handle authn_req messages
 %%% @author James Aimonetti
 %%% @author Luis Azedo
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(reg_authn_req).
@@ -25,7 +30,7 @@ init() -> 'ok'.
 -spec handle_req(kz_json:object(), kz_term:proplist()) -> 'ok'.
 handle_req(JObj, _Props) ->
     'true' = kapi_authn:req_v(JObj),
-    _ = kz_util:put_callid(JObj),
+    _ = kz_log:put_callid(JObj),
     Realm = kz_json:get_value(<<"Auth-Realm">>, JObj, <<"missing.realm">>),
     case kz_network_utils:is_ipv4(Realm)
         orelse kz_network_utils:is_ipv6(Realm)

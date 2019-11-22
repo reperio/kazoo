@@ -1,6 +1,11 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2011-2019, 2600Hz
 %%% @doc Receives STOP RECORD event
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(ecallmgr_fs_recordings).
@@ -17,7 +22,7 @@ init() ->
 
 -spec handle_record_stop(map()) -> any().
 handle_record_stop(#{node := Node, call_id := UUID, payload := JObj}) ->
-    kz_util:put_callid(UUID),
+    kz_log:put_callid(UUID),
     IsLocal = handling_locally(JObj),
     MediaRecorder = kz_recording:recorder(JObj),
     maybe_store_recording(IsLocal, MediaRecorder, JObj, UUID, Node).
@@ -34,7 +39,7 @@ maybe_store_recording('true', _, JObj, CallId, Node) ->
         'undefined' -> 'ok';
         <<>> -> 'ok';
         <<_/binary>> = Destination ->
-            kz_util:put_callid(CallId),
+            kz_log:put_callid(CallId),
             lager:debug("no one is handling call recording, storing recording to ~s", [Destination]),
 
             MediaName = kz_call_event:custom_channel_var(JObj, <<"Media-Name">>),

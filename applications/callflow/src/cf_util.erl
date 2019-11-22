@@ -4,6 +4,11 @@
 %%% @author Karl Anderson
 %%% @author James Aimonetti
 %%% @author Sponsored by Conversant Ltd, Implemented by SIPLABS, LLC (Ilya Ashchepkov)
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(cf_util).
@@ -205,13 +210,13 @@ manual_presence_resp(Username, Realm, JObj) ->
 -spec presence_mwi_query(kz_json:object(), kz_term:proplist()) -> 'ok'.
 presence_mwi_query(JObj, _Props) ->
     'true' = kapi_presence:mwi_query_v(JObj),
-    _ = kz_util:put_callid(JObj),
+    _ = kz_log:put_callid(JObj),
     mwi_query(JObj).
 
 -spec notification_register(kz_json:object(), kz_term:proplist()) -> 'ok'.
 notification_register(JObj, _Props) ->
     'true' = kapi_notifications:register_v(JObj),
-    _ = kz_util:put_callid(JObj),
+    _ = kz_log:put_callid(JObj),
     mwi_query(JObj).
 
 -spec mwi_query(kz_json:object()) -> 'ok'.
@@ -773,7 +778,7 @@ normalize_capture_group(<<>>, _) ->
     'undefined';
 normalize_capture_group(CaptureGroup, 'undefined') ->
     knm_converters:normalize(CaptureGroup);
-normalize_capture_group(CaptureGroup, ?NE_BINARY=AccountId) ->
+normalize_capture_group(CaptureGroup, <<AccountId/binary>>) ->
     knm_converters:normalize(CaptureGroup, AccountId);
 normalize_capture_group(CaptureGroup, Call) ->
     normalize_capture_group(CaptureGroup, kapps_call:account_id(Call)).

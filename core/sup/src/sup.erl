@@ -5,6 +5,10 @@
 %%%
 %%% @author Karl Anderson
 %%% @author Pierre Fenoll
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(sup).
@@ -60,10 +64,10 @@ main(CommandLineArgs, Loops) ->
             IsVerbose
                 andalso stdout("Running ~s:~s(~s)", [Module, Function, string:join(Args, ", ")]),
 
-            case rpc:call(Target, ?MODULE, in_kazoo, [SUPName, Module, Function, Arguments], Timeout) of
+            case rpc:call(Target, ?MODULE, 'in_kazoo', [SUPName, Module, Function, Arguments], Timeout) of
                 {'badrpc', {'EXIT',{'undef', _}}} ->
                     print_invalid_cli_args();
-                {badrpc, {'EXIT', {timeout_value,[{Module,Function,_,_}|_]}}} ->
+                {'badrpc', {'EXIT', {'timeout_value',[{Module,Function,_,_}|_]}}} ->
                     stderr("Command failed: timeout~n", []),
                     halt(4);
                 {'badrpc', Reason} ->
@@ -93,8 +97,8 @@ main(CommandLineArgs, Loops) ->
 
 -spec in_kazoo(atom(), module(), atom(), kz_term:binaries()) -> no_return().
 in_kazoo(SUPName, M, F, As) ->
-    kz_util:put_callid(SUPName),
-    lager:notice("~s: ~s ~s ~s", [?MODULE, M, F, kz_util:iolist_join($,, As)]),
+    kz_log:put_callid(SUPName),
+    lager:notice("~s: ~s ~s ~s", [?MODULE, M, F, kz_term:iolist_join($,, As)]),
     R = apply(M, F, As),
     lager:notice("~s result: ~p", [?MODULE, R]),
     R.
@@ -257,7 +261,7 @@ option_spec_list() ->
 -spec from_env(list(), list()) -> list().
 from_env(Name, Default) ->
     case os:getenv(Name) of
-        false -> Default;
+        'false' -> Default;
         Value -> Value
     end.
 

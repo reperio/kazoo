@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_notify_resend).
@@ -114,7 +118,7 @@ start_link() ->
 %%------------------------------------------------------------------------------
 -spec init([]) -> {'ok', state()}.
 init([]) ->
-    kz_util:put_callid(?NAME),
+    kz_log:put_callid(?NAME),
     lager:debug("~s has been started", [?NAME]),
     {'ok', #state{timer_ref = set_timer()}}.
 
@@ -141,7 +145,7 @@ set_timer() ->
 send_single(Id) ->
     case kz_datamgr:open_doc(?KZ_PENDING_NOTIFY_DB, Id) of
         {'ok', JObj} ->
-            kz_util:put_callid(kz_json:get_value(<<"payload">>, JObj)),
+            kz_log:put_callid(kz_json:get_value(<<"payload">>, JObj)),
             process_single(JObj);
         {'error', _}=Error -> Error
     end.
@@ -196,7 +200,7 @@ handle_info({'timeout', Ref, _Msg}, #state{timer_ref = Ref}=State) ->
             {'noreply', State#state{timer_ref = set_timer()}};
         {'ok', Pendings} ->
             lager:info("processing ~b pending notifications", [length(Pendings)]),
-            _ = kz_util:spawn(fun () -> process_then_next_cycle([kz_json:get_value(<<"doc">>, J) || J <- Pendings]) end),
+            _ = kz_process:spawn(fun () -> process_then_next_cycle([kz_json:get_value(<<"doc">>, J) || J <- Pendings]) end),
             {'noreply', State#state{running=Pendings}};
         {'error', 'not_found'} ->
             lager:error("unable to find pending view, this is not good..."),

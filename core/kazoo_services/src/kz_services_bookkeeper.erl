@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_services_bookkeeper).
@@ -200,7 +204,7 @@ update_bookkeeper(_Type, Invoice, Services, AuditJObj) ->
               ,{<<"Bookkeeper-Type">>, kz_services_invoice:bookkeeper_type(Invoice)}
               ,{<<"Vendor-ID">>, kz_services_invoice:bookkeeper_vendor_id(Invoice)}
               ,{<<"Invoice">>, kz_json:delete_key(<<"plan">>, kz_services_invoice:public_json(Invoice))}
-              ,{<<"Call-ID">>, kz_util:get_callid()}
+              ,{<<"Call-ID">>, kz_log:get_callid()}
               ,{<<"Audit-Log">>, kz_doc:public_fields(AuditJObj)}
                | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
               ],

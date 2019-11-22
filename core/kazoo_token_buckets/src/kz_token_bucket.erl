@@ -13,6 +13,10 @@
 %%% '''
 %%%
 %%% @author James Aimonetti
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_token_bucket).
@@ -167,7 +171,7 @@ normalize_fill_time(_) -> 'second'.
 %%------------------------------------------------------------------------------
 -spec init(list()) -> {'ok', state()}.
 init([Max, FillRate, FillAsBlock, FillTime]) ->
-    kz_util:put_callid(?MODULE),
+    kz_log:put_callid(?MODULE),
     lager:debug("starting token bucket with ~b max, filling at ~b/~s, in a block: ~s"
                ,[Max, FillRate,FillTime, FillAsBlock]
                ),
@@ -226,7 +230,7 @@ handle_cast({'credit', Req}, #state{tokens=Current
             {'noreply', State#state{tokens=N}}
     end;
 handle_cast({'name', Name}, State) ->
-    kz_util:put_callid(Name),
+    kz_log:put_callid(Name),
     lager:debug("updated name to ~p", [Name]),
     {'noreply', State};
 handle_cast('stop', State) ->

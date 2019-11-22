@@ -15,6 +15,11 @@
 %%%
 %%%
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(cb_sup).
@@ -57,7 +62,7 @@ start_link() ->
 
 -spec init_io(pid()) -> any().
 init_io(Parent) ->
-    kz_util:put_callid(<<"cb_sup_io_server">>),
+    kz_log:put_callid(<<"cb_sup_io_server">>),
     register(?SERVER, self()),
     lager:debug("acking to ~p", [Parent]),
     Debug = sys:debug_options([]),

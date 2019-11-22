@@ -2,6 +2,11 @@
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc Preforms maintenance operations against the stepswitch dbs
 %%% @author Karl Anderson
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(stepswitch_maintenance).
@@ -9,7 +14,6 @@
 -export([resources/0]).
 -export([reverse_lookup/1]).
 -export([flush/0
-        ,cnam_flush/0
         ]).
 -export([lookup_number/1
         ,number_tree/1
@@ -108,10 +112,6 @@ pretty_print_resource([{Key, Value}|Props]) ->
 %%------------------------------------------------------------------------------
 -spec flush() -> 'ok'.
 flush() -> kz_cache:flush_local(?CACHE_NAME).
-
--spec cnam_flush() -> 'ok'.
-cnam_flush() ->
-    io:format("flushed ~p entries from cnam cache~n", [stepswitch_cnam:flush()]).
 
 -spec register_views() -> 'ok'.
 register_views() ->

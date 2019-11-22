@@ -5,6 +5,11 @@
 %%% @author James Aimonetti
 %%% @author Pierre Fenoll
 %%% @author Roman Galeev
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kapps_config).
@@ -580,7 +585,7 @@ get_all_default_kvs(JObj) ->
 %% @end
 %%------------------------------------------------------------------------------
 
--spec set_string(config_category(), config_key(), kz_term:text() | binary() | string()) ->
+-spec set_string(config_category(), config_key(), kz_term:text()) ->
                         {'ok', kz_json:object()}.
 set_string(Category, Key, Value) ->
     set(Category, Key, kz_term:to_binary(Value)).
@@ -1149,6 +1154,7 @@ fetch_category(Category, 'false') ->
         ,{{<<"services">>, <<"support_billing_id">>}
          ,'undefined'
          }
+        ,{<<"stepswitch.cnam">>, <<"cnam">>}
         ]).
 
 -spec migrate() -> 'ok'.

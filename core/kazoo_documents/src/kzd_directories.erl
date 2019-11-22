@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kzd_directories).
@@ -11,6 +15,7 @@
 -export([max_dtmf/1, max_dtmf/2, set_max_dtmf/2]).
 -export([min_dtmf/1, min_dtmf/2, set_min_dtmf/2]).
 -export([name/1, name/2, set_name/2]).
+-export([search_fields/1, search_fields/2, set_search_fields/2]).
 -export([sort_by/1, sort_by/2, set_sort_by/2]).
 -export([users/1, users/2, set_users/2]).
 
@@ -85,6 +90,18 @@ name(Doc, Default) ->
 -spec set_name(doc(), kz_term:ne_binary()) -> doc().
 set_name(Doc, Name) ->
     kz_json:set_value([<<"name">>], Name, Doc).
+
+-spec search_fields(doc()) -> kz_term:api_binary().
+search_fields(Doc) ->
+    search_fields(Doc, 'undefined').
+
+-spec search_fields(doc(), Default) -> binary() | Default.
+search_fields(Doc, Default) ->
+    kz_json:get_binary_value([<<"search_fields">>], Doc, Default).
+
+-spec set_search_fields(doc(), binary()) -> doc().
+set_search_fields(Doc, SearchFields) ->
+    kz_json:set_value([<<"search_fields">>], SearchFields, Doc).
 
 -spec sort_by(doc()) -> binary().
 sort_by(Doc) ->

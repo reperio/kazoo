@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc Supervisor for started caches
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_cache_sup).
@@ -38,9 +42,9 @@ start_link(Name, ExpirePeriod) when is_integer(ExpirePeriod), ExpirePeriod > 0 -
 start_link(Name, ExpirePeriod, Props) ->
     supervisor:start_link({'local', sup_name(Name)}, ?MODULE, [Name, ExpirePeriod, Props]).
 
--spec stop(atom()) -> 'true'.
+-spec stop(atom()) -> 'ok'.
 stop(Name) ->
-    exit(whereis(sup_name(Name)), 'shutdown').
+    gen_server:stop(sup_name(Name)).
 
 -spec sup_name(atom()) -> atom().
 sup_name(Name) ->

@@ -2,6 +2,11 @@
 %%% @copyright (C) 2016-2019, 2600Hz
 %%% @doc Run tasks without CSV input file, scheduled by kz_tasks.
 %%% @author Pierre Fenoll
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_task_worker_noinput).
@@ -33,7 +38,7 @@
 %%------------------------------------------------------------------------------
 -spec start(kz_tasks:id(), kz_json:object(), kz_tasks:extra_args()) -> ok.
 start(TaskId, API, ExtraArgs) ->
-    _ = kz_util:put_callid(TaskId),
+    _ = kz_log:put_callid(TaskId),
     case init(TaskId, API, ExtraArgs) of
         {'ok', State} ->
             lager:debug("worker for ~s started", [TaskId]),
@@ -134,7 +139,7 @@ is_task_successful(IterValue
         ['stop'] -> 'stop';
         [{'EXIT', {_Error, _ST=[_|_]}}] ->
             lager:error("error: ~p", [_Error]),
-            kz_util:log_stacktrace(_ST),
+            kz_log:log_stacktrace(_ST),
             {Columns, Written} = store_return(State, ?WORKER_TASK_FAILED),
             {'false', Columns, Written, 'stop'};
         [{'ok', NewIterValue}] ->

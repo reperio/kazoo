@@ -2,6 +2,10 @@
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc Kazoo HTTP client
 %%% @author Hesaam Farhang
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_http).
@@ -64,6 +68,8 @@
 -export_type([ret/0
              ,req_id/0
              ,field/0, value/0, header/0, headers/0
+             ,method/0
+             ,http_body/0
              ]).
 
 -define(REQ_URL_INDEX, 1).
@@ -343,6 +349,7 @@ build_request(Method, Url, Headers, Body) when Method =:= 'post';
 
 ensure_string_headers(Headers) ->
     [{kz_term:to_list(K), kz_term:to_list(V)} || {K,V} <- Headers].
+
 %%------------------------------------------------------------------------------
 %% @doc Get options out of a proplist based on options type
 %% Two <code>HTTP_OPTIONS</code> and <code>OPTIONS</code> macros are specify

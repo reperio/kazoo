@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kzd_sms).
@@ -21,6 +25,8 @@
 -export([account_id/1, account_id/2]).
 -export([route_id/1, route_id/2, set_route_id/2]).
 
+-export([type/0, type/1]).
+
 
 -include("kz_documents.hrl").
 
@@ -28,6 +34,7 @@
 -export_type([doc/0]).
 
 -define(SCHEMA, <<"sms">>).
+-define(TYPE, <<"sms">>).
 
 -spec new() -> doc().
 new() ->
@@ -164,3 +171,10 @@ route_id(Doc, Default) ->
 -spec set_route_id(doc(), kz_term:ne_binary()) -> doc().
 set_route_id(Doc, RouteId) ->
     kz_json:set_value(<<"Route-ID">>, RouteId, Doc).
+
+-spec type() -> kz_term:ne_binary().
+type() -> ?TYPE.
+
+-spec type(doc()) -> kz_term:ne_binary().
+type(Doc) ->
+    kz_doc:type(Doc, ?TYPE).

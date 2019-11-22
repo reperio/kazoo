@@ -9,6 +9,11 @@
 %%% }
 %%%
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(konami_transfer).
@@ -138,7 +143,7 @@ handle(Data, Call) ->
         'exit':'normal' -> 'ok';
         ?STACKTRACE(_E, _R, ST)
         lager:info("statem terminated abnormally: ~s: ~p", [_E, _R]),
-        kz_util:log_stacktrace(ST)
+        kz_log:log_stacktrace(ST)
         end.
 
 -spec get_extension(kz_term:ne_binaries() | kz_term:ne_binary()) -> kz_term:ne_binary().

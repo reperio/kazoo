@@ -3,6 +3,11 @@
 %%% @doc Manage a FreeSWITCH node and its resources
 %%% @author James Aimonetti
 %%% @author Karl Anderson
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(ecallmgr_fs_node).
@@ -271,7 +276,7 @@ init([Node, Info, Options]) ->
 -spec init(atom(), kz_json:object(), kz_term:proplist()) -> {'ok', state()}.
 init(Node, Info, Options) ->
     process_flag('trap_exit', 'true'),
-    kz_util:put_callid(Node),
+    kz_log:put_callid(Node),
     process_flag('priority', 'high'), %% Living dangerously!
     lager:info("starting new fs node listener for ~s", [Node]),
     gproc:reg({'p', 'l', 'fs_node'}),
@@ -299,6 +304,9 @@ handle_call({'sip_url', Profile}, _, #state{info=Info}=State) ->
 handle_call('interfaces', _, #state{info=Info}=State) ->
     Resp = kz_json:get_json_value([<<"Roles">>, <<"Media">>, <<"profiles">>], Info, kz_json:new()),
     {'reply', Resp, State};
+handle_call({'interface', Interface}, _, #state{info=Info}=State) ->
+    Resp = kz_json:get_json_value([<<"Roles">>, <<"Media">>, <<"profiles">>, Interface], Info, kz_json:new()),
+    {'reply', Resp, State};
 handle_call('instance_uuid', _, #state{info=Info}=State) ->
     {'reply', kz_json:get_ne_binary_value([<<"Runtime-Info">>, <<"Core-UUID">>], Info), State};
 handle_call('info', _, #state{info=Info}=State) ->
@@ -317,7 +325,7 @@ handle_cast('sync_info', #state{node=Node}=State) ->
         _ -> {'noreply', State}
     end;
 handle_cast('sync_capabilities', #state{node=Node, info=Info}=State) ->
-    _Pid = kz_util:spawn(fun probe_capabilities/2, [Node, Info]),
+    _Pid = kz_process:spawn(fun probe_capabilities/2, [Node, Info]),
     lager:debug("syncing capabilities in ~p", [_Pid]),
     {'noreply', State};
 handle_cast('sync_channels', #state{node=Node}=State) ->
@@ -345,7 +353,7 @@ handle_info({'bgerror', _Job, _Result}, State) ->
     lager:debug("job ~s finished with an error: ~p", [_Job, _Result]),
     {'noreply', State};
 handle_info({'DOWN', Ref, 'process', Pid, _Reason}, #state{node=_Node, start_cmds_pid_ref={Pid, Ref}}=State) ->
-                                                %    freeswitch:event(Node, ['CHANNEL_SYNC']),
+    lager:debug("fs sync complete"),
     {'noreply', State#state{start_cmds_pid_ref='undefined'}};
 handle_info({'EXIT', _, 'noconnection'}, State) ->
     {stop, {'shutdown', 'noconnection'}, State};
@@ -400,11 +408,11 @@ code_change(_OldVsn, State, _Extra) ->
 
 -spec run_start_cmds(atom(), kz_json:object(), kz_term:proplist()) -> kz_term:pid_ref().
 run_start_cmds(Node, Info, Options) when is_atom(Node) ->
-    kz_util:spawn_monitor(fun run_start_cmds/4, [Node, Info, Options, self()]).
+    kz_process:spawn_monitor(fun run_start_cmds/4, [Node, Info, Options, self()]).
 
 -spec run_start_cmds(atom(), kz_json:object(), kz_term:proplist(), pid()) -> any().
 run_start_cmds(Node, Info, Options, Parent) when is_atom(Node) ->
-    kz_util:put_callid(Node),
+    kz_log:put_callid(Node),
     timer:sleep(kapps_config:get_integer(?APP_NAME, <<"fs_cmds_wait_ms">>, 5 * ?MILLISECONDS_IN_SECOND, Node)),
     run_start_cmds(Node, Info, Options, Parent, is_restarting(Info)).
 

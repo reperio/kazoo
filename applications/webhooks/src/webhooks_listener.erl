@@ -2,6 +2,11 @@
 %%% @copyright (C) 2013-2019, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(webhooks_listener).
@@ -76,10 +81,9 @@ handle_config(JObj, Srv, ?DOC_EDITED) ->
     case kapi_conf:get_id(JObj) of
         'undefined' -> find_and_update_hook(JObj, Srv);
         HookId ->
-            {'ok', Hook} = kz_datamgr:open_doc(?KZ_WEBHOOKS_DB, HookId),
+            {'ok', Hook} = kz_datamgr:open_cache_doc(?KZ_WEBHOOKS_DB, HookId),
             case (not kapi_conf:get_is_soft_deleted(JObj))
-                andalso kzd_webhook:is_enabled(Hook)
-
+                andalso kzd_webhooks:enabled(Hook)
             of
                 'true' ->
                     gen_listener:cast(Srv, {'update_hook', webhooks_util:jobj_to_rec(Hook)});
@@ -121,12 +125,10 @@ find_and_remove_hook(JObj, Srv) ->
     gen_listener:cast(Srv, {'remove_hook', webhooks_util:hook_id(JObj)}).
 
 -spec find_hook(kz_json:object()) ->
-                       {'ok', kz_json:object()} |
+                       {'ok', kzd_webhooks:doc()} |
                        {'error', any()}.
 find_hook(JObj) ->
-    kz_datamgr:open_cache_doc(?KZ_WEBHOOKS_DB
-                             ,kapi_conf:get_id(JObj)
-                             ).
+    kz_datamgr:open_cache_doc(?KZ_WEBHOOKS_DB, kapi_conf:get_id(JObj)).
 
 %%%=============================================================================
 %%% gen_server callbacks
@@ -138,7 +140,7 @@ find_hook(JObj) ->
 %%------------------------------------------------------------------------------
 -spec init([]) -> {'ok', state()}.
 init([]) ->
-    kz_util:put_callid(?MODULE),
+    kz_log:put_callid(?MODULE),
     {'ok', #state{}}.
 
 %%------------------------------------------------------------------------------
@@ -185,9 +187,9 @@ handle_cast(_Msg, State) ->
 handle_info({'ETS-TRANSFER', _TblId, _From, _Data}, State) ->
     lager:debug("write access to table '~p' available", [_TblId]),
     Self = self(),
-    _ = kz_util:spawn(
+    _ = kz_process:spawn(
           fun() ->
-                  kz_util:put_callid(?MODULE),
+                  kz_log:put_callid(?MODULE),
                   webhooks_util:load_hooks(Self),
                   webhooks_util:init_webhooks()
           end),

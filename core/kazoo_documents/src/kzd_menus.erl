@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kzd_menus).
@@ -23,6 +27,9 @@
 -export([retries/1, retries/2, set_retries/2]).
 -export([timeout/1, timeout/2, set_timeout/2]).
 
+-export([schema_name/0
+        ,type/0
+        ]).
 
 -include("kz_documents.hrl").
 
@@ -30,10 +37,11 @@
 -export_type([doc/0]).
 
 -define(SCHEMA, <<"menus">>).
+-define(TYPE, <<"menu">>).
 
 -spec new() -> doc().
 new() ->
-    kz_json_schema:default_object(?SCHEMA).
+    kz_doc:set_type(kz_json_schema:default_object(?SCHEMA), type()).
 
 -spec allow_record_from_offnet(doc()) -> boolean().
 allow_record_from_offnet(Doc) ->
@@ -226,3 +234,9 @@ timeout(Doc, Default) ->
 -spec set_timeout(doc(), integer()) -> doc().
 set_timeout(Doc, Timeout) ->
     kz_json:set_value([<<"timeout">>], Timeout, Doc).
+
+-spec schema_name() -> kz_term:ne_binary().
+schema_name() -> ?SCHEMA.
+
+-spec type() -> kz_term:ne_binary().
+type() -> ?TYPE.

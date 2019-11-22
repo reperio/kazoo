@@ -5,6 +5,11 @@
 %%% @author Edouard Swiac
 %%% @author Ben Wann
 %%% @author Sponsored by GTNetwork LLC, Implemented by SIPLABS LLC
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(cdr_channel_destroy).
@@ -28,7 +33,7 @@
 -spec handle_req(kz_call_event:doc(), kz_term:proplist()) -> 'ok'.
 handle_req(JObj, _Props) ->
     'true' = kapi_call:event_v(JObj),
-    _ = kz_util:put_callid(JObj),
+    _ = kz_log:put_callid(JObj),
     Routines = [fun maybe_ignore_app/1
                ,fun maybe_ignore_loopback/1
                ],

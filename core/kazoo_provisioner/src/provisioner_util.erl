@@ -2,6 +2,11 @@
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc Common functions for the provisioner modules
 %%% @author Karl Anderson
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(provisioner_util).
@@ -682,14 +687,14 @@ sync_device(AccountId, OldDevice, NewDevice) ->
             lager:debug("nothing has changed on device; no check-sync needed");
         'true' ->
             Realm = kzd_accounts:fetch_realm(AccountId),
-            send_check_sync(OldUsername, Realm, kz_util:get_callid())
+            send_check_sync(OldUsername, Realm, kz_log:get_callid())
     end.
 
 -spec force_sync_device(kz_term:ne_binary(), kzd_devices:doc()) -> 'ok'.
 force_sync_device(AccountId, NewDevice) ->
     Username = kzd_devices:sip_username(NewDevice),
     Realm = kzd_accounts:fetch_realm(AccountId),
-    send_check_sync(Username, Realm, kz_util:get_callid()).
+    send_check_sync(Username, Realm, kz_log:get_callid()).
 
 -spec sync_user(kz_term:ne_binary()) -> 'ok'.
 sync_user(AccountId) ->
@@ -735,7 +740,7 @@ force_sync_user(AccountId, NewUser) ->
             lager:debug("no user devices to sync");
         {'ok', DeviceDocs} ->
             Realm = kzd_accounts:fetch_realm(AccountId),
-            _ = [send_check_sync(kzd_devices:presence_id(DeviceDoc), Realm, kz_util:get_callid())
+            _ = [send_check_sync(kzd_devices:presence_id(DeviceDoc), Realm, kz_log:get_callid())
                  || DeviceDoc <- DeviceDocs
                 ],
             'ok'

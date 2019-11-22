@@ -11,6 +11,11 @@
 %%%
 %%% The list of shards on the node and the design documents in the db will be generated
 %%% and compaction will begin on those shards.
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kt_compactor_worker).
@@ -56,7 +61,7 @@
 run_compactor(Compactor) ->
     case should_compact(Compactor) of
         'false' ->
-            kt_compaction_reporter:skipped_db(kz_util:get_callid(), compactor_database(Compactor));
+            kt_compaction_reporter:skipped_db(kz_log:get_callid(), compactor_database(Compactor));
         'true' ->
             lager:info("compacting db '~s' on node '~s'"
                       ,[compactor_database(Compactor), compactor_node(Compactor)]
@@ -110,7 +115,7 @@ compact_shards(Compactor) ->
 
 -spec compact_shard(compactor()) -> 'ok'.
 compact_shard(#compactor{shards=[Shard]}=Compactor) ->
-    kz_util:put_callid(<<"compact_shard_", Shard/binary>>),
+    kz_log:put_callid(<<"compact_shard_", Shard/binary>>),
 
     %% Make sure this shard is not already being compacted before start compacting it.
     wait_for_compaction(compactor_admin(Compactor), Shard),
@@ -345,7 +350,7 @@ new(Node, Heuristic, APIConn, AdminConn, Database) ->
               ,heuristic=Heuristic
               ,shards=node_shards(Node, Database)
               ,design_docs=db_design_docs(APIConn, Database)
-              ,callid=kz_util:get_callid()
+              ,callid=kz_log:get_callid()
               }.
 
 -spec node_shards(kz_term:ne_binary(), kz_term:ne_binary()) -> kz_term:ne_binaries().

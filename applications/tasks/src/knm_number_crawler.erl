@@ -2,6 +2,11 @@
 %%% @copyright (C) 2013-2019, 2600Hz
 %%% @doc
 %%% @author Peter Defebvre
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(knm_number_crawler).
@@ -62,7 +67,7 @@ stop() ->
 
 -spec crawl_numbers() -> 'ok'.
 crawl_numbers() ->
-    kz_util:put_callid(?SERVER),
+    kz_log:put_callid(?SERVER),
     lager:debug("beginning a number crawl"),
     lists:foreach(fun crawl_number_db/1, knm_util:get_all_number_dbs()),
     lager:debug("finished the number crawl"),
@@ -78,7 +83,7 @@ crawl_numbers() ->
 %%------------------------------------------------------------------------------
 -spec init([]) -> {'ok', state()}.
 init([]) ->
-    kz_util:put_callid(?SERVER),
+    kz_log:put_callid(?SERVER),
     lager:debug("started ~s", [?SERVER]),
     {'ok', #state{cleanup_ref = cleanup_timer()}}.
 
@@ -108,7 +113,7 @@ handle_cast(_Msg, State) ->
 %%------------------------------------------------------------------------------
 -spec handle_info(any(), state()) -> kz_types:handle_info_ret_state(state()).
 handle_info({'timeout', Ref, _Msg}, #state{cleanup_ref=Ref}=State) ->
-    _ = kz_util:spawn(fun crawl_numbers/0),
+    _ = kz_process:spawn(fun crawl_numbers/0),
     {'noreply', State#state{cleanup_ref=cleanup_timer()}};
 handle_info(_Msg, State) ->
     lager:debug("unhandled msg: ~p", [_Msg]),

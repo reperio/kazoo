@@ -2,6 +2,11 @@
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_media_file).
@@ -21,7 +26,7 @@
 get_uri(#media_store_path{}=Store, JObj) ->
     maybe_proxy(JObj, Store);
 get_uri(Media, JObj) when is_binary(Media) ->
-    kz_util:put_callid(JObj),
+    kz_log:put_callid(JObj),
     Paths = [kz_http_util:urldecode(Path)
              || Path <- binary:split(Media, <<"/">>, ['global', 'trim']),
                 not kz_term:is_empty(Path)
@@ -89,8 +94,8 @@ proxy_uri(#media_store_path{db = Db
          ,StreamType
          ) ->
     _ = maybe_prepare_proxy(StreamType, Store),
-    Path = kz_util:uri_encode(base64:encode(term_to_binary({Db, Id, Attachment, Options}))),
-    File = kz_util:uri_encode(Attachment),
+    Path = kz_http_util:urlencode(base64:encode(term_to_binary({Db, Id, Attachment, Options}))),
+    File = kz_http_util:urlencode(Attachment),
     UrlParts = [kz_media_util:proxy_base_url(StreamType)
                ,StreamType
                ,Path

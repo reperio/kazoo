@@ -7,6 +7,11 @@
 %%% @author Karl Anderson
 %%% @author James Aimonetti
 %%% @author SIPLABS, LLC (Ilya Ashchepkov)
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(cb_users_v2).
@@ -412,10 +417,10 @@ update_device_presence(Context, DeviceDoc) ->
 
     lager:debug("re-provisioning device ~s", [kz_doc:id(DeviceDoc)]),
 
-    kz_util:spawn(fun() ->
-                          kz_util:put_callid(ReqId),
-                          provisioner_v5:update_device(DeviceDoc, AuthToken)
-                  end).
+    kz_process:spawn(fun() ->
+                             kz_log:put_callid(ReqId),
+                             provisioner_v5:update_device(DeviceDoc, AuthToken)
+                     end).
 
 %%------------------------------------------------------------------------------
 %% @doc

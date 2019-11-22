@@ -2,6 +2,10 @@
 %%% @copyright (C) 2015-2019, 2600Hz
 %%% @doc Modules to create a reference documents from Crossbar API modules.
 %%% @author James Aimonetti
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(cb_api_endpoints).
@@ -31,6 +35,7 @@
 
 -include_lib("kazoo_ast/include/kz_ast.hrl").
 -include_lib("kazoo_stdlib/include/kz_types.hrl").
+-include_lib("kazoo_stdlib/include/kz_log.hrl").
 -include_lib("kazoo_web/include/kazoo_web.hrl").
 -include_lib("kazoo_documents/include/kazoo_documents.hrl").
 
@@ -150,7 +155,7 @@ methods_to_section('undefined', _Path, Acc) ->
     io:format("skipping path ~p~n", [_Path]),
     Acc;
 methods_to_section(ModuleName, {Path, Methods}, Acc) ->
-    API = kz_util:iolist_join($/, [?CURRENT_VERSION, ModuleName | format_path_tokens(Path)]),
+    API = kz_term:iolist_join($/, [?CURRENT_VERSION, ModuleName | format_path_tokens(Path)]),
     APIPath = iolist_to_binary([$/, API]),
     lists:foldl(fun(Method, Acc1) ->
                         method_to_section(Method, Acc1, APIPath)
@@ -743,7 +748,7 @@ module_version(Module) ->
     end.
 
 swagger_api_path(Path, ModuleName) ->
-    API = kz_util:iolist_join($/, [ModuleName | format_path_tokens(Path)]),
+    API = kz_term:iolist_join($/, [ModuleName | format_path_tokens(Path)]),
     iolist_to_binary([$/, API]).
 
 -spec path_name(atom()) -> kz_term:api_ne_binary().
@@ -1170,6 +1175,7 @@ def_path_param(OasVersion, <<"{TEMPORAL_RULE_SET}">>=P) -> generic_id_path_param
 def_path_param(OasVersion, <<"{USER_ID}">>=P) -> generic_id_path_param(P, OasVersion);
 def_path_param(OasVersion, <<"{VM_BOX_ID}">>=P) -> generic_id_path_param(P, OasVersion);
 def_path_param(OasVersion, <<"{WEBHOOK_ID}">>=P) -> generic_id_path_param(P, OasVersion);
+def_path_param(OasVersion, <<"{FUNCTION_ID}">>=P) -> generic_id_path_param(P, OasVersion);
 def_path_param(OasVersion, <<"{MIGRATION_ID}">>=P) -> generic_id_path_param(P, OasVersion);
 
 %% When param represents an MoDB id (i.e. 32+4+2 bytes of hexa & 1 dash):
@@ -1292,7 +1298,7 @@ def_path_param(_OasVersion, _Param) ->
 
 filters_from_module(Module) ->
     Options = [{'accumulator', kz_json:new()}
-              ,{'clause', fun handle_filter_clause/3}
+              ,{'clause', fun handle_filter_clause/4}
               ,{'function', fun maybe_process_function/3}
               ],
     kazoo_ast:walk_modules([Module], Options).
@@ -1300,16 +1306,16 @@ filters_from_module(Module) ->
 maybe_process_function('filter_prop', 3, Acc) -> Acc;
 maybe_process_function(_F, _A, Acc) -> {'skip', Acc}.
 
-handle_filter_clause([?VAR('Doc'), ?BINARY_MATCH([?BINARY_STRING(FilterName)]), ?VAR('Val')], _Guards, Acc) ->
+handle_filter_clause(_F, [?VAR('Doc'), ?BINARY_MATCH([?BINARY_STRING(FilterName)]), ?VAR('Val')], _Guards, Acc) ->
     kz_json:set_value(kz_term:to_binary(FilterName), <<"{VALUE}">>, Acc);
-handle_filter_clause([?VAR('Doc'), ?BINARY_MATCH([?BINARY_STRING(FilterName)]), ?VAR('Key')], _Guards, Acc) ->
+handle_filter_clause(_F, [?VAR('Doc'), ?BINARY_MATCH([?BINARY_STRING(FilterName)]), ?VAR('Key')], _Guards, Acc) ->
     kz_json:set_value(kz_term:to_binary(FilterName), <<"{KEY}">>, Acc);
-handle_filter_clause([?VAR('Doc')
-                     ,?BINARY_MATCH([?BINARY_STRING(FilterName)
-                                    ,?BINARY_VAR('Key')
-                                    ])
-                     ,?VAR('Val')
-                     ], _Guards, Acc) ->
+handle_filter_clause(_F, [?VAR('Doc')
+                         ,?BINARY_MATCH([?BINARY_STRING(FilterName)
+                                        ,?BINARY_VAR('Key')
+                                        ])
+                         ,?VAR('Val')
+                         ], _Guards, Acc) ->
     kz_json:set_value(kz_term:to_binary(FilterName ++ "{KEY}"), <<"{VALUE}">>, Acc);
-handle_filter_clause([?VAR('_') | _], _Guards, Acc) ->
+handle_filter_clause(_F, [?VAR('_') | _], _Guards, Acc) ->
     Acc.

@@ -1,6 +1,11 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc Manage data connections.
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_datamgr).
@@ -74,6 +79,7 @@
         ,get_result_ids/1, get_result_ids/2, get_result_ids/3
         ,get_single_result/3
         ,get_result_doc/3, get_result_docs/3
+        ,show/2, show/3, show/4
         ,paginate_results/3
         ,design_info/2
         ,design_compact/2
@@ -99,6 +105,7 @@
 
 -type update_option() :: {'update', kz_json:flat_proplist()} |
                          {'create', kz_json:flat_proplist()} |
+                         {'should_create', boolean()} |
                          {'extra_update', kz_json:flat_proplist()} |
                          {'ensure_saved', boolean()}.
 -type update_options() :: [update_option()].
@@ -229,7 +236,7 @@ do_revise_docs_from_folder(DbName, Sleep, [H|T]) ->
         do_revise_docs_from_folder(DbName, Sleep, T)
     catch
         ?STACKTRACE(_, _, ST)
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         do_revise_docs_from_folder(DbName, Sleep, T)
         end.
 
@@ -649,7 +656,7 @@ flush_cache_docs(DbName) ->
 %% -define(OPEN_DOC_LOG(DbName, DocId, Options),
 %%         begin
 %%             {_, ST} = erlang:process_info(self(), current_stacktrace),
-%%             kz_util:log_stacktrace(ST),
+%%             kz_log:log_stacktrace(ST),
 %%             ?LOG_DEBUG("~s:open_doc(~p, ~p, ~p)", [?MODULE, DbName, DocId, Options])
 %%         end
 %%        ).
@@ -934,7 +941,7 @@ save_docs(DbName, Docs, Options) when is_list(Docs) ->
 update_doc(DbName, Id, Options) ->
     case open_doc(DbName, Id) of
         {'error', 'not_found'} ->
-            update_not_found(DbName, Id, Options);
+            update_not_found(DbName, Id, Options, props:is_true('should_create', Options, 'true'));
         {'error', _}=E -> E;
         {'ok', CurrentDoc} ->
             apply_updates_and_save(DbName, Id, Options, CurrentDoc)
@@ -983,10 +990,12 @@ save_update(DbName, Id, Options, UpdatedDoc) ->
             Error
     end.
 
--spec update_not_found(kz_term:ne_binary(), docid(), update_options()) ->
+-spec update_not_found(kz_term:ne_binary(), docid(), update_options(), boolean()) ->
                               {'ok', kz_json:object()} |
                               data_error().
-update_not_found(DbName, Id, Options) ->
+update_not_found(_DbName, _Id, _Options, 'false') ->
+    {'error', 'not_found'};
+update_not_found(DbName, Id, Options, 'true') ->
     CreateProps = props:get_value('create', Options, []),
 
     JObj = kz_json:set_values(CreateProps, kz_json:new()),
@@ -1289,6 +1298,30 @@ get_results(DbName, DesignDoc, Options) when ?VALID_DBNAME(DbName) ->
 get_results(DbName, DesignDoc, Options) ->
     case maybe_convert_dbname(DbName) of
         {'ok', Db} -> get_results(Db, DesignDoc, Options);
+        {'error', _}=E -> E
+    end.
+
+-spec show(kz_term:ne_binary(), kz_term:ne_binary()) ->
+                  {'ok', kz_json:object()} |
+                  data_error().
+show(DbName, DesignDoc) ->
+    show(DbName, DesignDoc, 'null').
+
+-spec show(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary() | 'null') ->
+                  {'ok', kz_json:object()} |
+                  data_error().
+show(DbName, DesignDoc, DocId) ->
+    show(DbName, DesignDoc, DocId, []).
+
+-spec show(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary() | 'null', kz_term:proplist()) ->
+                  {'ok', kz_json:object()} |
+                  data_error().
+show(DbName, DesignDoc, DocId, Options) when ?VALID_DBNAME(DbName) ->
+    Plan = kzs_plan:plan(DbName),
+    kzs_view:show(Plan, DbName, DesignDoc, DocId, Options);
+show(DbName, DesignDoc, DocId, Options) ->
+    case maybe_convert_dbname(DbName) of
+        {'ok', Db} -> show(Db, DesignDoc, DocId, Options);
         {'error', _}=E -> E
     end.
 
@@ -1776,7 +1809,7 @@ validate_view_map([], [_|_]=ViewMap) ->
     {<<"multi_db">>, ViewMap};
 validate_view_map([JObj | JObjs], ViewMaps) ->
     Db = kz_json:get_ne_binary_value(<<"database">>, JObj),
-    Class= kz_json:get_ne_binary_value(<<"classification">>, JObj),
+    Class = kz_json:get_ne_binary_value(<<"classification">>, JObj),
     case kz_json:is_json_object(JObj) of
         'true' ->
             validate_view_map(JObjs, only_one_of(Db, Class, [JObj | ViewMaps]));
@@ -1848,7 +1881,7 @@ do_refresh_views(DbName) ->
     Updated = case view_definitions(DbName, Classification) of
                   [] -> 'false';
                   Views ->
-                      Database = kz_util:uri_encode(kz_util:uri_decode(DbName)),
+                      Database = kz_http_util:urlencode(kz_http_util:urldecode(DbName)),
                       db_view_update(Database, Views)
               end,
 
@@ -1867,7 +1900,7 @@ do_refresh_views(DbName) ->
 
 -spec view_definitions(kz_term:ne_binary(), atom() | kz_term:ne_binary()) -> views_listing().
 view_definitions(DbName, Classification) ->
-    ViewOptions = [kz_util:uri_decode(DbName), kz_term:to_binary(Classification)],
+    ViewOptions = [kz_http_util:urldecode(DbName), kz_term:to_binary(Classification)],
     case get_result_docs(?KZ_DATA_DB, <<"views/views_by_classification">>, ViewOptions) of
         {'error', _} -> [];
         {'ok', JObjs} ->

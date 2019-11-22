@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_privacy).
@@ -361,13 +365,17 @@ should_block_anonymous(JObj) ->
 is_anonymous(JObj) ->
     IsCallerNumberZero = is_zero(kz_json:get_value(<<"Caller-ID-Number">>, JObj)),
     IsPrivacyName = kz_term:is_true(get_value(<<"Caller-Privacy-Name">>, JObj, 'false')),
+    IsPrivacyName2 = kz_json:is_true([<<"Privacy">>, <<"Hide-Name">>], JObj),
     IsPrivacyNumber = kz_term:is_true(get_value(<<"Caller-Privacy-Number">>, JObj, 'false')),
+    IsPrivacyNumber2 = kz_json:is_true([<<"Privacy">>, <<"Hide-Number">>], JObj),
     HasPrivacyFlags = has_flags(JObj),
     MatchesNumberRule = maybe_anonymous_cid_number(JObj),
     MatchesNameRule = maybe_anonymous_cid_name(JObj),
     IsCallerNumberZero
         orelse IsPrivacyName
+        orelse IsPrivacyName2
         orelse IsPrivacyNumber
+        orelse IsPrivacyNumber2
         orelse HasPrivacyFlags
         orelse MatchesNumberRule
         orelse MatchesNameRule.

@@ -3,6 +3,11 @@
 %%% @doc
 %%% @author Hesaam Farhang
 %%% @author Pierre Fenoll
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_account_crawler).
@@ -72,7 +77,7 @@ check(Account) ->
 %%------------------------------------------------------------------------------
 -spec init([]) -> {ok, state()}.
 init([]) ->
-    kz_util:put_callid(?SERVER),
+    kz_log:put_callid(?SERVER),
     lager:debug("started ~s", [?SERVER]),
     {'ok', #state{}}.
 

@@ -2,6 +2,11 @@
 %%% @copyright (C) 2011-2019, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(cf_page_group).
@@ -75,9 +80,9 @@ send_page(Endpoints, Timeout, CCVs, Options, Call) ->
 get_endpoints(undefined, Call) -> get_endpoints([], Call);
 get_endpoints(Members, Call) ->
     S = self(),
-    Builders = [kz_util:spawn(
+    Builders = [kz_process:spawn(
                   fun() ->
-                          kz_util:put_callid(kapps_call:call_id(Call)),
+                          kz_log:put_callid(kapps_call:call_id(Call)),
                           S ! {self(), catch kz_endpoint:build(EndpointId, Member, Call)}
                   end)
                 || {EndpointId, Member} <- resolve_endpoint_ids(Members, Call)

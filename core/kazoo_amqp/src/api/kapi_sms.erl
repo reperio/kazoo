@@ -3,6 +3,10 @@
 %%% @doc Routing requests, responses, and wins!
 %%% @author James Aimonetti
 %%% @author Karl Anderson
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kapi_sms).
@@ -51,7 +55,7 @@
                         ,{<<"Dial-Endpoint-Method">>, [<<"single">>, <<"simultaneous">>]}
                         ,{<<"SIP-Transport">>, [<<"udp">>, <<"tcp">>, <<"tls">>]}
                         ,{<<"Application-Name">>, [<<"send">>]}
-                        ,{<<"Route-Type">>, [<<"on-net">>, <<"off-net">>]}
+                        ,{<<"Route-Type">>, [<<"onnet">>, <<"offnet">>]}
                         ]).
 -define(SMS_REQ_TYPES, [{<<"Endpoints">>, fun is_list/1}
                        ,{<<"SIP-Headers">>, fun kz_json:is_json_object/1}
@@ -152,7 +156,7 @@
                        ]).
 -define(INBOUND_REQ_VALUES, [{<<"Event-Category">>, ?EVENT_CATEGORY}
                             ,{<<"Event-Name">>, ?INBOUND_REQ_EVENT_NAME}
-                            ,{<<"Route-Type">>, [<<"on-net">>, <<"off-net">>]}
+                            ,{<<"Route-Type">>, [<<"onnet">>, <<"offnet">>]}
                             ]).
 -define(INBOUND_ROUTING_KEY(RouteId, CallId), <<"message.inbound."
                                                ,(kz_amqp_util:encode(?LOWER(RouteId)))/binary, "."
@@ -192,7 +196,7 @@
                         ]).
 -define(OUTBOUND_REQ_VALUES, [{<<"Event-Category">>, ?EVENT_CATEGORY}
                              ,{<<"Event-Name">>, ?OUTBOUND_REQ_EVENT_NAME}
-                             ,{<<"Route-Type">>, [<<"on-net">>, <<"off-net">>]}
+                             ,{<<"Route-Type">>, [<<"onnet">>, <<"offnet">>]}
                              ]).
 -define(OUTBOUND_ROUTING_KEY(RouteId, CallId)
        ,list_to_binary(["message.outbound."

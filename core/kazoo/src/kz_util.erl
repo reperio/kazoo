@@ -3,12 +3,15 @@
 %%% @doc Various utilities - a veritable cornucopia.
 %%% @author James Aimonetti
 %%% @author Karl Anderson
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_util).
 
--export([log_stacktrace/0, log_stacktrace/1, log_stacktrace/2, log_stacktrace/3
-        ,format_account_id/1, format_account_id/2, format_account_id/3
+-export([format_account_id/1, format_account_id/2, format_account_id/3
         ,format_account_mod_id/1, format_account_mod_id/2, format_account_mod_id/3
         ,format_account_db/1
         ,format_account_modb/1, format_account_modb/2
@@ -16,22 +19,8 @@
         ,format_resource_selectors_db/1
         ]).
 
--export([uri_encode/1
-        ,uri_decode/1
-        ,resolve_uri/2
-        ]).
-
--export([uri/2]).
-
 -export([pretty_print_bytes/1, pretty_print_bytes/2
         ,bin_usage/0, mem_usage/0
-        ]).
-
--export([runs_in/3]).
--export([put_callid/1, get_callid/0, find_callid/1
-        ,spawn/1, spawn/2
-        ,spawn_link/1, spawn_link/2
-        ,spawn_monitor/2, spawn_monitor/3
         ,set_startup/0, startup/0
         ]).
 -export([get_event_type/1]).
@@ -54,84 +43,15 @@
 
 -export([application_version/1]).
 
--export([uniq/1]).
--export([iolist_join/2]).
-
--export([kz_log_md_clear/0, kz_log_md_put/2]).
-
--ifdef(TEST).
--export([resolve_uri_path/2]).
--endif.
-
--deprecated({'log_stacktrace', 0, 'next_major_release'}).
--deprecated({'log_stacktrace', 2, 'next_major_release'}).
-
 -include_lib("kernel/include/inet.hrl").
 
 -include_lib("kazoo_stdlib/include/kz_types.hrl").
--include_lib("kazoo_stdlib/include/kz_log.hrl").
 -include_lib("kazoo_stdlib/include/kz_databases.hrl").
--include_lib("kazoo/include/kz_api_literals.hrl").
+-include_lib("kazoo_amqp/include/kz_api_literals.hrl").
 
 -define(KAZOO_VERSION_CACHE_KEY, {?MODULE, 'kazoo_version'}).
 
 -export_type([account_format/0]).
-
-%%------------------------------------------------------------------------------
-%% @doc Standardized way of logging the stack-trace.
-%% @deprecated `erlang:get_stacktrace/0' used by this function is deprecated
-%% in OTP 21, please use the new try/catch syntax and pass stacktrace to
-%% {@link kz_util:log_stacktrace/1} instead.
-%% @end
-%%------------------------------------------------------------------------------
--spec log_stacktrace() -> 'ok'.
-log_stacktrace() ->
-    try throw('get_stacktrace')
-    catch
-        ?STACKTRACE(_E, _R, ST)
-        log_stacktrace(ST, "log_stacktrace/0 is deprecated: ", [])
-        end.
-
-%%------------------------------------------------------------------------------
-%% @doc Standardized way of logging the stack-trace.
-%% @end
-%%------------------------------------------------------------------------------
--spec log_stacktrace(list()) -> 'ok'.
-log_stacktrace(ST) ->
-    log_stacktrace(ST, "", []).
-
-%%------------------------------------------------------------------------------
-%% @doc Standardized way of logging the stack-trace.
-%% @deprecated `erlang:get_stacktrace/0' used by this function is deprecated
-%% in OTP 21, please use the new try/catch syntax and pass stacktrace to
-%% {@link kz_util:log_stacktrace/3} instead.
-%% @end
-%%------------------------------------------------------------------------------
--spec log_stacktrace(string(), list()) -> 'ok'.
-log_stacktrace(Fmt, Args) ->
-    try throw('get_stacktrace')
-    catch
-        ?STACKTRACE(_E, _R, ST)
-        log_stacktrace(ST, "log_stacktrace/2 is deprecated: " ++ Fmt, Args)
-        end.
-
-%%------------------------------------------------------------------------------
-%% @doc Standardized way of logging the stack-trace.
-%% @end
-%%------------------------------------------------------------------------------
--spec log_stacktrace(list(), string(), list()) -> 'ok'.
-log_stacktrace(ST, Fmt, Args) ->
-    ?LOG_ERROR("stacktrace: " ++ Fmt, Args),
-    _ = [log_stacktrace_mfa(M, F, A, Info)
-         || {M, F, A, Info} <- ST
-        ],
-    'ok'.
-
-log_stacktrace_mfa(M, F, Arity, Info) when is_integer(Arity) ->
-    ?LOG_ERROR("st: ~s:~s/~b at (~b)", [M, F, Arity, props:get_value('line', Info, 0)]);
-log_stacktrace_mfa(M, F, Args, Info) ->
-    ?LOG_ERROR("st: ~s:~s at ~p", [M, F, props:get_value('line', Info, 0)]),
-    lists:foreach(fun (Arg) -> ?LOG_ERROR("args: ~p", [Arg]) end, Args).
 
 -type account_format() :: 'unencoded' | 'encoded' | 'raw'.
 
@@ -363,125 +283,6 @@ format_account_modb(AccountId, 'encoded') ->
     ?MATCH_ACCOUNT_RAW(A,B,Rest) = raw_account_modb(AccountId),
     kz_term:to_binary(["account%2F", A, "%2F", B, "%2F", Rest]).
 
-%%------------------------------------------------------------------------------
-%% @doc Given an JSON Object extracts the `Call-ID' into the processes
-%% dictionary, failing that the `Msg-ID' and finally a generic.
-%% @end
-%%------------------------------------------------------------------------------
--spec put_callid(kz_json:object() | kz_term:proplist() | kz_term:ne_binary() | atom()) -> 'ok'.
-put_callid(?NE_BINARY = CallId) ->
-    _ = kz_log_md_put('callid', CallId),
-    _ = erlang:put('callid', CallId),
-    'ok';
-put_callid(Atom) when is_atom(Atom) ->
-    _ = kz_log_md_put('callid', Atom),
-    _ = erlang:put('callid', Atom),
-    'ok';
-put_callid(APITerm) ->
-    put_callid(find_callid(APITerm)).
-
--spec get_callid() -> kz_term:api_ne_binary().
-get_callid() -> erlang:get('callid').
-
--spec find_callid(kz_term:api_terms()) -> kz_term:api_binary().
-find_callid(APITerm) when is_list(APITerm) ->
-    find_callid(APITerm, fun props:get_first_defined/3);
-find_callid(APITerm) ->
-    find_callid(APITerm, fun kz_json:get_first_defined/3).
-
--spec find_callid(kz_term:api_terms(), fun()) -> kz_term:api_binary().
-find_callid(APITerm, GetFun) ->
-    GetFun([?KEY_LOG_ID, ?KEY_API_CALL_ID, ?KEY_MSG_ID]
-          ,APITerm
-          ,?DEFAULT_LOG_SYSTEM_ID
-          ).
-
--spec kz_log_md_put(atom(), any()) -> any().
-kz_log_md_put(K, V) ->
-    lager:md(lists:usort(fun is_kz_log_md_equal/2, [{K, V} | lager:md()])).
-
-is_kz_log_md_equal({K1, _}, {K2, _}) -> K1 =< K2;
-is_kz_log_md_equal(K1, K2) -> K1 =< K2.
-
--define(LAGER_MD_KEY, '__lager_metadata').
-
--spec kz_log_md_clear() -> 'ok'.
-kz_log_md_clear() ->
-    %% `lager:md([])' causing dialyzer to complain:
-    %% warn_failing_call
-    %% `kz_util.erl:408: The call lager:md([]) breaks the contract ([{atom(),any()},...]) -> ok`'
-    %% lager:md([]).
-    _ = erlang:put(?LAGER_MD_KEY, []),
-    'ok'.
-
-%%------------------------------------------------------------------------------
-%% @doc Gives `MaxTime' milliseconds to `Fun' of `Arguments' to apply.
-%% If time is elapsed, the sub-process is killed and returns `timeout'.
-%% @end
-%%------------------------------------------------------------------------------
--spec runs_in(number(), fun(), list()) -> {'ok', any()} | 'timeout'.
-runs_in(MaxTime, Fun, Arguments)
-  when is_integer(MaxTime), MaxTime > 0 ->
-    {Parent, Ref} = {self(), erlang:make_ref()},
-    Child = ?MODULE:spawn(fun () -> Parent ! {Ref, erlang:apply(Fun, Arguments)} end),
-    receive {Ref, Result} -> {'ok', Result}
-    after MaxTime ->
-            exit(Child, 'kill'),
-            'timeout'
-    end;
-runs_in(MaxTime, Fun, Arguments)
-  when is_number(MaxTime), MaxTime > 0 ->
-    runs_in(kz_term:to_integer(MaxTime), Fun, Arguments).
-
--spec spawn(fun(), list()) -> pid().
-spawn(Fun, Arguments) ->
-    CallId = get_callid(),
-    erlang:spawn(fun() ->
-                         _ = put_callid(CallId),
-                         erlang:apply(Fun, Arguments)
-                 end).
-
--spec spawn(fun(() -> any())) -> pid().
-spawn(Fun) ->
-    CallId = get_callid(),
-    erlang:spawn(fun() ->
-                         _ = put_callid(CallId),
-                         Fun()
-                 end).
-
--spec spawn_link(fun(), list()) -> pid().
-spawn_link(Fun, Arguments) ->
-    CallId = get_callid(),
-    erlang:spawn_link(fun () ->
-                              _ = put_callid(CallId),
-                              erlang:apply(Fun, Arguments)
-                      end).
-
--spec spawn_link(fun(() -> any())) -> pid().
-spawn_link(Fun) ->
-    CallId = get_callid(),
-    erlang:spawn_link(fun() ->
-                              _ = put_callid(CallId),
-                              Fun()
-                      end).
-
--spec spawn_monitor(fun(), list()) -> kz_term:pid_ref().
-spawn_monitor(Fun, Arguments) ->
-    CallId = get_callid(),
-    erlang:spawn_monitor(fun () ->
-                                 _ = put_callid(CallId),
-                                 erlang:apply(Fun, Arguments)
-                         end).
-
--spec spawn_monitor(module(), atom(), list()) -> kz_term:pid_ref().
-spawn_monitor(Module, Fun, Args) ->
-    CallId = get_callid(),
-    erlang:spawn_monitor(fun () ->
-                                 _ = put_callid(CallId),
-                                 erlang:apply(Module, Fun, Args)
-                         end).
-
-
 -spec set_startup() -> kz_time:api_seconds().
 set_startup() ->
     put('$startup', kz_time:now_s()).
@@ -503,61 +304,6 @@ get_event_type(JObj) ->
     {kz_json:get_value(<<"Event-Category">>, JObj)
     ,kz_json:get_value(<<"Event-Name">>, JObj)
     }.
-
--spec uri_decode(kz_term:text()) -> kz_term:text().
-uri_decode(Binary) when is_binary(Binary) ->
-    kz_term:to_binary(http_uri:decode(kz_term:to_list(Binary)));
-uri_decode(String) when is_list(String) ->
-    http_uri:decode(String);
-uri_decode(Atom) when is_atom(Atom) ->
-    kz_term:to_atom(http_uri:decode(kz_term:to_list(Atom)), 'true').
-
--spec uri_encode(kz_term:text()) -> kz_term:text().
-uri_encode(Binary) when is_binary(Binary) ->
-    kz_term:to_binary(http_uri:encode(kz_term:to_list(Binary)));
-uri_encode(String) when is_list(String) ->
-    http_uri:encode(String);
-uri_encode(Atom) when is_atom(Atom) ->
-    kz_term:to_atom(http_uri:encode(kz_term:to_list(Atom)), 'true').
-
--spec resolve_uri(nonempty_string() | kz_term:ne_binary(), nonempty_string() | kz_term:api_ne_binary()) -> kz_term:ne_binary().
-resolve_uri(Raw, 'undefined') -> kz_term:to_binary(Raw);
-resolve_uri(_Raw, <<"http", _/binary>> = Abs) -> Abs;
-resolve_uri(<<_/binary>> = RawPath, <<_/binary>> = Relative) ->
-    Path = resolve_uri_path(RawPath, Relative),
-    kz_binary:join(Path, <<"/">>);
-resolve_uri(RawPath, Relative) ->
-    resolve_uri(kz_term:to_binary(RawPath), kz_term:to_binary(Relative)).
-
--spec resolve_uri_path(kz_term:ne_binary(), kz_term:ne_binary()) -> kz_term:ne_binaries().
-resolve_uri_path(RawPath, Relative) ->
-    PathTokensRev = lists:reverse(binary:split(RawPath, <<"/">>, ['global'])),
-    UrlTokens = binary:split(Relative, <<"/">>, ['global']),
-    lists:reverse(
-      lists:foldl(fun resolve_uri_fold/2, PathTokensRev, UrlTokens)
-     ).
-
--spec resolve_uri_fold(kz_term:ne_binary(), kz_term:ne_binaries()) -> kz_term:ne_binaries().
-resolve_uri_fold(<<"..">>, []) -> [];
-resolve_uri_fold(<<"..">>, [_ | PathTokens]) -> PathTokens;
-resolve_uri_fold(<<".">>, PathTokens) -> PathTokens;
-resolve_uri_fold(<<>>, PathTokens) -> PathTokens;
-resolve_uri_fold(Segment, [<<>>|DirTokens]) -> [Segment|DirTokens];
-resolve_uri_fold(Segment, [LastToken|DirTokens]=PathTokens) ->
-    case filename:extension(LastToken) of
-        <<>> ->
-            %% no extension, append Segment to Tokens
-            [Segment | PathTokens];
-        _Ext ->
-            %% Extension found, append Segment to DirTokens
-            [Segment|DirTokens]
-    end.
-
--spec uri(kz_term:ne_binary(), kz_term:ne_binaries()) -> kz_term:ne_binary().
-uri(BaseUrl, Tokens) ->
-    [Pro, Url] = binary:split(BaseUrl, <<"://">>),
-    Uri = filename:join([Url | Tokens]),
-    <<Pro/binary, "://", Uri/binary>>.
 
 %%------------------------------------------------------------------------------
 %% @doc Fetch and cache the kazoo version from the VERSION file in kazoo's root folder/
@@ -757,41 +503,7 @@ get_app(AppName) ->
 
 -spec application_version(atom()) -> kz_term:ne_binary().
 application_version(Application) ->
-    {'ok', Vsn} = application:get_key(Application, 'vsn'),
-    kz_term:to_binary(Vsn).
-
-%%------------------------------------------------------------------------------
-%% @doc Like `lists:usort/1' but preserves original ordering.
-%%
-%% Time: `O(nlog(n))'
-%% @end
-%%------------------------------------------------------------------------------
--spec uniq(kz_term:proplist()) -> kz_term:proplist().
-uniq(KVs) when is_list(KVs) -> uniq(KVs, sets:new(), []).
-
-uniq([], _, L) -> lists:reverse(L);
-uniq([{K,_}=KV|Rest], S, L) ->
-    case sets:is_element(K, S) of
-        'true' -> uniq(Rest, S, L);
-        'false' ->
-            NewS = sets:add_element(K, S),
-            uniq(Rest, NewS, [KV|L])
+    case application:get_key(Application, 'vsn') of
+        {'ok', Vsn} -> kz_term:to_binary(Vsn);
+        'undefined' -> <<"unknown">>
     end.
-
--spec iolist_join(Sep, List1) -> List2 when
-      Sep :: T,
-      List1 :: [T],
-      List2 :: [T],
-      T :: iodata() | char().
-iolist_join(_, []) -> [];
-iolist_join(Sep, [H|T]) ->
-    [H | iolist_join_prepend(Sep, T)].
-
--spec iolist_join_prepend(Sep, List1) -> List2 when
-      Sep :: T,
-      List1 :: [T],
-      List2 :: [T],
-      T :: iolist().
-iolist_join_prepend(_, []) -> [];
-iolist_join_prepend(Sep, [H|T]) ->
-    [Sep, H | iolist_join_prepend(Sep, T)].

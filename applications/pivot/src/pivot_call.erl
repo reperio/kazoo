@@ -2,6 +2,11 @@
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc Handle processing of the pivot call
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(pivot_call).
@@ -140,7 +145,7 @@ init(_Call, _JObj, 'true') ->
     lager:info("call has gone down while we started up"),
     {'stop', 'normal'};
 init(Call, JObj, 'false') ->
-    kz_util:put_callid(kapps_call:call_id(Call)),
+    kz_log:put_callid(kapps_call:call_id(Call)),
 
     Method = kzt_util:http_method(kz_json:get_value(<<"HTTP-Method">>, JObj, 'get')),
     VoiceUri = kz_json:get_value(<<"Voice-URI">>, JObj),
@@ -335,7 +340,7 @@ handle_info({'http', {ReqId, 'stream_end', FinalHeaders}}
                  ,Body
                  ,AMQPConsumer
                  ],
-    {Pid, Ref} = kz_util:spawn_monitor(fun handle_resp/5, HandleArgs),
+    {Pid, Ref} = kz_process:spawn_monitor(fun handle_resp/5, HandleArgs),
     lager:debug("processing resp with ~p(~p)", [Pid, Ref]),
     {'noreply'
     ,State#state{request_id = 'undefined'
@@ -478,7 +483,7 @@ normalize_resp_headers(Headers) ->
 handle_resp(RequesterQ, Call, CT, <<_/binary>> = RespBody, AMQPConsumer) ->
     _ = kz_amqp_channel:consumer_pid(AMQPConsumer),
 
-    kz_util:put_callid(kapps_call:call_id(Call)),
+    kz_log:put_callid(kapps_call:call_id(Call)),
     Srv = kzt_util:get_amqp_listener(Call),
 
     case process_resp(RequesterQ, Call, CT, RespBody) of

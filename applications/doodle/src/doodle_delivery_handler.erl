@@ -2,6 +2,11 @@
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc Handlers for various AMQP payloads
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(doodle_delivery_handler).
@@ -13,7 +18,7 @@
 -spec handle_req(kz_json:object(), kz_term:proplist()) -> 'ok'.
 handle_req(JObj, _Props) ->
     'true' = kapi_sms:delivery_v(JObj),
-    _ = kz_util:put_callid(JObj),
+    _ = kz_log:put_callid(JObj),
     maybe_update_doc(JObj).
 
 -spec maybe_update_doc(kz_json:object()) -> any().

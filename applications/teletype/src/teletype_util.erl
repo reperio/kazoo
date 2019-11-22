@@ -2,6 +2,11 @@
 %%% @copyright (C) 2014-2019, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(teletype_util).
@@ -115,7 +120,7 @@ log_smtp(Emails, Subject, RenderedTemplates, Receipt, Error, AccountId) ->
     AccountDb = kazoo_modb:get_modb(AccountId),
     Id = make_smtplog_id(AccountDb),
     TemplateId = get('template_id'),
-    CallId = kz_util:get_callid(),
+    CallId = kz_log:get_callid(),
     Doc = kz_json:from_list(
             [{<<"rendered_templates">>, kz_json:from_list(RenderedTemplates)}
             ,{<<"subject">>, Subject}
@@ -180,7 +185,7 @@ relay_email(To, From, {_Type
             {'error', 'missing_from'};
         ?STACKTRACE(_E, _R, ST)
         lager:warning("failed to encode email: ~s: ~p", [_E, _R]),
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         {'error', 'email_encoding_failed'}
         end.
 
@@ -256,7 +261,7 @@ handle_relay_response(To, From, {'ok', Receipt}) ->
                         ,#email_receipt{to=To
                                        ,from=From
                                        ,timestamp=kz_time:now_s()
-                                       ,call_id=kz_util:get_callid()
+                                       ,call_id=kz_log:get_callid()
                                        }
                         ,[{'expires', ?MILLISECONDS_IN_HOUR}]
                         ),
@@ -272,7 +277,7 @@ handle_relay_response(_To, _From, {'exit', Reason}) ->
 
 -spec log_email_send_error(any()) -> 'ok'.
 log_email_send_error({'function_clause', Stacktrace}) ->
-    kz_util:log_stacktrace(Stacktrace);
+    kz_log:log_stacktrace(Stacktrace);
 log_email_send_error(Reason) ->
     lager:debug("exit relaying message: ~p", [Reason]).
 
@@ -461,6 +466,7 @@ find_account_db(<<"faxbox">>, JObj) -> kapi_notifications:account_db(JObj, 'fals
 find_account_db(<<"fax">>, JObj) -> kapi_notifications:account_db(JObj, 'true');
 find_account_db(<<"port_request">>, _JObj) -> ?KZ_PORT_REQUESTS_DB;
 find_account_db(<<"webhook">>, _JObj) -> ?KZ_WEBHOOKS_DB;
+find_account_db(<<"function">>, _JObj) -> ?KZ_FUNCTIONS_DB;
 find_account_db(_, JObj) -> kapi_notifications:account_db(JObj, 'false').
 
 -spec send_update(kz_json:object(), kz_term:ne_binary()) -> 'ok'.

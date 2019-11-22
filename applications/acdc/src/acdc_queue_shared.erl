@@ -3,6 +3,11 @@
 %%% @doc
 %%% @author James Aimonetti
 %%% @author Sponsored by GTNetwork LLC, Implemented by SIPLABS LLC
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(acdc_queue_shared).
@@ -101,7 +106,7 @@ deliveries(Srv) ->
 %%------------------------------------------------------------------------------
 -spec init([pid()]) -> {'ok', state()}.
 init([WorkerSup]) ->
-    kz_util:put_callid(?DEFAULT_LOG_SYSTEM_ID),
+    kz_log:put_callid(?DEFAULT_LOG_SYSTEM_ID),
 
     lager:debug("shared queue proc started"),
     gen_listener:cast(self(), {'get_fsm_proc', WorkerSup}),

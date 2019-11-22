@@ -7,6 +7,7 @@
 -export([main/1]).
 
 -include_lib("kazoo_stdlib/include/kz_types.hrl").
+-include_lib("kazoo_stdlib/include/kz_log.hrl").
 
 main(_) ->
     lists:foreach(fun run_generator/1
@@ -15,6 +16,7 @@ main(_) ->
                   ,fun kapps_config_usage:to_schema_docs/0
                   ,fun conference_schema_builder:to_schema/0
                   ,fun kapi_schemas:to_schemas/0
+                  ,fun maintenance_docs:to_docs/0
                   ]
                  ).
 

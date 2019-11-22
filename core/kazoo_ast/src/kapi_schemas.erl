@@ -2,6 +2,10 @@
 %%% @copyright (C) 2015-2019, 2600Hz
 %%% @doc Generate schema for Kazoo AMQP APIs.
 %%% @author James Aimonetti
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kapi_schemas).
@@ -11,6 +15,7 @@
         ]).
 
 -include_lib("kazoo_stdlib/include/kz_types.hrl").
+-include_lib("kazoo_stdlib/include/kz_log.hrl").
 -include_lib("kazoo_stdlib/include/kazoo_json.hrl").
 -include_lib("kazoo_ast/include/kz_ast.hrl").
 -include_lib("kazoo_amqp/src/api/kapi_presence.hrl").
@@ -438,6 +443,12 @@ validator_properties({'kz_term', 'is_ne_binary', 1}) ->
     kz_json:from_list([{<<"type">>, <<"string">>}
                       ,{<<"minLength">>, 1}
                       ]);
+validator_properties({'kz_term', 'is_ne_binaries', 1}) ->
+    kz_json:from_list([{<<"type">>, <<"array">>}
+                      ,{<<"items">>
+                       ,kz_json:from_list([{<<"type">>, <<"string">>}])
+                       }
+                      ]);
 validator_properties({'kapi_dialplan', 'terminators_v', 1}) ->
     kz_json:from_list([{<<"type">>, <<"array">>}
                       ,{<<"items">>
@@ -481,7 +492,7 @@ validator_properties({'function', 'has_cost_parameters', 1}) ->
 validator_properties({'function', 'store_media_content_v', 1}) ->
     kz_json:from_list([{<<"type">>, <<"string">>}]);
 validator_properties({'function', _F, _A}) ->
-    io:format("  no properties for fun ~p/~p~n", [_F, _A]),
+    ?LOG_DEBUG("  no properties for fun ~p/~p~n", [_F, _A]),
     kz_json:from_list([{<<"type">>, <<"string">>}]).
 
 cost_parameters_schema() ->

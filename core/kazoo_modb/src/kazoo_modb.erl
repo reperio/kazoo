@@ -2,6 +2,10 @@
 %%% @copyright (C) 2011-2019, 2600Hz
 %%% @doc
 %%% @author Peter Defebvre
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kazoo_modb).
@@ -480,7 +484,7 @@ refresh_views(AccountMODb) ->
 -spec run_routines(kz_term:ne_binary()) -> 'ok'.
 run_routines(AccountMODb) ->
     Routines = kapps_config:get_ne_binaries(?CONFIG_CAT, <<"routines">>, []),
-    Runs = [{Routine, kz_util:spawn_monitor(kz_term:to_atom(Routine), 'modb', [AccountMODb])}
+    Runs = [{Routine, kz_process:spawn_monitor(kz_term:to_atom(Routine), 'modb', [AccountMODb])}
             || Routine <- Routines,
                kz_module:is_exported(Routine, 'modb', 1)
            ],

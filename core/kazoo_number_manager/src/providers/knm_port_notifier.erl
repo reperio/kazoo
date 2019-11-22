@@ -2,6 +2,10 @@
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc Handle publishing notification events for new port requests
 %%% @author Peter Defebvre
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(knm_port_notifier).
@@ -23,7 +27,7 @@
 -spec save(knm_number:knm_number()) -> knm_number:knm_number().
 save(N) ->
     PN = knm_number:phone_number(N),
-    State = kz_json:get_ne_binary_value(?PVT_STATE, knm_phone_number:doc(PN)),
+    State = kzd_phone_numbers:pvt_state(knm_phone_number:doc(PN)),
     save(N, knm_phone_number:state(PN), State).
 
 -spec save(knm_number:knm_number(), kz_term:ne_binary(), kz_term:ne_binary()) -> knm_number:knm_number().

@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2018-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_cache_lru).
@@ -36,7 +40,7 @@ update_expire_period(Name, ExpirePeriodS) ->
 
 -spec init(list()) -> {'ok', state()}.
 init([Name, ExpirePeriod]) ->
-    kz_util:put_callid(lru_name(Name)),
+    kz_log:put_callid(lru_name(Name)),
     lager:debug("LRU expiration checks every ~pms", [ExpirePeriod]),
 
     {'ok', #state{name=Name

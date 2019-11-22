@@ -3,6 +3,11 @@
 %%% @doc Execute call commands
 %%% @author James Aimonetti
 %%% @author Karl Anderson
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(ecallmgr_call_command).
@@ -222,8 +227,10 @@ get_fs_app(_Node, _UUID, JObj, <<"privacy">>) ->
     case kapi_dialplan:privacy_v(JObj) of
         'false' -> {'error', <<"privacy failed to execute as JObj did not validate">>};
         'true' ->
-            Mode = kz_json:get_ne_binary_value(<<"Privacy-Mode">>, JObj),
-            {<<"privacy">>, Mode}
+            case kz_json:get_ne_binary_value(<<"Privacy-Mode">>, JObj) of
+                <<"none">> -> {<<"privacy">>, <<"no">>};
+                Mode -> {<<"privacy">>, Mode}
+            end
     end;
 
 get_fs_app(Node, UUID, JObj, <<"ring">>) ->
@@ -1156,11 +1163,11 @@ record_call(Node, UUID, <<"start">>, JObj) ->
     RecordingId = kz_json:get_ne_binary_value(<<"Media-Recording-ID">>, JObj),
 
     RecordArgs = [ScopeVariables
-                 ,"^^!"
+                 ,"^^", ?RECORD_CALL_PARAM_SEPARATOR
                  ,RecordingName
-                 ,"!+"
+                 ,?RECORD_CALL_PARAM_SEPARATOR, "+"
                  ,kz_term:to_binary(TimeLimit)
-                 ,"!{"
+                 ,?RECORD_CALL_PARAM_SEPARATOR, "{"
                  ,record_call_args(JObj)
                  ,"}"
                  ],

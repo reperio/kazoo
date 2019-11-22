@@ -1537,6 +1537,16 @@
             },
             "type": "object"
         },
+        "callflows.answer": {
+            "description": "Validator for the answer callflow data object",
+            "properties": {
+                "skip_module": {
+                    "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
+                    "type": "boolean"
+                }
+            },
+            "type": "object"
+        },
         "callflows.audio_macro": {
             "description": "Validator for the audio_macro callflow data object",
             "properties": {
@@ -1809,6 +1819,19 @@
         "callflows.branch_bnumber": {
             "description": "Validator for the branch_bnumber callflow data object",
             "properties": {
+                "hunt": {
+                    "default": false,
+                    "description": "Should the capture group be used to hunt for a new callflow",
+                    "type": "boolean"
+                },
+                "hunt_allow": {
+                    "description": "A regexp used to match against the capture group to whitelist allowed numbers to hunt",
+                    "type": "string"
+                },
+                "hunt_deny": {
+                    "description": "A regexp used to match against the capture group to blacklist denied numbers to hunt",
+                    "type": "string"
+                },
                 "skip_module": {
                     "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
                     "type": "boolean"
@@ -2425,6 +2448,20 @@
             },
             "type": "object"
         },
+        "callflows.function": {
+            "description": "Validator for the function callflow data object",
+            "properties": {
+                "id": {
+                    "description": "The Function's doc ID",
+                    "type": "string"
+                },
+                "skip_module": {
+                    "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
+                    "type": "boolean"
+                }
+            },
+            "type": "object"
+        },
         "callflows.group": {
             "description": "Validator for the group callflow data object",
             "properties": {
@@ -2530,11 +2567,32 @@
         "callflows.group_pickup_feature": {
             "description": "Validator for the group_pickup_feature callflow data object",
             "properties": {
+                "approved_device_id": {
+                    "description": "Restrict calling device to Device",
+                    "type": "string"
+                },
+                "approved_group_id": {
+                    "description": "Restrict calling device to Group",
+                    "type": "string"
+                },
+                "approved_user_id": {
+                    "description": "Restrict calling device to User",
+                    "type": "string"
+                },
+                "device_id": {
+                    "description": "Device to pickup",
+                    "type": "string"
+                },
+                "group_id": {
+                    "description": "Group in which to find a call to pickup",
+                    "type": "string"
+                },
                 "skip_module": {
                     "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
                     "type": "boolean"
                 },
                 "type": {
+                    "default": "extension",
                     "description": "The type of collection to pickup",
                     "enum": [
                         "group",
@@ -2543,8 +2601,15 @@
                         "extension"
                     ],
                     "type": "string"
+                },
+                "user_id": {
+                    "description": "User in which to find a call to pickup",
+                    "type": "string"
                 }
             },
+            "required": [
+                "type"
+            ],
             "type": "object"
         },
         "callflows.hangup": {
@@ -2831,6 +2896,16 @@
             "required": [
                 "username"
             ],
+            "type": "object"
+        },
+        "callflows.noop": {
+            "description": "Validator for the noop callflow data object",
+            "properties": {
+                "skip_module": {
+                    "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
+                    "type": "boolean"
+                }
+            },
             "type": "object"
         },
         "callflows.notification": {
@@ -3258,7 +3333,7 @@
             "properties": {
                 "action": {
                     "default": "prepend",
-                    "description": "Action to perform",
+                    "description": "If the action parameter is \"reset\" the caller-id-name and caller-id-number will be restored to their original values, if the value is \"prepend\" then the prepending will happen",
                     "enum": [
                         "reset",
                         "prepend"
@@ -3267,7 +3342,7 @@
                 },
                 "apply_to": {
                     "default": "current",
-                    "description": "Apply the prepend to which caller ID",
+                    "description": "Either \"original\" or \"current\", this specifies that the prefix's should be applied to the current caller-id's or the original values",
                     "enum": [
                         "original",
                         "current"
@@ -3276,12 +3351,12 @@
                 },
                 "caller_id_name_prefix": {
                     "default": "",
-                    "description": "Prefix caller ID name",
+                    "description": "The prefix that should be applied to the caller-id-name",
                     "type": "string"
                 },
                 "caller_id_number_prefix": {
                     "default": "",
-                    "description": "Prefix caller ID number",
+                    "description": "The prefix that should be applied to the caller-id-number",
                     "type": "string"
                 },
                 "skip_module": {
@@ -4199,6 +4274,16 @@
                     "description": "Allow login if caller has a single mailbox",
                     "type": "boolean"
                 },
+                "skip_module": {
+                    "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
+                    "type": "boolean"
+                }
+            },
+            "type": "object"
+        },
+        "callflows.wait_for_hangup": {
+            "description": "Validator for the wait_for_hangup callflow data object",
+            "properties": {
                 "skip_module": {
                     "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
                     "type": "boolean"
@@ -5347,7 +5432,7 @@
                         },
                         "number": {
                             "description": "The number to forward calls to",
-                            "maxLength": 15,
+                            "maxLength": 35,
                             "type": "string"
                         },
                         "require_keypress": {
@@ -5923,6 +6008,15 @@
                 "name": {
                     "description": "The name of the directory",
                     "minLength": 1,
+                    "type": "string"
+                },
+                "search_fields": {
+                    "description": "What user fields to search DTMF matches on",
+                    "enum": [
+                        "first_name",
+                        "last_name",
+                        "both"
+                    ],
                     "type": "string"
                 },
                 "sort_by": {
@@ -6574,6 +6668,34 @@
                     "type": "string"
                 }
             },
+            "type": "object"
+        },
+        "functions": {
+            "description": "Functions that javascript function to process a callflow document.",
+            "properties": {
+                "enabled": {
+                    "default": true,
+                    "description": "Is the function enabled and running",
+                    "type": "boolean"
+                },
+                "function_js": {
+                    "description": "Serverless function in Javascript",
+                    "type": "string"
+                },
+                "language_pack": {
+                    "default": "javascript",
+                    "description": "The language and version are required for the function runtime.",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "A descriptive name for the function.",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "name",
+                "function_js"
+            ],
             "type": "object"
         },
         "groups": {
@@ -9857,6 +9979,9 @@
                 "Billing-Seconds": {
                     "type": "string"
                 },
+                "Bridge-B-Unique-ID": {
+                    "type": "string"
+                },
                 "Bridge-Hangup-Cause": {
                     "type": "string"
                 },
@@ -9873,6 +9998,9 @@
                     "type": "string"
                 },
                 "Callee-ID-Number": {
+                    "type": "string"
+                },
+                "Caller-Destination-Number": {
                     "type": "string"
                 },
                 "Caller-ID-Name": {
@@ -12354,6 +12482,9 @@
                 "Bridge-Actions": {
                     "type": "object"
                 },
+                "Call-Context": {
+                    "type": "string"
+                },
                 "Call-ID": {
                     "type": "string"
                 },
@@ -12603,6 +12734,9 @@
         "kapi.dialplan.bridge_endpoint_headers": {
             "description": "AMQP API for dialplan.bridge_endpoint_headers",
             "properties": {
+                "Account-ID": {
+                    "type": "string"
+                },
                 "Auth-Password": {
                     "type": "string"
                 },
@@ -12613,6 +12747,9 @@
                     "type": "string"
                 },
                 "Bypass-Media": {
+                    "type": "string"
+                },
+                "Call-Context": {
                     "type": "string"
                 },
                 "Callee-ID-Name": {
@@ -12657,6 +12794,9 @@
                 "Endpoint-Delay": {
                     "type": "string"
                 },
+                "Endpoint-ID": {
+                    "type": "string"
+                },
                 "Endpoint-Options": {
                     "type": "string"
                 },
@@ -12667,6 +12807,9 @@
                     "type": "integer"
                 },
                 "Endpoint-Type": {
+                    "type": "string"
+                },
+                "Endpoint-URI": {
                     "type": "string"
                 },
                 "Failover": {
@@ -13107,8 +13250,17 @@
                 "Call-ID": {
                     "type": "string"
                 },
+                "Channel-Call-State": {
+                    "type": "string"
+                },
+                "Channel-State": {
+                    "type": "string"
+                },
                 "Custom-Channel-Vars": {
                     "type": "object"
+                },
+                "Dialplan-Error": {
+                    "type": "string"
                 },
                 "Error-Message": {
                     "type": "string"
@@ -14090,7 +14242,8 @@
                     "enum": [
                         "full",
                         "name",
-                        "number"
+                        "number",
+                        "none"
                     ],
                     "type": "string"
                 }
@@ -22041,6 +22194,9 @@
                 "Bridge-Actions": {
                     "type": "object"
                 },
+                "Call-Context": {
+                    "type": "string"
+                },
                 "Call-Restrictions-Enabled": {
                     "type": "string"
                 },
@@ -22298,6 +22454,9 @@
                 "Bridge-Actions": {
                     "type": "object"
                 },
+                "Call-Context": {
+                    "type": "string"
+                },
                 "Call-Restrictions-Enabled": {
                     "type": "string"
                 },
@@ -22540,6 +22699,9 @@
         "kapi.resource.originate_req_endpoint_headers": {
             "description": "AMQP API for resource.originate_req_endpoint_headers",
             "properties": {
+                "Account-ID": {
+                    "type": "string"
+                },
                 "Auth-Password": {
                     "type": "string"
                 },
@@ -22550,6 +22712,9 @@
                     "type": "string"
                 },
                 "Bypass-Media": {
+                    "type": "string"
+                },
+                "Call-Context": {
                     "type": "string"
                 },
                 "Callee-ID-Name": {
@@ -22594,6 +22759,9 @@
                 "Endpoint-Delay": {
                     "type": "string"
                 },
+                "Endpoint-ID": {
+                    "type": "string"
+                },
                 "Endpoint-Options": {
                     "type": "string"
                 },
@@ -22604,6 +22772,9 @@
                     "type": "integer"
                 },
                 "Endpoint-Type": {
+                    "type": "string"
+                },
+                "Endpoint-URI": {
                     "type": "string"
                 },
                 "Failover": {
@@ -22720,6 +22891,9 @@
                 "Billing-Seconds": {
                     "type": "string"
                 },
+                "Bridge-B-Unique-ID": {
+                    "type": "string"
+                },
                 "Bridge-Hangup-Cause": {
                     "type": "string"
                 },
@@ -22736,6 +22910,9 @@
                     "type": "string"
                 },
                 "Callee-ID-Number": {
+                    "type": "string"
+                },
+                "Caller-Destination-Number": {
                     "type": "string"
                 },
                 "Caller-ID-Name": {
@@ -23002,6 +23179,9 @@
                 "Billing-Seconds": {
                     "type": "string"
                 },
+                "Bridge-B-Unique-ID": {
+                    "type": "string"
+                },
                 "Bridge-Hangup-Cause": {
                     "type": "string"
                 },
@@ -23018,6 +23198,9 @@
                     "type": "string"
                 },
                 "Callee-ID-Number": {
+                    "type": "string"
+                },
+                "Caller-Destination-Number": {
                     "type": "string"
                 },
                 "Caller-ID-Name": {
@@ -23880,8 +24063,8 @@
                 },
                 "Route-Type": {
                     "enum": [
-                        "on-net",
-                        "off-net"
+                        "onnet",
+                        "offnet"
                     ],
                     "type": "string"
                 },
@@ -23942,6 +24125,9 @@
                 },
                 "Bridge-Actions": {
                     "type": "object"
+                },
+                "Call-Context": {
+                    "type": "string"
                 },
                 "Call-ID": {
                     "type": "string"
@@ -24094,8 +24280,8 @@
                 },
                 "Route-Type": {
                     "enum": [
-                        "on-net",
-                        "off-net"
+                        "onnet",
+                        "offnet"
                     ],
                     "type": "string"
                 },
@@ -24168,6 +24354,9 @@
         "kapi.sms.message_endpoint_headers": {
             "description": "AMQP API for sms.message_endpoint_headers",
             "properties": {
+                "Account-ID": {
+                    "type": "string"
+                },
                 "Auth-Password": {
                     "type": "string"
                 },
@@ -24178,6 +24367,9 @@
                     "type": "string"
                 },
                 "Bypass-Media": {
+                    "type": "string"
+                },
+                "Call-Context": {
                     "type": "string"
                 },
                 "Callee-ID-Name": {
@@ -24222,6 +24414,9 @@
                 "Endpoint-Delay": {
                     "type": "string"
                 },
+                "Endpoint-ID": {
+                    "type": "string"
+                },
                 "Endpoint-Options": {
                     "type": "string"
                 },
@@ -24232,6 +24427,9 @@
                     "type": "integer"
                 },
                 "Endpoint-Type": {
+                    "type": "string"
+                },
+                "Endpoint-URI": {
                     "type": "string"
                 },
                 "Failover": {
@@ -24416,8 +24614,8 @@
                 },
                 "Route-Type": {
                     "enum": [
-                        "on-net",
-                        "off-net"
+                        "onnet",
+                        "offnet"
                     ],
                     "type": "string"
                 },
@@ -25293,6 +25491,14 @@
         "list_entries": {
             "description": "Schema for a match list entries",
             "properties": {
+                "capture_group_key": {
+                    "description": "The number which is used to select this entry, length should be same as `capture_group_length`",
+                    "type": "string"
+                },
+                "capture_group_length": {
+                    "description": "Length of the numbers in the list entries for which it used to select desire Caller ID",
+                    "type": "integer"
+                },
                 "displayname": {
                     "description": "Display name",
                     "maxLength": 128,
@@ -26917,8 +27123,7 @@
             "type": "object"
         },
         "port_requests.to_scheduled": {
-            "description": "Schema for a port request to be transitioned to the 'scheduled' state",
-            "oneOf": [
+            "anyOf": [
                 {
                     "required": [
                         "scheduled_date"
@@ -26930,6 +27135,7 @@
                     ]
                 }
             ],
+            "description": "Schema for a port request to be transitioned to the 'scheduled' state",
             "properties": {
                 "schedule_on": {
                     "description": "date-time at which to perform the porting",
@@ -28462,7 +28668,7 @@
             ],
             "type": "object"
         },
-        "skel": {
+        "skels": {
             "description": "Skeleton JSON schema",
             "properties": {},
             "type": "object"
@@ -28981,6 +29187,9 @@
                 "account": {
                     "$ref": "#/definitions/storage.plan.database"
                 },
+                "aggregate": {
+                    "$ref": "#/definitions/storage.plan.database"
+                },
                 "modb": {
                     "$ref": "#/definitions/storage.plan.database"
                 },
@@ -28994,25 +29203,38 @@
             "description": "schema for database storage plan",
             "properties": {
                 "attachments": {
-                    "$ref": "#/definitions/storage.plan.database.attachment"
+                    "$ref": "#/definitions/storage.plan.database.attachment",
+                    "description": "Describes what attachment types to store using this plan"
                 },
                 "connection": {
+                    "description": "Which connection UUID to use when storing to this database type",
                     "type": "string"
                 },
                 "database": {
                     "properties": {
                         "create_options": {
                             "type": "object"
+                        },
+                        "names": {
+                            "description": "List of database names to match (non-matching names won't use this plan)",
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
                         }
                     },
                     "type": "object"
                 },
                 "types": {
+                    "description": "The document types to store with this plan",
                     "properties": {
                         "call_recording": {
                             "$ref": "#/definitions/storage.plan.database.document"
                         },
                         "fax": {
+                            "$ref": "#/definitions/storage.plan.database.document"
+                        },
+                        "function": {
                             "$ref": "#/definitions/storage.plan.database.document"
                         },
                         "mailbox_message": {
@@ -29480,6 +29702,16 @@
                     },
                     "type": "object"
                 },
+                "callflow_event_listeners": {
+                    "default": 5,
+                    "description": "callflow callflow_event_listeners",
+                    "type": "integer"
+                },
+                "callflow_listeners": {
+                    "default": 5,
+                    "description": "callflow callflow_listeners",
+                    "type": "integer"
+                },
                 "calls_consume_tokens": {
                     "default": true,
                     "description": "callflow calls consume tokens",
@@ -29712,32 +29944,32 @@
             "properties": {
                 "accept_prompt": {
                     "default": "tone_stream://%(250,50,440)",
-                    "description": "callflow.dynamic_cid accept prompt",
+                    "description": "The media that would be played when the new caller id is accepted",
                     "type": "string"
                 },
                 "default_prompt": {
                     "default": "dynamic-cid-enter_cid",
-                    "description": "callflow.dynamic_cid default prompt",
+                    "description": "The media that would be played to user to dial the new caller id",
                     "type": "string"
                 },
                 "max_digits": {
                     "default": 10,
-                    "description": "callflow.dynamic_cid max digits",
+                    "description": "Maximum length of the new caller id number",
                     "type": "integer"
                 },
                 "min_digits": {
                     "default": 10,
-                    "description": "callflow.dynamic_cid min digits",
+                    "description": "Minimum length of the new caller id number",
                     "type": "integer"
                 },
                 "reject_prompt": {
                     "default": "dynamic-cid-invalid_using_default",
-                    "description": "callflow.dynamic_cid reject prompt",
+                    "description": "The media that would be played when the new caller id is rejected",
                     "type": "string"
                 },
                 "whitelist_regex": {
                     "default": "\\d+",
-                    "description": "callflow.dynamic_cid whitelist regex",
+                    "description": "The regex to use for number to be matched against",
                     "type": "string"
                 }
             },
@@ -29939,6 +30171,72 @@
                     "default": {},
                     "description": "cluster zones",
                     "type": "object"
+                }
+            },
+            "type": "object"
+        },
+        "system_config.cnam": {
+            "description": "Schema for cnam system_config",
+            "properties": {
+                "cnam_expires": {
+                    "default": 900,
+                    "description": "cnam cnam_expires",
+                    "type": "integer"
+                },
+                "disable_normalize": {
+                    "default": false,
+                    "description": "cnam disable_normalize",
+                    "type": "boolean"
+                },
+                "http_accept_header": {
+                    "default": "text/pbx,text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    "description": "cnam http_accept_header",
+                    "type": "string"
+                },
+                "http_basic_auth_password": {
+                    "default": "",
+                    "description": "cnam http_basic_auth_password",
+                    "type": "string"
+                },
+                "http_basic_auth_username": {
+                    "default": "",
+                    "description": "cnam http_basic_auth_username",
+                    "type": "string"
+                },
+                "http_body": {
+                    "default": "",
+                    "description": "cnam http_body",
+                    "type": "string"
+                },
+                "http_connect_timeout_ms": {
+                    "default": 500,
+                    "description": "cnam http_connect_timeout_ms",
+                    "type": "integer"
+                },
+                "http_content_type_header": {
+                    "default": "application/json",
+                    "description": "cnam http_content_type_header",
+                    "type": "string"
+                },
+                "http_method": {
+                    "default": "get",
+                    "description": "cnam http_method",
+                    "type": "string"
+                },
+                "http_token_auth_token": {
+                    "default": "",
+                    "description": "cnam http_token_auth_token",
+                    "type": "string"
+                },
+                "http_url": {
+                    "default": "https://data.telnyx.com/cnam/v1/caller-information?tn={{phone_number}}",
+                    "description": "cnam http_url",
+                    "type": "string"
+                },
+                "http_user_agent_header": {
+                    "default": "Kazoo CNAM",
+                    "description": "cnam http_user_agent_header",
+                    "type": "string"
                 }
             },
             "type": "object"
@@ -32430,6 +32728,11 @@
         "system_config.kazoo_directory": {
             "description": "Schema for kazoo_directory system_config",
             "properties": {
+                "default_ignore_completed_elsewhere": {
+                    "default": true,
+                    "description": "kazoo_directory default_ignore_completed_elsewhere",
+                    "type": "boolean"
+                },
                 "restrict_to_known_types": {
                     "default": false,
                     "description": "kazoo_directory restrict_to_known_types",
@@ -32441,6 +32744,11 @@
         "system_config.kazoo_endpoint": {
             "description": "Schema for kazoo_endpoint system_config",
             "properties": {
+                "build_metaflows": {
+                    "default": false,
+                    "description": "kazoo_endpoint build_metaflows",
+                    "type": "boolean"
+                },
                 "custom_sip_interface": {
                     "description": "kazoo_endpoint custom sip interface",
                     "type": "string"
@@ -32462,6 +32770,11 @@
                     "default": true,
                     "description": "kazoo_endpoint default ignore completed elsewhere",
                     "type": "boolean"
+                },
+                "endpoint_module": {
+                    "default": "kz_endpoint_v5",
+                    "description": "kazoo_endpoint endpoint_module",
+                    "type": "string"
                 },
                 "restrict_to_known_types": {
                     "default": false,
@@ -32549,6 +32862,17 @@
                     "default": "",
                     "description": "kazoo_endpoint.mobile suffix",
                     "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "system_config.kazoo_events": {
+            "description": "Schema for kazoo_events system_config",
+            "properties": {
+                "event_listeners": {
+                    "default": 5,
+                    "description": "kazoo_events event_listeners",
+                    "type": "integer"
                 }
             },
             "type": "object"
@@ -32783,7 +33107,7 @@
                     "type": "boolean"
                 },
                 "max_recording_time_limit": {
-                    "default": 3600,
+                    "default": 10800,
                     "description": "media maximum recording time limit",
                     "type": "integer"
                 },
@@ -34076,6 +34400,37 @@
             },
             "type": "object"
         },
+        "system_config.number_manager.voxbone": {
+            "description": "Schema for number_manager.voxbone system_config",
+            "properties": {
+                "api_password": {
+                    "default": "",
+                    "description": "number_manager voxbone api_password",
+                    "type": "string"
+                },
+                "api_username": {
+                    "default": "",
+                    "description": "number_manager voxbone api_username",
+                    "type": "string"
+                },
+                "environment": {
+                    "default": "sandbox",
+                    "description": "number_manager voxbone environment",
+                    "enum": [
+                        "sandbox",
+                        "production",
+                        "beta"
+                    ],
+                    "type": "string"
+                },
+                "max_page_size": {
+                    "default": 20,
+                    "description": "number_manager voxbone max_page_size",
+                    "type": "integer"
+                }
+            },
+            "type": "object"
+        },
         "system_config.omnipresence": {
             "description": "Schema for omnipresence system_config",
             "properties": {
@@ -34461,7 +34816,7 @@
                             "type": "string"
                         },
                         "transfer_target": {
-                            "description": "on-net phone number to transfer unconfigured numbers to",
+                            "description": "onnet phone number to transfer unconfigured numbers to",
                             "type": "string"
                         }
                     },
@@ -34499,7 +34854,7 @@
                             "type": "string"
                         },
                         "transfer_target": {
-                            "description": "on-net phone number to transfer unknown numbers to",
+                            "description": "onnet phone number to transfer unknown numbers to",
                             "type": "string"
                         }
                     },
@@ -34825,9 +35180,25 @@
                     "description": "API key for Google Cloud Speech",
                     "type": "string"
                 },
+                "asr_enable_automatic_punctuation": {
+                    "default": true,
+                    "description": "detect and insert punctuation in transcription results",
+                    "type": "boolean"
+                },
                 "asr_enable_word_time_offsets": {
                     "description": "top result includes a list of words and the start and end time offsets",
                     "type": "boolean"
+                },
+                "asr_model": {
+                    "default": "phone_call",
+                    "description": "model to select for the given request",
+                    "enum": [
+                        "command_and_search",
+                        "phone_call",
+                        "video",
+                        "default"
+                    ],
+                    "type": "string"
                 },
                 "asr_profanity_filter": {
                     "description": "server will attempt to filter out profanities, replacing all but the initial character in each filtered word with asterisk",
@@ -34837,6 +35208,11 @@
                     "default": "https://speech.googleapis.com/v1/speech:recognize",
                     "description": "Google Cloud Speech API url",
                     "type": "string"
+                },
+                "asr_use_enhanced": {
+                    "default": true,
+                    "description": "use an enhanced model for speech recognition",
+                    "type": "boolean"
                 },
                 "tts_api_key": {
                     "default": "",
@@ -37217,6 +37593,16 @@
             "in": "path",
             "name": "FUNCTION",
             "pattern": "^[a-zA-Z0-9]+$",
+            "required": true,
+            "type": "string"
+        },
+        "FUNCTION_ID": {
+            "description": "request FUNCTION_ID parameter",
+            "in": "path",
+            "maxLength": 32,
+            "minLength": 32,
+            "name": "FUNCTION_ID",
+            "pattern": "^[0-9a-f]+$",
             "required": true,
             "type": "string"
         },
@@ -40793,6 +41179,145 @@
                     },
                     {
                         "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/functions": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "functions",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/functions"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/functions/samples": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/functions/{FUNCTION_ID}": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/FUNCTION_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/FUNCTION_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "patch": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/FUNCTION_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "functions",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/functions"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/FUNCTION_ID"
                     }
                 ],
                 "responses": {
@@ -45465,6 +45990,14 @@
             "put": {
                 "parameters": [
                     {
+                        "in": "body",
+                        "name": "skels",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/skels"
+                        }
+                    },
+                    {
                         "$ref": "#/parameters/auth_token_header"
                     },
                     {
@@ -45535,6 +46068,14 @@
             },
             "post": {
                 "parameters": [
+                    {
+                        "in": "body",
+                        "name": "skels",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/skels"
+                        }
+                    },
                     {
                         "$ref": "#/parameters/auth_token_header"
                     },

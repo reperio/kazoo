@@ -3,6 +3,10 @@
 %%% @doc Conversion of types.
 %%% @author James Aimonetti
 %%% @author Karl Anderson
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_term).
@@ -47,6 +51,8 @@
         ]).
 
 -export([a1hash/3, floor/1, ceiling/1]).
+
+-export([iolist_join/2]).
 
 -type text() :: string() | atom() | binary() | iolist().
 %% Denotes Erlang data type which can represent as.
@@ -585,3 +591,21 @@ error_to_binary(Reason) ->
 -spec words_to_bytes(integer()) -> integer().
 words_to_bytes(Words) ->
     Words * erlang:system_info('wordsize').
+
+-spec iolist_join(Sep, List1) -> List2 when
+      Sep :: T,
+      List1 :: [T],
+      List2 :: [T],
+      T :: iodata() | char().
+iolist_join(_, []) -> [];
+iolist_join(Sep, [H|T]) ->
+    [H | iolist_join_prepend(Sep, T)].
+
+-spec iolist_join_prepend(Sep, List1) -> List2 when
+      Sep :: T,
+      List1 :: [T],
+      List2 :: [T],
+      T :: iolist().
+iolist_join_prepend(_, []) -> [];
+iolist_join_prepend(Sep, [H|T]) ->
+    [Sep, H | iolist_join_prepend(Sep, T)].

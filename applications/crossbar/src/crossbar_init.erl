@@ -4,6 +4,10 @@
 %%% @author Karl Anderson
 %%% @author James Aimonetti
 %%% @author Jon Blanton
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(crossbar_init).
@@ -23,7 +27,8 @@ paths_list() ->
     [api_path(), default_path()].
 
 default_path() ->
-    {'_', 'crossbar_default_handler', []}.
+    {'ok', Bytes} = file:read_file(filename:join(code:priv_dir(?APP), "kazoo.txt")),
+    {'_', 'crossbar_default_handler', #{body => Bytes}}.
 
 api_path() ->
     {<<"/:version/[...]">>, [api_version_constraint()], 'api_resource', []}.
@@ -57,7 +62,7 @@ api_version_constraint('forward', NotVersion) ->
 %%------------------------------------------------------------------------------
 -spec start_link() -> kz_types:startlink_ret().
 start_link() ->
-    kz_util:put_callid(?DEFAULT_LOG_SYSTEM_ID),
+    kz_log:put_callid(?DEFAULT_LOG_SYSTEM_ID),
     Dispatch = cowboy_router:compile(crossbar_routes()),
 
     DefaultIP = kz_network_utils:default_binding_ip(),
@@ -181,10 +186,11 @@ maybe_start_plaintext(Dispatch, IP) ->
             try
                 lager:info("trying to bind to address ~s port ~b", [inet:ntoa(IP), Port]),
                 cowboy:start_clear('api_resource'
-                                  ,[{'ip', IP}
-                                   ,{'port', Port}
-                                   ,{'num_acceptors', Workers}
-                                   ]
+                                  ,#{'socket_opts' => [{'ip', IP}
+                                                      ,{'port', Port}
+                                                      ]
+                                    ,'num_acceptors' => Workers
+                                    }
                                   ,#{'env' => #{'dispatch' => Dispatch
                                                }
                                     ,'stream_handlers' => maybe_add_compression_handler()
@@ -227,10 +233,9 @@ start_ssl(Dispatch, IP) ->
                            ]
                           ),
                 cowboy:start_tls('api_resource_ssl'
-                                ,[{'ip', IP}
-                                 ,{'num_acceptors', Workers}
-                                  | SSLOpts
-                                 ]
+                                ,#{'socket_opts' => [{'ip', IP} | SSLOpts]
+                                  ,'num_acceptors' => Workers
+                                  }
                                 ,#{'env' => #{'dispatch' => Dispatch
                                              }
                                   ,'stream_handlers' => maybe_add_compression_handler()

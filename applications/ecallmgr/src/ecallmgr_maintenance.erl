@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(ecallmgr_maintenance).
@@ -97,6 +101,7 @@
 
 -export([limit_channel_uptime/1, limit_channel_uptime/2
         ,hangup_long_running_channels/0, hangup_long_running_channels/1
+        ,hangup/1
         ]).
 
 -include("ecallmgr.hrl").
@@ -345,6 +350,7 @@ reload_acls() ->
          end
          || Node <- ecallmgr_fs_nodes:connected()
         ],
+    _ = kz_amqp_worker:cast(kz_api:default_headers(?APP_NAME, ?APP_VERSION), fun kapi_trusted:publish_reload/1),
     'no_return'.
 
 -spec test_ip_against_acl(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) -> 'ok'.
@@ -724,3 +730,11 @@ hangup_long_running_channels(MaxAge) ->
     io:format("hanging up channels older than ~p seconds~n", [MaxAge]),
     N = ecallmgr_fs_channels:cleanup_old_channels(kz_term:to_integer(MaxAge)),
     io:format("hungup ~p channels~n", [N]).
+
+-spec hangup(kz_term:text()) -> freeswitch:fs_api_ret().
+hangup(UUID) ->
+    case ecallmgr_fs_channel:fetch(UUID, 'record') of
+        {'ok', #channel{node=Node}} ->
+            freeswitch:api(Node, 'uuid_kill', UUID);
+        _ -> io:format("channel ~s not found~n", [UUID])
+    end.

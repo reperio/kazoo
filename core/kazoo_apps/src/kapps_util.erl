@@ -3,6 +3,11 @@
 %%% @doc Utilities shared by a subset of `kapps'.
 %%% @author James Aimonetti
 %%% @author Karl Anderson
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kapps_util).
@@ -48,6 +53,12 @@
 -export([write_tts_file/2]).
 -export([to_magic_hash/1
         ,from_magic_hash/1
+        ]).
+-export([get_application/0
+        ,put_application/1
+        ]).
+-export([epmd_enabled/0
+        ,epmd_disabled/0
         ]).
 
 -include("kazoo_apps.hrl").
@@ -400,7 +411,7 @@ account_ccvs_from_ip_auth(Doc) ->
               [{<<"Account-ID">>, AccountId}
               ,{<<"Owner-ID">>, OwnerId}
               ,{<<"Authorizing-ID">>, kz_doc:id(Doc)}
-              ,{<<"Inception">>, <<"on-net">>}
+              ,{<<"Inception">>, <<"onnet">>}
               ,{<<"Authorizing-Type">>, AuthType}
               ])
     end.
@@ -488,14 +499,9 @@ cache(Key, AccountDbs) ->
 %%------------------------------------------------------------------------------
 -spec get_call_termination_reason(kz_json:object()) -> {kz_term:ne_binary(), kz_term:ne_binary()}.
 get_call_termination_reason(JObj) ->
-    Cause = case kz_json:get_ne_value(<<"Application-Response">>, JObj) of
-                'undefined' ->
-                    kz_json:get_ne_value(<<"Hangup-Cause">>, JObj, <<"UNSPECIFIED">>);
-                Response ->
-                    Response
-            end,
-    Code = kz_json:get_value(<<"Hangup-Code">>, JObj, <<"sip:600">>),
-    {Cause, Code}.
+    {kz_call_event:application_response(JObj, kz_call_event:hangup_cause(JObj, <<"UNSPECIFIED">>))
+    ,kz_call_event:hangup_code(JObj, <<"sip:600">>)
+    }.
 
 %%------------------------------------------------------------------------------
 %% @doc Reads all view files from given `Folder' in the given `App'.
@@ -632,3 +638,30 @@ to_magic_hash(Bin) ->
 -spec from_magic_hash(kz_term:ne_binary()) -> kz_term:ne_binary().
 from_magic_hash(Bin) ->
     zlib:unzip(kz_binary:from_hex(Bin)).
+
+-spec get_application() -> atom().
+get_application() ->
+    case get('application') of
+        'undefined' -> find_application();
+        Application -> Application
+    end.
+
+-spec find_application() -> atom().
+find_application() ->
+    case application:get_application() of
+        {'ok', Application} ->
+            Application;
+        _Else -> 'undefined'
+    end.
+
+-spec put_application(atom()) -> atom().
+put_application(Application) ->
+    put('application', Application).
+
+-spec epmd_enabled() -> boolean().
+epmd_enabled() ->
+    init:get_argument('start_epmd') =/= {'ok', [["false"]]}.
+
+-spec epmd_disabled() -> boolean().
+epmd_disabled() ->
+    init:get_argument('start_epmd') =:= {'ok', [["false"]]}.

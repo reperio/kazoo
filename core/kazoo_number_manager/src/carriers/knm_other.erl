@@ -3,6 +3,10 @@
 %%% @doc Handle client requests for phone_number documents
 %%% @author Karl Anderson
 %%% @author Pierre Fenoll
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(knm_other).
@@ -287,7 +291,7 @@ get_blocks(?BLOCK_PHONEBOOK_URL, _Prefix, _Quantity, Options) ->
 get_blocks(Url, Prefix, Quantity, Options) ->
     Offset = props:get_binary_value('offset', Options, <<"0">>),
     Limit = props:get_binary_value('blocks', Options, <<"0">>),
-    ReqBody = list_to_binary(["?prefix=", kz_util:uri_encode(Prefix)
+    ReqBody = list_to_binary(["?prefix=", kz_http_util:urlencode(Prefix)
                              ,"&size=", kz_term:to_binary(Quantity)
                              ,"&offset=", Offset
                              ,"&limit=", Limit

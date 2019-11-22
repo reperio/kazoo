@@ -3,6 +3,11 @@
 %%% @doc
 %%% @author James Aimonetti
 %%% @author Daniel Finke
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(konami_code_statem).
@@ -374,7 +379,7 @@ listen_on(Call, JObj) ->
 -spec has_metaflow(kz_term:ne_binary(), kz_json:object(), kz_json:object()) ->
                           'false' |
                           {'number', kz_json:object()} |
-                          {'patterm', kz_json:object()}.
+                          {'pattern', kz_json:object()}.
 has_metaflow(Collected, Ns, Ps) ->
     case has_number(Collected, Ns) of
         'false' -> has_pattern(Collected, Ps);

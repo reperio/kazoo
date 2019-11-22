@@ -3,6 +3,10 @@
 %%% @doc
 %%% @author James Aimonetti
 %%% @author Karl Anderson
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kapi_offnet_resource).
@@ -434,7 +438,7 @@ req_to_jobj(?REQ_TYPE(JObj)) -> JObj.
 
 -spec put_callid(req()) -> 'ok'.
 put_callid(?REQ_TYPE(JObj)) ->
-    kz_util:put_callid(JObj).
+    kz_log:put_callid(JObj).
 
 -spec set_outbound_call_id(req(), kz_term:ne_binary()) -> req().
 set_outbound_call_id(?REQ_TYPE(JObj), CallId) ->

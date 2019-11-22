@@ -6,6 +6,11 @@
 %%%
 %%% @author Karl Anderson
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(cb_devices_v1).
@@ -158,10 +163,10 @@ post(Context, DeviceId) ->
             Context2 = crossbar_doc:save(Context1),
             case cb_context:resp_status(Context2) of
                 'success' ->
-                    _ = kz_util:spawn(fun crossbar_util:flush_registration/1, [Context2]),
+                    _ = kz_process:spawn(fun crossbar_util:flush_registration/1, [Context2]),
                     _ = crossbar_util:maybe_refresh_fs_xml('device', Context2),
                     _ = maybe_aggregate_device(DeviceId, Context2),
-                    _ = kz_util:spawn(fun update_device_provisioning/1, [Context2]),
+                    _ = kz_process:spawn(fun update_device_provisioning/1, [Context2]),
                     Context2;
                 _ ->
                     Context2
@@ -210,7 +215,7 @@ post(Context, DeviceId, ?CHECK_SYNC_PATH_TOKEN) ->
 put(Context) ->
     Context1 = crossbar_doc:save(Context),
     _ = maybe_aggregate_device('undefined', Context1),
-    _ = kz_util:spawn(fun update_device_provisioning/1, [Context1]),
+    _ = kz_process:spawn(fun update_device_provisioning/1, [Context1]),
     Context1.
 
 -spec put(cb_context:context(), path_token()) -> cb_context:context().
@@ -224,7 +229,7 @@ delete(Context, DeviceId) ->
         'success' ->
             _ = crossbar_util:flush_registration(Context1),
             _ = crossbar_util:refresh_fs_xml(Context1),
-            _ = kz_util:spawn(fun maybe_delete_provision/1, [Context1]),
+            _ = kz_process:spawn(fun maybe_delete_provision/1, [Context1]),
             _ = maybe_remove_aggregate(DeviceId, Context1),
             Context1;
         _ ->

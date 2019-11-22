@@ -4,6 +4,11 @@
 %%% @author James Aimonetti
 %%% @author Sponsored by GTNetwork LLC, Implemented by SIPLABS LLC
 %%% @author Daniel Finke
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(acdc_stats).
@@ -373,7 +378,7 @@ sort_by_entered_timestamp(#call_stat{entered_timestamp=ATimestamp}, #call_stat{e
 
 -spec init([]) -> {'ok', state()}.
 init([]) ->
-    kz_util:put_callid(<<"acdc.stats">>),
+    kz_log:put_callid(<<"acdc.stats">>),
     kz_datamgr:suppress_change_notice(),
     lager:debug("started new acdc stats collector"),
 
@@ -672,14 +677,14 @@ average_wait_time_fold([EnteredT, AbandonedT, HandledT], {CallCount, TotalWaitTi
 -spec archive_data() -> 'ok'.
 archive_data() ->
     Self = self(),
-    _ = kz_util:spawn(fun archive_call_data/2, [Self, 'false']),
-    _ = kz_util:spawn(fun acdc_agent_stats:archive_status_data/2, [Self, 'false']),
+    _ = kz_process:spawn(fun archive_call_data/2, [Self, 'false']),
+    _ = kz_process:spawn(fun acdc_agent_stats:archive_status_data/2, [Self, 'false']),
     'ok'.
 
 force_archive_data() ->
     Self = self(),
-    _ = kz_util:spawn(fun archive_call_data/2, [Self, 'true']),
-    _ = kz_util:spawn(fun acdc_agent_stats:archive_status_data/2, [Self, 'true']),
+    _ = kz_process:spawn(fun archive_call_data/2, [Self, 'true']),
+    _ = kz_process:spawn(fun acdc_agent_stats:archive_status_data/2, [Self, 'true']),
     'ok'.
 
 cleanup_data(Srv) ->
@@ -722,7 +727,7 @@ cleanup_unfinished(Unfinished) ->
 
 -spec archive_call_data(pid(), boolean()) -> 'ok'.
 archive_call_data(Srv, 'true') ->
-    kz_util:put_callid(<<"acdc_stats.force_call_archiver">>),
+    kz_log:put_callid(<<"acdc_stats.force_call_archiver">>),
 
     Match = [{#call_stat{status='$1'
                         ,is_archived='$2'
@@ -736,7 +741,7 @@ archive_call_data(Srv, 'true') ->
              }],
     maybe_archive_call_data(Srv, Match);
 archive_call_data(Srv, 'false') ->
-    kz_util:put_callid(<<"acdc_stats.call_archiver">>),
+    kz_log:put_callid(<<"acdc_stats.call_archiver">>),
 
     Past = kz_time:now_s() - ?ARCHIVE_WINDOW,
     Match = [{#call_stat{entered_timestamp='$1'
@@ -963,7 +968,17 @@ handle_handled_stat(JObj, Props) ->
                 ,{#call_stat.handled_timestamp, kz_json:get_value(<<"Handled-Timestamp">>, JObj)}
                 ,{#call_stat.status, <<"handled">>}
                 ]),
-    update_call_stat(Id, Updates, Props).
+
+    Stat = find_call_stat(Id),
+    case handled_stat_should_update(Stat) of
+        'true' -> update_call_stat(Id, Updates, Props);
+        'false' -> 'ok'
+    end.
+
+-spec handled_stat_should_update(call_stat()) -> boolean().
+                                                % Handle stats where processed came in before handled (hungup quickly after pickup)
+handled_stat_should_update(#call_stat{status= <<"processed">>}) -> 'false';
+handled_stat_should_update(_) -> 'true'.
 
 -spec handle_processed_stat(kz_json:object(), kz_term:proplist()) -> 'ok'.
 handle_processed_stat(JObj, Props) ->
@@ -976,7 +991,18 @@ handle_processed_stat(JObj, Props) ->
                 ,{#call_stat.hung_up_by, kz_json:get_value(<<"Hung-Up-By">>, JObj)}
                 ,{#call_stat.status, <<"processed">>}
                 ]),
-    update_call_stat(Id, Updates, Props).
+
+    Stat = find_call_stat(Id),
+    Updates1 = processed_stat_maybe_fix_update(Stat, Updates),
+
+    update_call_stat(Id, Updates1, Props).
+
+-spec processed_stat_maybe_fix_update(call_stat(), kz_term:proplist()) -> kz_term:proplist().
+processed_stat_maybe_fix_update(#call_stat{handled_timestamp='undefined'}, Updates) ->
+                                                % Handle stats where processed came in before handled (hungup quickly after pickup)
+    ProcessedTimestamp = props:get_integer_value(#call_stat.processed_timestamp, Updates),
+    [{#call_stat.handled_timestamp, ProcessedTimestamp} | Updates];
+processed_stat_maybe_fix_update(_, Updates) -> Updates.
 
 -spec flush_call_stat(kz_json:object(), kz_term:proplist()) -> 'ok'.
 flush_call_stat(JObj, Props) ->

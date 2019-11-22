@@ -3,6 +3,10 @@
 %%% @doc Handle client requests for phone_number documents
 %%% @author James Aimonetti
 %%% @author Pierre Fenoll
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(knm_vitelity).
@@ -220,7 +224,7 @@ to_number(DID, CarrierData, QID) ->
 query_vitelity(Prefix, Quantity, QOptions) ->
     URI = knm_vitelity_util:build_uri(QOptions),
     {'ok'
-    ,{'https', [], _Host, _Port, _Path, [$? | QueryString]}
+    ,{'http', [], _Host, _Port, _Path, [$? | QueryString]}
     } = http_uri:parse(kz_term:to_list(URI)),
     Options = cow_qs:parse_qs(kz_term:to_binary(QueryString)),
     XML =

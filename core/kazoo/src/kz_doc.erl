@@ -3,15 +3,17 @@
 %%% @doc Utilities for manipulating Kazoo documents.
 %%% @author Edouard Swiac
 %%% @author James Aimonetti
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_doc).
 
--include_lib("kazoo_stdlib/include/kz_types.hrl").
--include_lib("kazoo_stdlib/include/kazoo_json.hrl").
-
 -export([id/1, id/2
         ,set_id/2
+        ,delete_id/1
         ,path_id/0
         ]).
 -export([revision/1
@@ -111,6 +113,10 @@
 -export([remove_pvt/1]).
 -endif.
 
+-include_lib("kazoo_stdlib/include/kz_types.hrl").
+-include_lib("kazoo_stdlib/include/kazoo_json.hrl").
+-include_lib("kazoo_stdlib/include/kz_log.hrl").
+
 -define(PVT_FUNS, [fun add_pvt_vsn/4
                   ,fun add_pvt_account_id/4
                   ,fun add_pvt_account_db/4
@@ -186,6 +192,10 @@ id(JObj, Default) ->
 set_id(JObj, Id) ->
     kz_json:set_value(?KEY_ID, Id, JObj).
 
+-spec delete_id(doc()) -> doc().
+delete_id(JObj) ->
+    kz_json:delete_key(?KEY_ID, JObj).
+
 -spec path_id() -> kz_json:path().
 path_id() ->
     [?KEY_ID].
@@ -239,7 +249,7 @@ type(JObj, Default) ->
     try kz_json:get_ne_binary_value(?KEY_PVT_TYPE, JObj, Default)
     catch
         ?STACKTRACE('error', 'badarg', ST)
-        kz_util:log_stacktrace(ST, "~s:type(~s)", [?MODULE, kz_json:encode(JObj)]),
+        kz_log:log_stacktrace(ST, "~s:type(~s)", [?MODULE, kz_json:encode(JObj)]),
         Default
         end.
 
@@ -489,7 +499,7 @@ external_attachments(JObj, Default) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec attachment_names(doc()) -> kz_term:ne_binaries() | [].
+-spec attachment_names(doc()) -> kz_term:ne_binaries().
 attachment_names(JObj) ->
     kz_json:get_keys(attachments(JObj, kz_json:new())).
 
@@ -606,14 +616,14 @@ update_pvt_parameters(JObj0, DBName) ->
 -spec update_pvt_parameters(doc(), kz_term:api_ne_binary(), kz_term:proplist()) ->
                                    doc().
 update_pvt_parameters(JObj, DbName, Options) ->
-    Opts = props:insert_value('now', kz_time:now_s(), Options),
-    Updates = get_pvt_updates(JObj, DbName, Opts),
+    Updates = get_pvt_updates(JObj, DbName, Options),
     kz_json:set_values(Updates, JObj).
 
 -spec get_pvt_updates(kz_json:object(), kz_term:api_ne_binary(), kz_term:proplist()) ->
                              kz_term:proplist().
 get_pvt_updates(JObj, DbName, Options) ->
-    lists:foldl(fun(Fun, Acc) -> Fun(Acc, JObj, DbName, Options) end, [], ?PVT_FUNS).
+    Opts = props:insert_value('now', kz_time:now_s(), Options),
+    lists:foldl(fun(Fun, Acc) -> Fun(Acc, JObj, DbName, Opts) end, [], ?PVT_FUNS).
 
 -spec add_pvt_vsn(kz_term:proplist(), doc(), kz_term:api_ne_binary(), kz_term:proplist()) -> kz_term:proplist().
 add_pvt_vsn(Acc, _JObj, _, Options) ->
@@ -668,15 +678,17 @@ add_pvt_node(Acc, _JObj, _, Options) ->
 
 -spec add_pvt_created(kz_term:proplist(), doc(), kz_term:api_ne_binary(), kz_term:proplist()) -> kz_term:proplist().
 add_pvt_created(Acc, JObj, _, Opts) ->
-    case kz_json:get_ne_binary_value(?KEY_REV, JObj) of
-        'undefined' ->
-            [{?KEY_CREATED, props:get_value('now', Opts, kz_time:now_s())} | Acc];
-        _Rev -> Acc
+    case kz_term:is_empty(kz_json:get_ne_binary_value(?KEY_REV, JObj))
+        orelse kz_term:is_empty(created(JObj))
+    of
+        'true' ->
+            [{?KEY_CREATED, props:get_value('now', Opts)} | Acc];
+        'false' -> Acc
     end.
 
 -spec add_pvt_modified(kz_term:proplist(), doc(), kz_term:api_ne_binary(), kz_term:proplist()) -> kz_term:proplist().
 add_pvt_modified(Acc, _JObj, _, Opts) ->
-    [{?KEY_MODIFIED, props:get_value('now', Opts)} | Acc].
+    [{?KEY_MODIFIED, props:get_value('now', Opts, kz_time:now_s())} | Acc].
 
 -spec add_id(kz_term:proplist(), doc(), any(), kz_term:proplist()) -> kz_term:proplist().
 add_id(Acc, _JObj, _, Opts) ->

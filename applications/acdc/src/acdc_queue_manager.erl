@@ -8,6 +8,11 @@
 %%%
 %%% @author Sponsored by GTNetwork LLC, Implemented by SIPLABS LLC
 %%% @author Daniel Finke
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(acdc_queue_manager).
@@ -143,7 +148,7 @@ start_link(Super, AccountId, QueueId) ->
 -spec handle_member_call(kz_json:object(), kz_term:proplist()) -> 'ok'.
 handle_member_call(JObj, Props) ->
     'true' = kapi_acdc_queue:member_call_v(JObj),
-    _ = kz_util:put_callid(JObj),
+    _ = kz_log:put_callid(JObj),
 
     Call = kapps_call:from_json(kz_json:get_value(<<"Call">>, JObj)),
 
@@ -206,7 +211,7 @@ handle_member_call_success(JObj, Prop) ->
 
 -spec handle_member_call_cancel(kz_json:object(), kz_term:proplist()) -> 'ok'.
 handle_member_call_cancel(JObj, Props) ->
-    kz_util:put_callid(JObj),
+    kz_log:put_callid(JObj),
     lager:debug("cancel call ~p", [JObj]),
     'true' = kapi_acdc_queue:member_call_cancel_v(JObj),
     K = make_ignore_key(kz_json:get_value(<<"Account-ID">>, JObj)
@@ -298,12 +303,12 @@ init([Super, QueueJObj]) ->
     AccountId = kz_doc:account_id(QueueJObj),
     QueueId = kz_doc:id(QueueJObj),
 
-    kz_util:put_callid(<<"mgr_", QueueId/binary>>),
+    kz_log:put_callid(<<"mgr_", QueueId/binary>>),
 
     init(Super, AccountId, QueueId, QueueJObj);
 
 init([Super, AccountId, QueueId]) ->
-    kz_util:put_callid(<<"mgr_", QueueId/binary>>),
+    kz_log:put_callid(<<"mgr_", QueueId/binary>>),
 
     AcctDb = kz_util:format_account_id(AccountId, 'encoded'),
     {'ok', QueueJObj} = kz_datamgr:open_cache_doc(AcctDb, QueueId),
@@ -311,8 +316,6 @@ init([Super, AccountId, QueueId]) ->
     init(Super, AccountId, QueueId, QueueJObj).
 
 init(Super, AccountId, QueueId, QueueJObj) ->
-    process_flag('trap_exit', 'false'),
-
     AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
     _ = kz_datamgr:add_to_doc_cache(AccountDb, QueueId, QueueJObj),
 
@@ -642,14 +645,14 @@ code_change(_OldVsn, State, _Extra) ->
 start_secondary_queue(AccountId, QueueId) ->
     AccountDb = kz_util:format_account_db(AccountId),
     Priority = lookup_priority_levels(AccountDb, QueueId),
-    kz_util:spawn(fun gen_listener:add_queue/4
-                 ,[self()
-                  ,?SECONDARY_QUEUE_NAME(QueueId)
-                  ,[{'queue_options', ?SECONDARY_QUEUE_OPTIONS(Priority)}
-                   ,{'consume_options', ?SECONDARY_CONSUME_OPTIONS}
-                   ]
-                  ,?SECONDARY_BINDINGS(AccountId, QueueId)
-                  ]).
+    kz_process:spawn(fun gen_listener:add_queue/4
+                    ,[self()
+                     ,?SECONDARY_QUEUE_NAME(QueueId)
+                     ,[{'queue_options', ?SECONDARY_QUEUE_OPTIONS(Priority)}
+                      ,{'consume_options', ?SECONDARY_CONSUME_OPTIONS}
+                      ]
+                     ,?SECONDARY_BINDINGS(AccountId, QueueId)
+                     ]).
 
 -spec lookup_priority_levels(kz_term:ne_binary(), kz_term:ne_binary()) -> kz_term:api_integer().
 lookup_priority_levels(AccountDB, QueueId) ->

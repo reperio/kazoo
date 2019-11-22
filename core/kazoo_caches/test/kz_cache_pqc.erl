@@ -1,9 +1,14 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2018, 2600Hz
+%%% @copyright (C) 2011-2019, 2600Hz
 %%% @doc PropEr testing of the cache
 %%% @author James Aimonetti
 %%% @todo refactor how wait_for_* functions work in the model. need to track the
 %%%       monitors in the model and adjust how now_ms is forwarded
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_cache_pqc).
@@ -61,7 +66,7 @@ run_counterexample([SeqSteps]) ->
 
 run_counterexample(SeqSteps, State) ->
     process_flag('trap_exit', 'true'),
-    kz_util:put_callid(?MODULE),
+    kz_log:put_callid(?MODULE),
     is_pid(whereis(?SERVER))
         andalso kz_cache:stop_local(?SERVER),
     kz_cache_sup:start_link(?SERVER, ?CACHE_TTL_MS),
@@ -113,7 +118,7 @@ correct() ->
     ?FORALL(Cmds
            ,commands(?MODULE)
            ,begin
-                kz_util:put_callid(?MODULE),
+                kz_log:put_callid(?MODULE),
                 stop(?SERVER),
                 kz_cache_sup:start_link(?SERVER, ?CACHE_TTL_MS),
                 {History, State, Result} = run_commands(?MODULE, Cmds),

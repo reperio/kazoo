@@ -3,6 +3,11 @@
 %%% @doc Conference participant process
 %%% @author Karl Anderson
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(conf_participant).
@@ -228,7 +233,7 @@ handle_cast('pivoted', Participant) ->
 handle_cast({'channel_replaced', NewCallId}
            ,#participant{call=Call}=Participant
            ) ->
-    kz_util:put_callid(NewCallId),
+    kz_log:put_callid(NewCallId),
     NewCall = kapps_call:set_call_id(NewCallId, Call),
     lager:info("updated call to use ~s instead", [NewCallId]),
     gen_listener:add_binding(self(), 'call', [{'callid', NewCallId}]),
@@ -440,11 +445,11 @@ sync_participant(JObj, Call, #participant{in_conference='false'
     ParticipantId = kz_json:get_value(<<"Participant-ID">>, JObj),
     IsModerator = kz_json:is_true([<<"Conference-Channel-Vars">>, <<"Is-Moderator">>], JObj),
     log_conference_join(IsModerator, ParticipantId, Conference),
-    _ = kz_util:spawn(fun notify_requestor/4, [kapps_call:controller_queue(Call)
-                                              ,ParticipantId
-                                              ,DiscoveryEvent
-                                              ,kapps_conference:id(Conference)
-                                              ]),
+    _ = kz_process:spawn(fun notify_requestor/4, [kapps_call:controller_queue(Call)
+                                                 ,ParticipantId
+                                                 ,DiscoveryEvent
+                                                 ,kapps_conference:id(Conference)
+                                                 ]),
     Muted = kz_json:is_false([<<"Conference-Channel-Vars">>, <<"Speak">>], JObj),
     Deaf = kz_json:is_false([<<"Conference-Channel-Vars">>, <<"Hear">>], JObj),
     Participant#participant{in_conference='true'

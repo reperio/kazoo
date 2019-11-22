@@ -3,6 +3,11 @@
 %%% @doc
 %%% @author James Aimonetti
 %%% @author Karl Anderson
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(crossbar_util).
@@ -737,7 +742,7 @@ apply_response_map_item({Key, ExistingKey}, J, JObj) ->
 
 -spec get_path(cowboy_req:req() | kz_term:ne_binary(), kz_term:ne_binary()) -> kz_term:ne_binary().
 get_path(<<_/binary>> = RawPath, Relative) ->
-    kz_util:resolve_uri(RawPath, Relative);
+    kz_http_util:resolve_uri(RawPath, Relative);
 get_path(Req, Relative) ->
     get_path(cowboy_req:path(Req), Relative).
 
@@ -870,7 +875,7 @@ descendants_count() ->
     descendants_count(ViewOptions).
 
 -spec descendants_count(kz_term:proplist() | kz_term:ne_binary()) -> 'ok'.
-descendants_count(<<_/binary>> = Account) ->
+descendants_count(<<Account/binary>>) ->
     AccountId = kz_util:format_account_id(Account, 'raw'),
     descendants_count([{'key', AccountId}]);
 descendants_count(Opts) ->

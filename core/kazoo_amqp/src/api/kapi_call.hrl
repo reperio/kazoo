@@ -19,6 +19,7 @@
         ,<<"Application-Response">>
         ,<<"Billing-Seconds">>
         ,<<"Bridge-Hangup-Cause">>
+        ,<<"Caller-Destination-Number">>
         ,<<"Call-Direction">>
         ,<<"Callee-ID-Name">>
         ,<<"Callee-ID-Number">>
@@ -99,6 +100,7 @@
         ,<<"Connecting-Leg-B-UUID">>
         ,<<"Endpoint-Disposition">>
         ,<<"Transfer-Disposition">>
+        ,<<"Bridge-B-Unique-ID">>
         ]).
 -define(CALL_EVENT_VALUES, [{<<"Event-Category">>, <<"call_event">>}]).
 -define(CALL_EVENT_TYPES, [{<<"Custom-Application-Vars">>, fun kz_json:is_json_object/1}

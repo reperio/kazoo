@@ -4,6 +4,10 @@
 %%% ETS writer for table
 %%%
 %%% @author James Aimonetti
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_buckets).
@@ -293,7 +297,7 @@ gift_data() -> 'ok'.
 %%------------------------------------------------------------------------------
 -spec init([]) -> {'ok', state()}.
 init([]) ->
-    kz_util:put_callid(?MODULE),
+    kz_log:put_callid(?MODULE),
     {'ok', #state{inactivity_timer_ref=start_inactivity_timer()}}.
 
 %%------------------------------------------------------------------------------
@@ -318,12 +322,12 @@ handle_call({'start', App, Name, MaxTokens, FillRate, FillTime}, _From, #state{t
     of
         {'ok', Pid} when is_pid(Pid) ->
             T = {App, Name},
-            case ets:insert_new(Tbl, new_bucket(Pid, T)) of
-                'true' -> lager:debug("new bucket for ~s, ~s: ~p", [App, Name, Pid]);
-                'false' ->
-                    lager:debug("hmm, bucket appears to exist for ~s, ~s, stopping ~p", [App, Name, Pid]),
-                    kz_buckets_sup:stop_bucket(Pid)
-            end,
+            _ = case ets:insert_new(Tbl, new_bucket(Pid, T)) of
+                    'true' -> lager:debug("new bucket for ~s, ~s: ~p", [App, Name, Pid]);
+                    'false' ->
+                        lager:debug("hmm, bucket appears to exist for ~s, ~s, stopping ~p", [App, Name, Pid]),
+                        kz_buckets_sup:stop_bucket(Pid)
+                end,
             kz_token_bucket:set_name(Pid, T),
             {'reply', 'ok', State};
         'false' ->
@@ -375,7 +379,7 @@ handle_info({'DOWN', Ref, 'process', Pid, _Reason}, #state{table_id=Tbl}=State) 
     end,
     {'noreply', State};
 handle_info(?INACTIVITY_MSG, #state{inactivity_timer_ref=_OldRef}=State) ->
-    _Pid = kz_util:spawn(fun check_for_inactive_buckets/0),
+    _Pid = kz_process:spawn(fun check_for_inactive_buckets/0),
     {'noreply', State#state{inactivity_timer_ref=start_inactivity_timer()}};
 handle_info(_Info, State) ->
     lager:debug("unhandled message: ~p", [_Info]),
@@ -422,7 +426,7 @@ start_inactivity_timer() ->
 
 -spec check_for_inactive_buckets() -> 'ok'.
 check_for_inactive_buckets() ->
-    kz_util:put_callid(?MODULE),
+    kz_log:put_callid(?MODULE),
     Now = kz_time:now_s(),
     InactivityTimeout = ?INACTIVITY_TIMEOUT_S,
 

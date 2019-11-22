@@ -4,6 +4,10 @@
 %%% @author Karl Anderson
 %%% @author James Aimonetti
 %%% @author Sponsored by Velvetech LLC, Implemented by SIPLABS LLC
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kapps_call_command).
@@ -41,7 +45,7 @@
 -export([answer/1, answer_now/1
         ,hangup/1, hangup/2
         ,break/1
-        ,queued_hangup/1
+        ,queued_hangup/1, queued_hangup/2
         ,set/3, set/4, set/5, set_terminators/2
         ,fetch/1, fetch/2
         ]).
@@ -129,7 +133,7 @@
         ,privacy/2
         ]).
 
--export([b_answer/1, b_hangup/1, b_hangup/2, b_fetch/1, b_fetch/2]).
+-export([b_answer/1, b_answer_now/1, b_hangup/1, b_hangup/2, b_fetch/1, b_fetch/2]).
 -export([b_echo/1]).
 -export([b_ring/1]).
 
@@ -475,9 +479,12 @@ receive_event(Timeout, IgnoreOthers) ->
     Start = kz_time:start_time(),
     receive
         {'amqp_msg', JObj} -> {'ok', JObj};
-        _ when IgnoreOthers ->
+        _Msg when IgnoreOthers ->
+            lager:debug_unsafe("ignoring received event : ~p", [_Msg]),
             receive_event(kz_time:decr_timeout(Timeout, Start), IgnoreOthers);
-        Other -> {'other', Other}
+        Other ->
+            lager:debug_unsafe("received other event : ~p", [Other]),
+            {'other', Other}
     after
         Timeout -> {'error', 'timeout'}
     end.
@@ -825,6 +832,7 @@ recv_dtmf(DTMFs, Call) ->
 recv_dtmf_command(DTMFs) ->
     props:filter_undefined(
       [{<<"DTMFs">>, DTMFs}
+      ,{<<"Insert-At">>, <<"now">>}
       ,{<<"Application-Name">>, <<"recv_dtmf">>}
       ]).
 
@@ -983,6 +991,13 @@ b_answer(Call) ->
     answer(Call),
     wait_for_message(Call, <<"answer">>).
 
+-spec b_answer_now(kapps_call:call()) ->
+                          kapps_api_error() |
+                          {'ok', kz_json:object()}.
+b_answer_now(Call) ->
+    answer_now(Call),
+    wait_for_message(Call, <<"answer">>).
+
 %%------------------------------------------------------------------------------
 %% @doc Produces the low level AMQP request to echo the channel.
 %% @end
@@ -1024,11 +1039,6 @@ hangup(Call) ->
               ],
     send_command(Command, Call).
 
--spec queued_hangup(kapps_call:call()) -> 'ok'.
-queued_hangup(Call) ->
-    Command = [{<<"Application-Name">>, <<"hangup">>}],
-    send_command(Command, Call).
-
 -spec hangup(boolean(), kapps_call:call()) -> 'ok'.
 hangup(OtherLegOnly, Call) when is_boolean(OtherLegOnly) ->
     Command = [{<<"Application-Name">>, <<"hangup">>}
@@ -1051,6 +1061,18 @@ b_hangup('false', Call) ->
 b_hangup('true', Call) ->
     hangup('true', Call),
     wait_for_unbridge().
+
+-spec queued_hangup(kapps_call:call()) -> 'ok'.
+queued_hangup(Call) ->
+    queued_hangup(Call, 'undefined').
+
+-spec queued_hangup(kapps_call:call(), kz_term:api_ne_binary()) -> 'ok'.
+queued_hangup(Call, Cause) ->
+    Command = props:filter_undefined(
+                [{<<"Application-Name">>, <<"hangup">>}
+                ,{<<"Hangup-Cause">>, Cause}
+                ]),
+    send_command(Command, Call).
 
 %%------------------------------------------------------------------------------
 %% @doc Produces the low level AMQP request to page the call.
@@ -1157,8 +1179,36 @@ bridge_command(Endpoints, Timeout, Strategy, IgnoreEarlyMedia, Ringback, SIPHead
     ,{<<"Dial-Endpoint-Method">>, Strategy}
     ,{<<"Custom-SIP-Headers">>, SIPHeaders}
     ,{<<"Ignore-Forward">>, IgnoreForward}
-    ,{<<"Export-Bridge-Variables">>, ?BRIDGE_EXPORT_VARS}
+    ,{<<"Call-Context">>, bridge_context(Call)}
     ].
+
+-spec bridge_context(kapps_call:call()) -> kz_json:object().
+bridge_context(Call) ->
+    Props = [{<<"Inception">>, kapps_call:inception_type(Call)}
+            ,{<<"Other-UUID">>, kapps_call:other_leg_call_id(Call)}
+            ],
+    Routines = [fun bridge_context_flags/2
+               ],
+    KVs = lists:foldl(fun(F, Acc) -> F(Call, Acc) end, Props, Routines),
+    kz_json:set_values(KVs, kapps_call:kvs_fetch('call-context', kz_json:new(), Call)).
+
+-spec bridge_context_flags(kapps_call:call(), kz_term:proplist()) -> kz_term:proplist().
+bridge_context_flags(Call, Props) ->
+    Flags = kapps_call:kvs_fetch('context-flags', [], Call)
+        ++ bridge_context_direct_call_flag(Call),
+    [{<<"Flags">>, Flags} | Props].
+
+-define(BRIDGE_NON_DIRECT_MODULES, [<<"cf_ring_group">>, <<"acdc_util">>]).
+
+-spec bridge_context_direct_call_flag(kapps_call:call()) -> kz_term:ne_binaries().
+bridge_context_direct_call_flag(Call) ->
+    Source = kz_term:to_binary(kapps_call:kvs_fetch('context-source', Call)),
+    case not lists:member(Source, ?BRIDGE_NON_DIRECT_MODULES)
+        andalso kapps_call:custom_channel_var(<<"Call-Forward">>, Call) =:= 'undefined'
+    of
+        'true' -> [<<"direct_call">>];
+        'false' -> [<<"non_direct_call">>]
+    end.
 
 -spec bridge(kz_json:objects(), kapps_call:call()) -> 'ok'.
 bridge(Endpoints, Call) ->
@@ -2747,9 +2797,14 @@ wait_for_headless_application(Application, Event, Type, Fun, Timeout) ->
                     lager:debug("destroy occurred, waiting 60000 ms for ~s event", [Application]),
                     wait_for_headless_application(Application, Event, Type, Fun, 60 * ?MILLISECONDS_IN_SECOND);
                 {Type, Event, Application} ->
+                    lager:debug("stop event ~s has been received for ~s", [Event, Application]),
                     case Fun(JObj) of
                         'true' -> Ok;
-                        'false' -> wait_for_headless_application(Application, Event, Type, Fun, kz_time:decr_timeout(Timeout, Start))
+                        'false' ->
+                            lager:debug_unsafe("failed to validate received stop event ~s for ~s : ~s"
+                                              ,[Event, Application, kz_json:encode(JObj, ['pretty'])]
+                                              ),
+                            wait_for_headless_application(Application, Event, Type, Fun, kz_time:decr_timeout(Timeout, Start))
                     end;
                 _T ->
                     lager:debug("ignore ~p", [_T]),
@@ -2845,14 +2900,14 @@ wait_for_bridge(Timeout, Fun, Call, Start, {'ok', JObj}) ->
             wait_for_bridge('infinity', Fun, Call);
         {<<"call_event">>, <<"CHANNEL_REPLACED">>, _} ->
             CallId = kz_json:get_value(<<"Replaced-By">>, JObj),
-            _ = kz_util:put_callid(CallId),
+            _ = kz_log:put_callid(CallId),
             NewTimeout = kz_time:decr_timeout(Timeout, Start),
             NewStart = kz_time:start_time(),
             lager:info("bridge channel replaced ~s for ~s", [EvtCallId, CallId]),
             wait_for_bridge(NewTimeout, Fun, kapps_call:set_call_id(CallId, Call), NewStart, receive_event(NewTimeout));
         {<<"call_event">>, <<"CHANNEL_DIRECT">>, _} ->
-            CallId = kz_json:get_value(<<"Connecting-Leg-A-UUID">>, JObj),
-            _ = kz_util:put_callid(CallId),
+            CallId = kz_json:get_value(<<"Connecting-Leg-B-UUID">>, JObj),
+            _ = kz_log:put_callid(CallId),
             NewTimeout = kz_time:decr_timeout(Timeout, Start),
             NewStart = kz_time:start_time(),
             lager:info("bridge channel replaced ~s for ~s", [EvtCallId, CallId]),
@@ -2882,7 +2937,7 @@ wait_for_bridge(Timeout, Fun, Call, Start, {'ok', JObj}) ->
 wait_for_noop(Call, NoopId) ->
     case wait_for_message(Call, <<"noop">>, <<"CHANNEL_EXECUTE_COMPLETE">>, <<"call_event">>, 'infinity') of
         {'ok', JObj}=OK ->
-            case kz_json:get_value(<<"Application-Response">>, JObj) of
+            case kz_json:get_ne_binary_value(<<"Application-Response">>, JObj) of
                 NoopId when is_binary(NoopId), NoopId =/= <<>> -> OK;
                 _No when is_binary(NoopId), NoopId =/= <<>> -> wait_for_noop(Call, NoopId);
                 _ -> OK

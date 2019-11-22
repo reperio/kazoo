@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_dataconnections).
@@ -128,7 +132,7 @@ test_conn(Tag) ->
 -spec init([]) -> {'ok', state()}.
 init([]) ->
     process_flag('trap_exit', 'true'),
-    kz_util:put_callid(?DEFAULT_LOG_SYSTEM_ID),
+    kz_log:put_callid(?DEFAULT_LOG_SYSTEM_ID),
     _ = ets:new(?MODULE, ['ordered_set'
                          ,{'read_concurrency', 'true'}
                          ,{'keypos', #data_connection.id}

@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2019-, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(pqc_cb_ledgers).
@@ -28,7 +32,7 @@ fetch(API, ?NE_BINARY=AccountId) ->
 -spec fetch(pqc_cb_api:state(), kz_term:ne_binary(), kz_term:ne_binary()) -> pqc_cb_api:response().
 fetch(API, ?NE_BINARY=AccountId, ?NE_BINARY=AcceptType) ->
     LedgersURL = ledgers_url(AccountId),
-    RequestHeaders = pqc_cb_api:request_headers(API, [{"accept", kz_term:to_list(AcceptType)}]),
+    RequestHeaders = pqc_cb_api:request_headers(API, [{<<"accept">>, kz_term:to_list(AcceptType)}]),
 
     Expectations = [#expectation{response_codes = [200]
                                 ,response_headers = [{"content-type", kz_term:to_list(AcceptType)}]
@@ -50,7 +54,7 @@ fetch_by_source(API, ?NE_BINARY=AccountId, ?NE_BINARY=SourceType) ->
                              pqc_cb_api:response().
 fetch_by_source(API, ?NE_BINARY=AccountId, SourceType, ?NE_BINARY=AcceptType) ->
     LedgersURL = ledgers_source_url(AccountId, SourceType),
-    RequestHeaders = pqc_cb_api:request_headers(API, [{"accept", kz_term:to_list(AcceptType)}]),
+    RequestHeaders = pqc_cb_api:request_headers(API, [{<<"accept">>, kz_term:to_list(AcceptType)}]),
 
     Expectations = [#expectation{response_codes = [200]
                                 ,response_headers = [{"content-type", kz_term:to_list(AcceptType)}]
@@ -122,7 +126,7 @@ initial_state() ->
 
 init_system() ->
     TestId = kz_binary:rand_hex(5),
-    kz_util:put_callid(TestId),
+    kz_log:put_callid(TestId),
 
     _ = kz_data_tracing:clear_all_traces(),
     _ = [kapps_controller:start_app(App) ||

@@ -1,6 +1,11 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2016-2019, 2600Hz
 %%% @doc data adapter behaviour
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kzs_publish).
@@ -28,7 +33,7 @@ maybe_publish_docs(Db, Docs, JObjs) ->
 
 -spec publish_docs(kz_term:ne_binary(), kz_json:objects(), kz_json:objects()) -> 'ok'.
 publish_docs(Db, Docs, JObjs) ->
-    _ = kz_util:spawn(
+    _ = kz_process:spawn(
           fun() ->
                   [publish_doc(Db, Doc, JObj)
                    || {Doc, JObj} <- lists:zip(Docs, JObjs),
@@ -46,7 +51,7 @@ maybe_publish_doc(Db, Doc, JObj) ->
     _PidOrNot = kz_datamgr:change_notice()
         andalso should_publish_db_changes(Db)
         andalso should_publish_doc(Doc)
-        andalso kz_util:spawn(fun publish_doc/3, [Db, Doc, JObj]),
+        andalso kz_process:spawn(fun publish_doc/3, [Db, Doc, JObj]),
     lager:debug("maybe publishing db/doc change: ~p", [_PidOrNot]).
 -endif.
 
@@ -56,7 +61,7 @@ publish_db(_, _) -> 'true'.
 -else.
 publish_db(DbName, Action) ->
     SupressChange = kz_datamgr:change_notice(),
-    _ = kz_util:spawn(fun() -> do_publish_db(SupressChange, DbName, Action) end),
+    _ = kz_process:spawn(fun() -> do_publish_db(SupressChange, DbName, Action) end),
     'true'.
 
 -spec should_publish_doc(kz_json:object()) -> boolean().

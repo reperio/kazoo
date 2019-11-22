@@ -3,6 +3,11 @@
 %%% @doc
 %%% @author Roman Galeev
 %%% @author Hesaam Farhang
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(crossbar_view).
@@ -218,7 +223,7 @@ build_load_params(Context, View, Options) ->
     catch
         ?STACKTRACE(_E, _T, ST)
         lager:debug("exception occurred during building view options for ~s", [View]),
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         cb_context:add_system_error('datastore_fault', Context)
         end.
 
@@ -261,7 +266,7 @@ build_load_range_params(Context, View, Options) ->
     catch
         ?STACKTRACE(_E, _T, ST)
         lager:debug("exception occurred during building range view options for ~s", [View]),
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         cb_context:add_system_error('datastore_fault', Context)
         end.
 
@@ -808,7 +813,7 @@ get_results(#{databases := [Db|RestDbs]=Dbs
             catch
                 ?STACKTRACE(_E, _T, ST)
                 lager:debug("exception occurred during querying db ~s for view ~s : ~p:~p", [Db, View, _E, _T]),
-                kz_util:log_stacktrace(ST),
+                kz_log:log_stacktrace(ST),
                 LoadMap#{context => cb_context:add_system_error('datastore_fault', Context)}
                 end
     end.
@@ -834,10 +839,7 @@ handle_query_result(#{last_key := LastKey
         FilteredJObjs when is_list(FilteredJObjs) ->
             FilteredLength = length(FilteredJObjs),
             lager:debug("db_returned: ~b passed_filter: ~p next_start_key: ~p", [ResultsLength, FilteredLength, NewLastKey]),
-            handle_query_result(LoadMap, Dbs, FilteredJObjs, FilteredLength, NewLastKey);
-        FilteredJObj ->
-            lager:debug("db_returned: ~b passed_filter: ~p next_start_key: ~p", [ResultsLength, 1, NewLastKey]),
-            handle_query_result(LoadMap, Dbs, FilteredJObj, 1, NewLastKey)
+            handle_query_result(LoadMap, Dbs, FilteredJObjs, FilteredLength, NewLastKey)
     end.
 
 -spec handle_query_result(load_params(), kz_term:ne_binaries(), kz_json:object() | kz_json:objects(), non_neg_integer(), last_key()) -> load_params().

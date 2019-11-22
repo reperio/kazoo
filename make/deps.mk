@@ -1,22 +1,18 @@
 ## 3rd party dependencies
-DEPS = amqp_client \
-	apns \
+DEPS ?= amqp_client \
+	amqp_dist \
 	couchbeam \
 	cowboy \
 	eflame \
+	eiconv \
 	erlang_localtime \
 	erlazure \
 	erlcloud \
 	erlsom \
 	erlydtl \
-	escalus \
-	exml \
-	fcm \
-	folsom \
 	gen_smtp \
 	getopt \
 	gproc \
-	hep \
 	inet_cidr \
 	jesse \
 	jiffy \
@@ -28,18 +24,18 @@ DEPS = amqp_client \
 	plists \
 	poolboy \
 	proper \
+	ra \
 	ranch \
 	recon \
 	reloader \
 	syslog \
-	trie \
 	yamerl \
 	zucchini
 
 # BUILD_DEPS = parse_trans
 IGNORE_DEPS = hamcrest
 
-ifeq ($(USER),travis)
+ifeq ($(CIRCLECI),true)
     DEPS += coveralls
     dep_coveralls = git https://github.com/markusn/coveralls-erl 1.4.0
     DEPS += proper
@@ -47,7 +43,7 @@ endif
 
 dep_amqp_client = git https://github.com/2600hz/erlang-amqp_client.git v3.7.14
 
-dep_apns = git https://github.com/2600hz/erlang-apns4erl.git aba1fa96a4abbbb2c1628ad5d604f482aad4d12f # latest commit SHA to 2600hz branch
+dep_amqp_dist = git https://github.com/2600hz/erlang-amqp_dist.git faa54e490f3083a323d3a95c53bb9493644478dd
 
 # dep_certifi = hex 0.3.0
 # Used by hackney, let it pull in certifi
@@ -55,7 +51,9 @@ dep_apns = git https://github.com/2600hz/erlang-apns4erl.git aba1fa96a4abbbb2c16
 # dep_chatterbox = hex 0.7.0
 # used by apns4erl
 
-dep_couchbeam = git https://github.com/2600hz/erlang-couchbeam 28fce6c340de83f4792d45224c29ec729b8e264d # latest commit SHA to 2600hz branch
+dep_couchbeam = git https://github.com/2600hz/erlang-couchbeam 86d946646ad9dee1dee305b15d5c59e4c8e60cc2 # latest commit SHA to 2600hz-kazoo5 branch
+# adds _show querying
+
 ### https://github.com/benoitc/couchbeam/pull/158 - _list functions fix
 ### https://github.com/benoitc/couchbeam/pull/164 - allow 202 in put_attachment
 ### https://github.com/benoitc/couchbeam/pull/165 - fetch couchdb config
@@ -67,7 +65,7 @@ dep_cowboy = git https://github.com/2600hz/erlang-cowboy 2.6.3
 dep_eflame = git https://github.com/slfritchie/eflame 7b0bb1a7e8c8482a59421a3a50ae69d49af59d52
 # used by kz_tracers
 
-# dep_eiconv = git https://github.com/zotonic/eiconv
+dep_eiconv = git https://github.com/zotonic/eiconv 1.0.0
 # used by gen_smtp
 
 dep_erlang_localtime = git https://github.com/2600hz/erlang-localtime
@@ -78,19 +76,6 @@ dep_erlazure = git https://github.com/2600hz/erlang-erlazure.git 88e0417251983ab
 
 dep_erlcloud = git https://github.com/2600hz/erlang-erlcloud 3.2.7
 # used by kazoo_attachments and a crossbar test (cb_storage_tests)
-
-dep_escalus = git https://github.com/2600hz/erlang-escalus 0de0463c345a1ade6fccfb9aadad719b58a1cef5
-# used by fax cloud printer i think?
-
-dep_exml = git https://github.com/2600hz/erlang-exml 2.2.1
-# used by fax cloud printer
-
-dep_fcm = git https://github.com/2600hz/erlang-fcm.git b2f68a4c6f0f59475597a35e2dc9be13d9ba2910
-# Firebase cloud messaging
-# used by pusher
-
-dep_folsom = git https://github.com/2600hz/erlang-folsom 0.8.2
-# used by hangups
 
 ## Code reloaders for dev VMs, uncomment if desired
 # dep_fs_event = git https://github.com/jamhed/fs_event 783400da08c2b55c295dbec81df0d926960c0346
@@ -105,10 +90,6 @@ dep_getopt = git https://github.com/2600hz/erlang-getopt v1.0.1
 
 dep_gproc = git https://github.com/2600hz/erlang-gproc 0.8.0
 # used by kazoo_events, webseq, konami, acdc, ecallmgr, callflow
-
-dep_hep = git https://github.com/2600hz/hep-erlang a8f62dbc756fd3d4be1e2f0a6cec47a23f6cd18a
-# Homer encapsulation protocol
-# merged lazedo/hep changes
 
 # dep_horse = git https://github.com/ninenines/horse 4dc81d47c3116b38af673481402f34ce03f8936b
 # used by kazoo_stdlib in some test modules
@@ -150,6 +131,8 @@ dep_proper = git https://github.com/2600hz/erlang-proper v1.3
 
 dep_recon = git https://github.com/2600hz/erlang-recon 2.4.0
 
+dep_ra = git https://github.com/2600hz/erlang-ra.git v1.0.0
+
 dep_ranch = git https://github.com/2600hz/erlang-ranch 1.7.1
 
 dep_reloader = git https://github.com/2600hz/erlang-reloader de1e6c74204b61ccf3b3652f05c6a7dec9e8257d
@@ -158,9 +141,6 @@ dep_reloader = git https://github.com/2600hz/erlang-reloader de1e6c74204b61ccf3b
 # commit adds makefile for compile/clean
 
 dep_syslog = git https://github.com/2600hz/erlang-syslog bbad537a1cb5e4f37e672d2e2665659e850662d0
-
-dep_trie = git https://github.com/2600hz/erlang-trie v1.7.5
-# used by hotornot
 
 # dep_wsock = git https://github.com/madtrick/wsock 1.1.7
 # appears unused

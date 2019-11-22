@@ -2,6 +2,11 @@
 %%% @copyright (C) 2016-2019, 2600Hz
 %%% @doc Schedule one-off tasks only once per cluster
 %%% @author Pierre Fenoll
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_tasks_scheduler).
@@ -152,7 +157,7 @@ worker_pause() ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec worker_maybe_send_update(kz_tasks:id(), pos_integer(), pos_integer()) -> 'ok'.
+-spec worker_maybe_send_update(kz_tasks:id(), non_neg_integer(), non_neg_integer()) -> 'ok'.
 worker_maybe_send_update(TaskId, Succeeded, Failed) ->
     gen_server:cast(?SERVER, {'worker_update_processed', TaskId, Succeeded, Failed}).
 
@@ -184,7 +189,7 @@ try_maybe_strip_columns(Columns, CSVPath) ->
     catch
         ?STACKTRACE(_E, _R, ST)
         lager:warning("stripping empty columns failed: ~p:~p", [_E, _R]),
-        kz_util:log_stacktrace(ST)
+        kz_log:log_stacktrace(ST)
         end.
 
 maybe_strip_columns(Columns, CSVPath) ->
@@ -370,7 +375,7 @@ handle_call({'stop_task', TaskId}, _From, State) ->
                     {'ok', JObj} = update_task(Task1),
                     State1 = remove_task(TaskId, State),
                     State2 = remove_last_worker_update(TaskId, State1),
-                    kz_util:spawn(fun try_to_salvage_output/1, [TaskId]),
+                    kz_process:spawn(fun try_to_salvage_output/1, [TaskId]),
                     ?REPLY_FOUND(State2, JObj)
             end
     end;
@@ -488,7 +493,7 @@ handle_info({'EXIT', Pid, _Reason}, State) ->
     {'ok', _JObj} = update_task(Task1),
     State1 = remove_task(TaskId, State),
     State2 = remove_last_worker_update(TaskId, State1),
-    kz_util:spawn(fun try_to_salvage_output/1, [TaskId]),
+    kz_process:spawn(fun try_to_salvage_output/1, [TaskId]),
     {'noreply', State2};
 
 handle_info(_Info, State) ->
@@ -570,7 +575,7 @@ handle_call_start_task(Task=#{id := TaskId
                  },
     lager:debug("extra args: ~p", [ExtraArgs]),
     %% Task needs to run where App is started.
-    try kz_util:spawn_link(fun Worker:start/3, [TaskId, API, ExtraArgs]) of
+    try kz_process:spawn_link(fun Worker:start/3, [TaskId, API, ExtraArgs]) of
         Pid ->
             Task1 = Task#{started => kz_time:now_s()
                          ,worker_pid => Pid

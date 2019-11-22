@@ -2,6 +2,11 @@
 %%% @copyright (C) 2015-2019, 2600Hz
 %%% @doc
 %%% @author Hesaam Farhang
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(ananke_tasks_sup).
@@ -62,7 +67,7 @@ delete_child(Id) ->
 
 -spec delete_child(any(), non_neg_integer()) -> 'ok'.
 delete_child(Id, Timeout) ->
-    _ = kz_util:spawn(delete_child_after_timeout(Id, Timeout)),
+    _ = kz_process:spawn(delete_child_after_timeout(Id, Timeout)),
     'ok'.
 
 %%==============================================================================

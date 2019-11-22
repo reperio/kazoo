@@ -18,6 +18,11 @@
 %%% Progressively load rates instead of seeding from the database.
 %%%
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(hon_trie_lru).
@@ -81,7 +86,7 @@ cache_rates(RatedeckId, Rates) ->
 
 -spec init([kz_term:ne_binary() | pos_integer()]) -> {'ok', state()}.
 init([RatedeckDb, ExpiresS]) ->
-    kz_util:put_callid(hon_trie:trie_proc_name(RatedeckDb)),
+    kz_log:put_callid(hon_trie:trie_proc_name(RatedeckDb)),
     lager:debug("starting LRU for ~s", [RatedeckDb]),
     {'ok', #state{trie=trie:new()
                  ,ratedeck_db=RatedeckDb

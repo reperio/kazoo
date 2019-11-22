@@ -5,6 +5,11 @@
 %%%
 %%%
 %%% @author James Aimonetti <james@2600hz.org>
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(notify_fax_inbound_error_to_email).
@@ -30,7 +35,7 @@ init() ->
 -spec handle_req(kz_json:object(), kz_term:proplist()) -> any().
 handle_req(JObj, _Props) ->
     'true' = kapi_notifications:fax_inbound_error_v(JObj),
-    _ = kz_util:put_callid(JObj),
+    _ = kz_log:put_callid(JObj),
 
     lager:debug("new fax error left, sending to email if enabled"),
 
@@ -75,7 +80,7 @@ send(JObj, AcctObj) ->
         ?STACKTRACE(C, R, ST)
         Msg = io_lib:format("failed: ~s:~p", [C, R]),
         lager:debug(Msg),
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         {'error', Msg}
         end.
 

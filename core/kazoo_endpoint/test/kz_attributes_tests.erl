@@ -1,12 +1,16 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2014-2018, 2600Hz
+%%% @copyright (C) 2014-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_attributes_tests).
 
 -include_lib("eunit/include/eunit.hrl").
--include_lib("kazoo_stdlib/include/kz_types.hrl").
+-include_lib("kazoo_stdlib/include/kz_log.hrl").
 -include_lib("kazoo_fixturedb/include/kz_fixturedb.hrl").
 
 -define(NEW_CF_FLAGS, [fun(C) -> kapps_call:set_account_id(?FIXTURE_RESELLER_ACCOUNT_ID, C) end
@@ -24,7 +28,7 @@
                       ]).
 
 kz_attributes_test_() ->
-    {setup
+    {'setup'
     ,fun setup_db/0
     ,fun terminate_db/1
     ,fun(_ReturnOfSetup) ->
@@ -37,18 +41,18 @@ kz_attributes_test_() ->
 
 setup_db() ->
     ?LOG_DEBUG(":: Starting Kazoo FixtureDB"),
-    {ok, _} = application:ensure_all_started(kazoo_config),
+    {'ok', _} = application:ensure_all_started('kazoo_config'),
     kazoo_fixturedb:start().
 
 terminate_db(Pid) ->
-    _DataLink = erlang:exit(Pid, normal),
-    Ref = monitor(process, Pid),
+    _DataLink = erlang:exit(Pid, 'normal'),
+    Ref = monitor('process', Pid),
     receive
-        {'DOWN', Ref, process, Pid, _Reason} ->
-            _KConfig = application:stop(kazoo_config),
+        {'DOWN', Ref, 'process', Pid, _Reason} ->
+            _KConfig = application:stop('kazoo_config'),
             ?LOG_DEBUG(":: Stopped Kazoo FixtureDB, data_link: ~p kazoo_config: ~p", [_DataLink, _KConfig])
     after 1000 ->
-            _KConfig = application:stop(kazoo_config),
+            _KConfig = application:stop('kazoo_config'),
             ?LOG_DEBUG(":: Stopped Kazoo FixtureDB, data_link: timeout kazoo_config: ~p", [_KConfig])
     end.
 

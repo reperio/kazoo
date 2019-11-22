@@ -3,6 +3,10 @@
 %%% @doc Simple cache server.
 %%% @author James Aimonetti
 %%% @author Karl Anderson
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_cache_ets).
@@ -223,12 +227,12 @@ handle_cast(_Msg, Name) ->
 handle_info({'timeout', _Ref, {?MONITOR_EXPIRE_MSG, MonitorRef}}
            ,Name
            ) ->
-    _ = kz_util:spawn(fun kz_cache_callbacks:timed_out/2
-                     ,[monitor_tab(Name), MonitorRef]
-                     ),
+    _ = kz_process:spawn(fun kz_cache_callbacks:timed_out/2
+                        ,[monitor_tab(Name), MonitorRef]
+                        ),
     {'noreply', Name};
 handle_info({'EXIT', Pid, _Reason}, Name) ->
-    kz_util:spawn(fun() -> handle_dead_pid(Name, Pid) end),
+    kz_process:spawn(fun() -> handle_dead_pid(Name, Pid) end),
     {'noreply', Name};
 handle_info(_Info, Name) ->
     ?LOG_INFO("unhandled msg: ~p", [_Info]),

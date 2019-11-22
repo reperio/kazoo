@@ -2,6 +2,10 @@
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc Receive call events for various scenarios
 %%% @author James Aimonetti
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kzt_receiver).
@@ -234,7 +238,7 @@ play_loop(Call, PlayMe, Terminators, N) ->
 -spec record_loop(kapps_call:call(), pos_integer()) ->
                          {'ok', kapps_call:call()} |
                          {'empty', kapps_call:call()} |
-                         {'error', kapps_call:call()}.
+                         {'error', atom(), kapps_call:call()}.
 record_loop(Call, SilenceTimeout) ->
     case wait_for_call_event(Call, <<"RECORD_STOP">>) of
         {'ok', EvtJObj} ->

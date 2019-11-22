@@ -2,6 +2,11 @@
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(doodle_exe).
@@ -160,7 +165,7 @@ callid_update(CallId, Call) ->
 -spec callid(kapps_call:call() | pid()) -> kz_term:ne_binary().
 callid(Srv) when is_pid(Srv) ->
     CallId = gen_server:call(Srv, 'callid', ?MILLISECONDS_IN_SECOND),
-    kz_util:put_callid(CallId),
+    kz_log:put_callid(CallId),
     CallId;
 callid(Call) ->
     Srv = kapps_call:kvs_fetch('consumer_pid', Call),
@@ -246,7 +251,7 @@ send_amqp(Call, API, PubFun) when is_function(PubFun, 1) ->
 init([Call]) ->
     process_flag('trap_exit', 'true'),
     CallId = kapps_call:call_id(Call),
-    kz_util:put_callid(CallId),
+    kz_log:put_callid(CallId),
     gen_listener:cast(self(), 'initialize'),
     {'ok', #state{call=Call}}.
 
@@ -331,7 +336,7 @@ handle_cast({'continue', Key}, #state{flow=Flow
             end
     end;
 handle_cast('stop', #state{call=Call}=State) ->
-    _ = kz_util:spawn(fun doodle_util:save_sms/1, [kapps_call:clear_helpers(Call)]),
+    _ = kz_process:spawn(fun doodle_util:save_sms/1, [kapps_call:clear_helpers(Call)]),
     {'stop', 'normal', State};
 handle_cast('transfer', State) ->
     {'stop', {'shutdown', 'transfer'}, State};
@@ -341,7 +346,7 @@ handle_cast({'branch', NewFlow}, State) ->
     lager:info("textflow has been branched"),
     {'noreply', launch_cf_module(State#state{flow=NewFlow})};
 handle_cast({'callid_update', NewCallId}, #state{call=Call}=State) ->
-    kz_util:put_callid(NewCallId),
+    kz_log:put_callid(NewCallId),
     PrevCallId = kapps_call:call_id_direct(Call),
     lager:info("updating callid to ~s (from ~s), catch you on the flip side", [NewCallId, PrevCallId]),
     lager:info("removing call event bindings for ~s", [PrevCallId]),
@@ -605,20 +610,20 @@ cf_module_skip(CFModule, _Call) ->
                              {kz_term:pid_ref(), CFModule}.
 spawn_cf_module(CFModule, Data, Call) ->
     AMQPConsumer = kz_amqp_channel:consumer_pid(),
-    {kz_util:spawn_monitor(fun cf_module_task/4, [CFModule, Data, Call, AMQPConsumer])
+    {kz_process:spawn_monitor(fun cf_module_task/4, [CFModule, Data, Call, AMQPConsumer])
     ,CFModule
     }.
 
 -spec cf_module_task(atom(), list(), kapps_call:call(), pid()) -> any().
 cf_module_task(CFModule, Data, Call, AMQPConsumer) ->
     _ = kz_amqp_channel:consumer_pid(AMQPConsumer),
-    kz_util:put_callid(kapps_call:call_id_direct(Call)),
+    kz_log:put_callid(kapps_call:call_id_direct(Call)),
     try CFModule:handle(Data, Call) of
         _ -> 'ok'
     catch
         ?STACKTRACE(_E, R, ST)
         lager:info("action ~s died unexpectedly (~s): ~p", [CFModule, _E, R]),
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         throw(R)
         end.
 
@@ -648,7 +653,7 @@ log_call_information(Call) ->
     lager:info("from ~s", [kapps_call:from(Call)]),
     lager:info("CID ~s ~s", [kapps_call:caller_id_name(Call), kapps_call:caller_id_number(Call)]),
     case kapps_call:inception(Call) of
-        'undefined' -> lager:info("inception on-net: using attributes for an internal call", []);
+        'undefined' -> lager:info("inception onnet: using attributes for an internal call", []);
         _Else -> lager:info("inception ~s: using attributes for an external call", [_Else])
     end,
     lager:info("authorizing id ~s", [kapps_call:authorizing_id(Call)]).

@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kzd_accounts).
@@ -1585,7 +1589,7 @@ validate_account_schema(ParentId, AccountId, Doc, ValidationErrors, SchemaJObj) 
     catch
         ?STACKTRACE('error', 'function_clause', ST)
         lager:error("function clause failure"),
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         throw({'system_error', <<"validation failed to run on the server">>})
         end.
 

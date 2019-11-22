@@ -2,6 +2,11 @@
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc
 %%% @author Karl Anderson <karl@2600hz.org>
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(notify_util).
@@ -55,7 +60,7 @@ send_email(From, To, Email) ->
                              ,{'auth', Auth}
                              ]
                             ,fun(X) ->
-                                     kz_util:put_callid(ReqId),
+                                     kz_log:put_callid(ReqId),
                                      lager:debug("email relay responded: ~p, send to ~p", [X, Self]),
                                      Self ! {'relay_response', X}
                              end),
@@ -413,7 +418,7 @@ category_to_file(_) ->
 qr_code_image('undefined') -> 'undefined';
 qr_code_image(Text) ->
     lager:debug("create qr code for ~s", [Text]),
-    CHL = kz_util:uri_encode(Text),
+    CHL = kz_http_util:urlencode(Text),
     Url = <<"https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=", CHL/binary, "&choe=UTF-8">>,
 
     case kz_http:get(kz_term:to_list(Url)) of

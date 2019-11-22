@@ -2,6 +2,10 @@
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc
 %%% @author Peter Defebvre
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(knm_locality).
@@ -34,7 +38,7 @@ fetch(Numbers) when is_list(Numbers)->
 -spec prefix(kz_term:text(), kz_term:text(), kz_term:text()) -> {'ok', kz_json:object()} |
                                                                 {'error', kz_json:object()}.
 prefix(Url, Country, City) ->
-    ReqParam = kz_util:uri_encode(City),
+    ReqParam = kz_http_util:urlencode(City),
     Uri = lists:flatten([Url, "/", Country, "/city?pattern=", ReqParam]),
     case kz_http:get(Uri) of
         {'ok', 200, _Headers, Body} ->
@@ -63,9 +67,8 @@ prefix(Url, Country, City) ->
 fetch_req(Numbers, Url) ->
     ReqBody = kz_json:from_list([{<<"data">>, Numbers}]),
     Uri = <<Url/binary, "/locality/metadata">>,
-    Headers = [{'content_type', "application/json"}
-              ],
-    kz_http:post(binary_to_list(Uri), Headers, kz_json:encode(ReqBody)).
+    Headers = [{"content_type", "application/json"}],
+    kz_http:post(Uri, Headers, kz_json:encode(ReqBody)).
 
 -spec handle_resp(kz_http:http_ret()) -> {'ok', kz_json:object()} |
                                          {'error', 'lookup_failed'}.

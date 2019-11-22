@@ -2,6 +2,11 @@
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(pqc_cb_storage).
@@ -13,7 +18,12 @@
         ]).
 
 %% API Shims
--export([create/3, create/4]).
+-export([create/3, create/4
+        ,fetch/2
+        ,update/3
+        ,patch/3
+        ,delete/2
+        ]).
 %%         ,fetch/1
 %%         ]).
 
@@ -49,13 +59,61 @@ create(API, AccountId, ?NE_BINARY=UUID, ValidateSettings) ->
     create(API, AccountId, storage_doc(UUID), ValidateSettings);
 create(API, AccountId, StorageDoc, ValidateSettings) ->
     StorageURL = storage_url(AccountId, ValidateSettings),
-    RequestHeaders = pqc_cb_api:request_headers(API, [{"content-type", "application/json"}]),
+    RequestHeaders = pqc_cb_api:request_headers(API, [{<<"content-type">>, "application/json"}]),
     Expectations = [#expectation{response_codes = [201]}],
     pqc_cb_api:make_request(Expectations
                            ,fun kz_http:put/3
                            ,StorageURL
                            ,RequestHeaders
                            ,kz_json:encode(pqc_cb_api:create_envelope(StorageDoc))
+                           ).
+
+-spec fetch(pqc_cb_api:state(), kz_term:api_ne_binary()) -> pqc_cb_api:response().
+fetch(API, AccountId) ->
+    StorageURL = storage_url(AccountId),
+    RequestHeaders = pqc_cb_api:request_headers(API),
+    Expectations = [#expectation{response_codes = [200]}],
+    pqc_cb_api:make_request(Expectations
+                           ,fun kz_http:get/2
+                           ,StorageURL
+                           ,RequestHeaders
+                           ).
+
+-spec delete(pqc_cb_api:state(), kz_term:api_ne_binary()) -> pqc_cb_api:response().
+delete(API, AccountId) ->
+    StorageURL = storage_url(AccountId),
+    RequestHeaders = pqc_cb_api:request_headers(API),
+    Expectations = [#expectation{response_codes = [200]}],
+    pqc_cb_api:make_request(Expectations
+                           ,fun kz_http:delete/2
+                           ,StorageURL
+                           ,RequestHeaders
+                           ).
+
+-spec update(pqc_cb_api:state(), kz_term:api_ne_binary(), kzd_storage:doc()) -> pqc_cb_api:response().
+update(API, AccountId, StorageDoc) ->
+    StorageURL = storage_url(AccountId),
+    RequestHeaders = pqc_cb_api:request_headers(API, [{<<"content-type">>, "application/json"}]),
+    RequestEnvelope = pqc_cb_api:create_envelope(StorageDoc),
+    Expectations = [#expectation{response_codes = [200]}],
+    pqc_cb_api:make_request(Expectations
+                           ,fun kz_http:post/3
+                           ,StorageURL
+                           ,RequestHeaders
+                           ,kz_json:encode(RequestEnvelope)
+                           ).
+
+-spec patch(pqc_cb_api:state(), kz_term:api_ne_binary(), kz_json:object()) -> pqc_cb_api:response().
+patch(API, AccountId, PatchDoc) ->
+    StorageURL = storage_url(AccountId),
+    RequestHeaders = pqc_cb_api:request_headers(API, [{<<"content-type">>, "application/json"}]),
+    RequestEnvelope = pqc_cb_api:create_envelope(PatchDoc),
+    Expectations = [#expectation{response_codes = [200]}],
+    pqc_cb_api:make_request(Expectations
+                           ,fun kz_http:patch/3
+                           ,StorageURL
+                           ,RequestHeaders
+                           ,kz_json:encode(RequestEnvelope)
                            ).
 
 storage_url('undefined') ->
@@ -76,7 +134,7 @@ initial_state() ->
 
 init_system() ->
     TestId = kz_binary:rand_hex(5),
-    kz_util:put_callid(TestId),
+    kz_log:put_callid(TestId),
 
     _ = kz_data_tracing:clear_all_traces(),
     _ = [kapps_controller:start_app(App) ||
@@ -200,7 +258,7 @@ test_vm_message(API, AccountId) ->
     CreatedVM = kz_json:decode(CreateVM),
     MediaId = kz_json:get_ne_binary_value([<<"data">>, <<"media_id">>], CreatedVM),
 
-    {'ok', GetVM} = pqc_httpd:wait_for_req([<<?MODULE_STRING>>, AccountId, MediaId]),
+    GetVM = pqc_httpd:wait_for_req([<<?MODULE_STRING>>, AccountId, MediaId]),
     ?INFO("get VM: ~p", [GetVM]),
     {[RequestBody], [_AttachmentName]} = kz_json:get_values(GetVM),
 

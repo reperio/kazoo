@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_auth_keys).
@@ -125,7 +129,7 @@ from_token_fold(Token, [Fun | Routines]) ->
     catch
         ?STACKTRACE(_E, _R, ST)
         lager:debug("error running public key routine ~p : ~p , ~p", [Fun, _E, _R]),
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         from_token_fold(Token, Routines)
         end.
 
@@ -142,6 +146,8 @@ maybe_get_key(#{auth_provider := #{public_key_jwt_field := Field
 maybe_get_key(#{auth_provider := #{name := <<"kazoo">>}
                ,header := #{<<"kid">> := KeyId}
                } = Token) ->
+    Token#{key_id => KeyId};
+maybe_get_key(#{header := #{<<"kid">> := KeyId}} = Token) ->
     Token#{key_id => KeyId};
 maybe_get_key(#{}=Token) -> Token.
 
@@ -178,12 +184,31 @@ maybe_discovery(#{key_id := KeyId
                  ,auth_provider := #{name := <<"kazoo">>}
                  }=Token) ->
     Token#{key => public_key(KeyId)};
-maybe_discovery(#{}=Token) -> Token.
+maybe_discovery(#{payload := #{<<"iss">> := <<"http", _/binary>> = Issuer}}=Token) ->
+    DiscoveryUrl = <<Issuer/binary, "/.well-known/openid-configuration">>,
+    case kz_auth_util:get_json_from_url(DiscoveryUrl) of
+        {'ok', JObj} ->
+            lager:debug_unsafe("obtained discovery document : ~s", [kz_json:encode(JObj,[pretty])]),
+            Token#{discovery => JObj};
+        _ -> Token
+    end;
+maybe_discovery(#{}=Token) ->
+    Token.
 
 -spec maybe_discovery_url(map()) -> map().
 maybe_discovery_url(#{discovery := JObj
                      ,auth_provider := #{public_key_discovery_field := Field}
                      }=Token) ->
+    lager:debug("verifying that ~s is in discovery document", [Field]),
+    case kz_json:get_value(Field, JObj) of
+        'undefined' -> Token;
+        KeysUrl ->
+            lager:debug("keys url ~s found in discovery document", [KeysUrl]),
+            Token#{discovery_url => KeysUrl}
+    end;
+maybe_discovery_url(#{discovery := JObj
+                     }=Token) ->
+    Field = <<"jwks_uri">>,
     lager:debug("verifying that ~s is in discovery document", [Field]),
     case kz_json:get_value(Field, JObj) of
         'undefined' -> Token;
@@ -232,6 +257,17 @@ fetch_key(#{key_id := KeyId
                               ,public_key_method := <<"lookup">>
                               }
            }= Token) ->
+    lager:debug("looking up public key sets in '~s' field in downloaded json : ~p", [Field, KeyDoc]),
+    case kz_json:find_value(Field, KeyId, kz_json:get_value(<<"keys">>, KeyDoc)) of
+        'undefined' ->
+            lager:debug("public key not found from '~s' field in downloaded json : ~p", [Field, KeyDoc]),
+            Token;
+        JObj -> Token#{key_value => kz_json:to_map(JObj)}
+    end;
+fetch_key(#{key_id := KeyId
+           ,key_doc := KeyDoc
+           }= Token) ->
+    Field = <<"kid">>,
     lager:debug("looking up public key sets in '~s' field in downloaded json : ~p", [Field, KeyDoc]),
     case kz_json:find_value(Field, KeyId, kz_json:get_value(<<"keys">>, KeyDoc)) of
         'undefined' ->

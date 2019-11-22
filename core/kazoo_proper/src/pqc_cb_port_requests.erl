@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(pqc_cb_port_requests).
@@ -93,7 +97,7 @@ init_system() ->
 -spec initial_state() -> state().
 initial_state() ->
     TestId = kz_binary:rand_hex(16),
-    kz_util:put_callid(TestId),
+    kz_log:put_callid(TestId),
 
     API = pqc_cb_api:authenticate(),
     State = #{master => #{model => pqc_kazoo_model:new(API)
@@ -110,7 +114,7 @@ initial_state() ->
     catch
         ?STACKTRACE(_R, _T, ST)
         ?debugFmt("exception ~p:~p", [_R, _T]),
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         cleanup(State),
         throw('failed')
         end.

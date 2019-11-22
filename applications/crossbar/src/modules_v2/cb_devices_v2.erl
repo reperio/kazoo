@@ -6,6 +6,11 @@
 %%%
 %%% @author Karl Anderson
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(cb_devices_v2).
@@ -827,7 +832,7 @@ handle_device_update(DeviceId, Context) ->
     case cb_context:resp_status(Context) =:= 'success' of
         'false' -> Context;
         'true' ->
-            _ = kz_util:spawn(fun crossbar_util:flush_registration/1, [Context]),
+            _ = kz_process:spawn(fun crossbar_util:flush_registration/1, [Context]),
             _ = crossbar_util:maybe_refresh_fs_xml('device', Context),
             Routines = [fun maybe_add_mdn/2
                        ,fun maybe_remove_previous_mdn/2
@@ -883,7 +888,7 @@ aggregate_device(Context) ->
 %%------------------------------------------------------------------------------
 -spec maybe_update_provision(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 maybe_update_provision(_DeviceId, Context) ->
-    _ = kz_util:spawn(fun update_provision/1, [Context]),
+    _ = kz_process:spawn(fun update_provision/1, [Context]),
     Context.
 
 -spec update_provision(cb_context:context()) -> 'ok'.
@@ -985,7 +990,7 @@ handle_device_removal(DeviceId, Context) ->
     case cb_context:resp_status(Context) =:= 'success' of
         'false' -> Context;
         'true' ->
-            _ = kz_util:spawn(fun crossbar_util:flush_registration/1, [Context]),
+            _ = kz_process:spawn(fun crossbar_util:flush_registration/1, [Context]),
             _ = crossbar_util:refresh_fs_xml(Context),
             Routines = [fun maybe_remove_aggregate/2
                        ,fun maybe_delete_provision/2
@@ -1030,7 +1035,7 @@ maybe_delete_provision(_DeviceId, Context) ->
     case kz_term:is_not_empty(MacAddress) of
         'false' -> Context;
         'true' ->
-            _ = kz_util:spawn(fun delete_provision/1, [Context]),
+            _ = kz_process:spawn(fun delete_provision/1, [Context]),
             Context
     end.
 

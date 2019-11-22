@@ -2,6 +2,11 @@
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc Look up IP for authorization/replaying of route_req
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(reg_route_req).
@@ -19,7 +24,7 @@ init() -> 'ok'.
 -spec handle_route_req(kz_json:object(), kz_term:proplist()) -> any().
 handle_route_req(JObj, _Props) ->
     'true' = kapi_route:req_v(JObj),
-    kz_util:put_callid(JObj),
+    kz_log:put_callid(JObj),
 
     CCVs = kz_json:get_value(<<"Custom-Channel-Vars">>, JObj, kz_json:new()),
     case kz_json:get_ne_value(<<"Account-ID">>, CCVs) of

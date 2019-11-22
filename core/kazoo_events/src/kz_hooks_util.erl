@@ -2,6 +2,10 @@
 %%% @copyright (C) 2017-2019, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_hooks_util).
@@ -235,7 +239,7 @@ handle_call_event(JObj, Props) ->
     HookEvent = kz_api:event_name(JObj),
     AccountId = kz_call_event:account_id(JObj),
     CallId = kz_call_event:call_id(JObj),
-    kz_util:put_callid(CallId),
+    kz_log:put_callid(CallId),
 
     RoutingKey = binding_key(AccountId, HookEvent),
     _ = kazoo_bindings:map(RoutingKey, [JObj]),
@@ -255,6 +259,18 @@ handle_call_event(JObj, 'undefined', <<"CHANNEL_CREATE">>, CallId, RR) ->
                                   ,<<"Account-ID">>
                                   ], AccountId, JObj),
             handle_call_event(J, AccountId, <<"CHANNEL_CREATE">>, CallId, RR)
+    end;
+handle_call_event(JObj, 'undefined', <<"CHANNEL_DESTROY">>, CallId, RR) ->
+    lager:debug("event 'channel_destroy' had no account id"),
+    case lookup_account_id(JObj) of
+        {'error', _R} ->
+            lager:debug("failed to determine account id for 'channel_destroy'", []);
+        {'ok', AccountId} ->
+            lager:debug("determined account id for 'channel_destroy' is ~s", [AccountId]),
+            J = kz_json:set_value([<<"Custom-Channel-Vars">>
+                                  ,<<"Account-ID">>
+                                  ], AccountId, JObj),
+            handle_call_event(J, AccountId, <<"CHANNEL_DESTROY">>, CallId, RR)
     end;
 handle_call_event(JObj, AccountId, HookEvent, _CallId, 'false') ->
     Evt = ?HOOK_EVT(AccountId, HookEvent, JObj),

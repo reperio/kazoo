@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(ecallmgr_app).
@@ -31,20 +35,30 @@ start(_StartType, _StartArgs) ->
 -spec request(kz_nodes:request_acc()) -> kz_nodes:request_acc().
 request(Acc) ->
     Servers = [{kz_term:to_binary(Server)
-               ,kz_json:from_list(
-                  [{<<"Startup">>, Started}
-                  ,{<<"Instance-UUID">>, ecallmgr_fs_node:instance_uuid(Server)}
-                  ,{<<"Interfaces">>, ecallmgr_fs_node:interfaces(Server)}
-                  ])
+               ,node_info(Server, Started)
                }
                || {Server, Started} <- ecallmgr_fs_nodes:connected('true')
               ],
-    [{'media_servers', Servers}
+    [{'media_servers', props:filter_undefined(Servers)}
     ,{'channels', ecallmgr_fs_channels:count()}
     ,{'conferences', ecallmgr_fs_conferences:count()}
     ,{'registrations', ecallmgr_registrar:count()}
      | Acc
     ].
+
+-spec node_info(atom(), kz_time:gregorian_seconds()) -> kz_term:api_object().
+node_info(Server, Started) ->
+    try
+        kz_json:from_list(
+          [{<<"Startup">>, Started}
+          ,{<<"Instance-UUID">>, ecallmgr_fs_node:instance_uuid(Server)}
+          ,{<<"Interfaces">>, ecallmgr_fs_node:interfaces(Server)}
+          ])
+    catch
+        _E:_R:_ST -> 'undefined'
+    end.
+
+
 
 %% @doc Implement the application stop behaviour.
 -spec stop(any()) -> any().

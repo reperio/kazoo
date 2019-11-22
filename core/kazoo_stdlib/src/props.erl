@@ -5,6 +5,10 @@
 %%%
 %%% @author James Aimonetti
 %%% @author Karl Anderson
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(props).
@@ -18,7 +22,7 @@
         ,get_ne_binary_value/2, get_ne_binary_value/3
         ,get_is_true/2, get_is_true/3, is_true/2, is_true/3
         ,get_is_false/2, get_is_false/3, is_false/2, is_false/3
-        ,get_keys/1
+        ,get_keys/1, get_values/1
         ,get_first_defined/2, get_first_defined/3
         ,get_all_values/2
         ,get_values_and_keys/1
@@ -254,17 +258,22 @@ get_keys(Props) -> [as_key(KV) || KV <- Props].
 as_key(A) when is_atom(A) -> A;
 as_key({K, _}) -> K.
 
+-spec get_values(kz_term:proplist()) -> [kz_term:proplist_value()].
+get_values(Props) -> [V || {_K, V} <- Props].
+
 -spec get_all_values(kz_term:proplist_key(), kz_term:proplist()) -> [kz_term:proplist_value()].
 get_all_values(Key, Props) -> [V || {K, V} <- Props, K =:= Key].
 
 -spec get_values_and_keys(kz_term:proplist()) -> {[kz_term:proplist_value()], [kz_term:proplist_key()]}.
 get_values_and_keys(Props) ->
-    lists:foldr(fun(Key, {Vs, Ks}) ->
-                        {[get_value(Key, Props)|Vs], [Key|Ks]}
-                end
-               ,{[], []}
-               ,get_keys(Props)
-               ).
+    lists:foldr(fun get_value_and_key/2, {[], []}, Props).
+
+-spec get_value_and_key(kz_term:proplist_property(), {[kz_term:proplist_value()], [kz_term:proplist_key()]}) ->
+                               {[kz_term:proplist_value()], [kz_term:proplist_key()]}.
+get_value_and_key({Key, Value}, {Values, Keys}) ->
+    {[Value | Values], [Key | Keys]};
+get_value_and_key(Key, {Values, Keys}) ->
+    {['true' | Values], [Key | Keys]}.
 
 %%------------------------------------------------------------------------------
 %% @doc Returns the value at Key (or Default) and the (maybe modified) proplist()

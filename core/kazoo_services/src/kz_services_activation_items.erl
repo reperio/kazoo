@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_services_activation_items).
@@ -15,7 +19,7 @@
 
 -include("services.hrl").
 
--opaque items() :: [kz_services_activation_item:item()].
+-type items() :: [kz_services_activation_item:item()].
 -type fold_fun() :: fun((kz_services_activation_item:item(), Acc) -> Acc).
 -export_type([items/0
              ,fold_fun/0
@@ -26,8 +30,7 @@
 %% @end
 %%------------------------------------------------------------------------------
 -spec empty() -> items().
-empty() ->
-    [].
+empty() -> [].
 
 %%------------------------------------------------------------------------------
 %% @doc

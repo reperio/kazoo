@@ -2,6 +2,11 @@
 %%% @copyright (C) 2014-2019, 2600Hz
 %%% @doc
 %%% @author Luis Azedo
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(fax_smtp).
@@ -69,7 +74,7 @@ init(Hostname, SessionCount, Address, Options) ->
                           ,peer_ip = Address
                           ,session_id = kz_binary:rand_hex(16)
                           },
-            kz_util:put_callid(State#state.session_id),
+            kz_log:put_callid(State#state.session_id),
             {'ok', Banner, State};
         'true' ->
             lager:warning("connection limit exceeded ~p", [Address]),
@@ -230,7 +235,7 @@ code_change(_OldVsn, State, _Extra) ->
 
 -spec terminate(any(), state()) ->  {'ok', any(), state()}.
 terminate('normal', State) ->
-    _ = kz_util:spawn(fun handle_message/1, [State]),
+    _ = kz_process:spawn(fun handle_message/1, [State]),
     {'ok', 'normal', State};
 terminate(Reason, State) ->
     lager:debug("terminate ~p", [Reason]),

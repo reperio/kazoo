@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(ecallmgr_fs_event_stream).
@@ -36,8 +40,6 @@
                ,port :: inet:port_number() | 'undefined'
                ,socket :: inet:socket() | 'undefined'
                ,idle_alert = 'infinity' :: timeout()
-               ,channel_mon :: kz_term:api_reference()
-               ,amqp_channel :: kz_term:api_pid()
                ,packet :: event_packet_type()
                }).
 -type state() :: #state{}.
@@ -69,7 +71,7 @@ init([Node, {ProfileName, Bindings}, Packet]) ->
 -spec init(atom(), profile_name(), bindings(), event_packet_type()) -> {'ok', state()} | {'stop', any()}.
 init(Node, ProfileName, Bindings, Packet) ->
     process_flag('trap_exit', 'true'),
-    kz_util:put_callid(list_to_binary([kz_term:to_binary(Node), <<"-eventstream-">>, kz_term:to_binary(ProfileName)])),
+    kz_log:put_callid(list_to_binary([kz_term:to_binary(Node), <<"-eventstream-">>, kz_term:to_binary(ProfileName)])),
     request_event_stream(#state{node=Node
                                ,profile_name=ProfileName
                                ,bindings=Bindings
@@ -104,12 +106,6 @@ handle_cast('connect', #state{ip=IP, port=Port, packet=Packet, idle_alert=Timeou
         {'error', Reason} ->
             {'stop', Reason, State}
     end;
-handle_cast({'kz_amqp_assignment', {'new_channel', _, Channel}}, State) ->
-    lager:debug("channel acquired ~p", [Channel]),
-    _ = kz_amqp_channel:consumer_channel(Channel),
-    {'noreply', State#state{channel_mon = erlang:monitor('process', Channel)
-                           ,amqp_channel=Channel
-                           }};
 handle_cast(_Msg, #state{socket='undefined'}=State) ->
     lager:debug("unhandled cast: ~p", [_Msg]),
     {'noreply', State};
@@ -122,15 +118,11 @@ handle_cast(_Msg, #state{idle_alert=Timeout}=State) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec handle_info(any(), state()) -> kz_types:handle_info_ret_state(state()).
-handle_info({'DOWN', _MonitorRef, _Type, _Object, _Info}, State)->
-    kz_amqp_channel:requisition(),
-    {'noreply', State#state{amqp_channel='undefined'}};
 handle_info({'tcp', Socket, Data}, #state{socket=Socket
                                          ,node=Node
                                          ,idle_alert=Timeout
-                                         ,amqp_channel=Channel
                                          }=State) ->
-    case handle_data(Node, Data, Channel) of
+    case handle_data(Node, Data) of
         {'error', {'not_handled', _EvtData}} ->
             lager:warning("data from event stream socket not processed => ~p", [_EvtData]),
             {'noreply', State, Timeout};
@@ -174,7 +166,12 @@ handle_info(_Msg, #state{socket='undefined'}=State) ->
 handle_info({'kz_amqp_assignment', {'new_channel', _, Channel}}, State) ->
     lager:debug("channel acquired ~p", [Channel]),
     _ = kz_amqp_channel:consumer_channel(Channel),
-    {'noreply', State#state{channel_mon = erlang:monitor('process', Channel), amqp_channel=Channel}};
+    {'noreply', State};
+
+handle_info({'kz_amqp_assignment', 'lost_channel'}, State) ->
+    lager:debug("channel lost"),
+    _ = kz_amqp_channel:remove_consumer_channel(),
+    {'noreply', State};
 
 handle_info(_Msg, #state{idle_alert=Timeout}=State) ->
     lager:debug("unhandled message: ~p", [_Msg]),
@@ -224,10 +221,10 @@ request_event_stream(#state{node=Node}=State) ->
         {'ok', {IP, Port}} ->
             {'ok', IPAddress} = inet_parse:address(IP),
             gen_server:cast(self(), 'connect'),
-            kz_util:put_callid(list_to_binary([kz_term:to_binary(Node)
-                                              ,$-, kz_term:to_binary(IP)
-                                              ,$:, kz_term:to_binary(Port)
-                                              ])),
+            kz_log:put_callid(list_to_binary([kz_term:to_binary(Node)
+                                             ,$-, kz_term:to_binary(IP)
+                                             ,$:, kz_term:to_binary(Port)
+                                             ])),
             {'ok', State#state{ip=IPAddress, port=kz_term:to_integer(Port)}};
         {'EXIT', ExitReason} ->
             {'stop', {'shutdown', ExitReason}};
@@ -292,11 +289,12 @@ idle_alert_timeout() ->
         Else -> Else * ?MILLISECONDS_IN_SECOND
     end.
 
--spec handle_data(atom(), binary(), pid()) -> any().
-handle_data(Node, Data, Channel) ->
+-spec handle_data(atom(), binary()) -> any().
+handle_data(Node, Data) ->
     try binary_to_term(Data) of
         {'event', 'json', JObj} ->
-            kz_util:spawn(fun handle_event/3, [Node, JObj, Channel]);
+            Channel = kz_amqp_channel:consumer_channel(),
+            kz_process:spawn(fun handle_event/3, [Node, JObj, Channel]);
         Else -> {'error', {'not_handled', Else}}
     catch
         'error':'badarg':_ -> {'error', 'decode_error'};
@@ -306,7 +304,7 @@ handle_data(Node, Data, Channel) ->
 -spec handle_event(atom(), kz_json:object(), pid()) -> any().
 handle_event(Node, JObj, Channel) ->
     kz_amqp_channel:consumer_channel(Channel),
-    kz_util:put_callid(JObj),
+    kz_log:put_callid(JObj),
     log_json_event(Node, kz_api:event_name(JObj), JObj),
     UUID = kz_api:call_id(JObj),
     Category = kz_api:event_category(JObj),

@@ -9,6 +9,11 @@
 %%% @author Karl Anderson
 %%% @author Edouard Swiac
 %%% @author Sponsored by Conversant Ltd, Implemented by SIPLABS, LLC (Ilya Ashchepkov)
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(cb_clicktocall).
@@ -340,7 +345,7 @@ originate_call(C2CId, Context, Contact, 'true') ->
     do_originate_call(C2CId, Context, Contact, Request, cb_context:req_value(Context, <<"blocking">>, 'false')).
 
 do_originate_call(C2CId, Context, Contact, Request, 'false') ->
-    _Pid = kz_util:spawn(fun() -> do_originate_call(C2CId, Context, Contact, Request) end),
+    _Pid = kz_process:spawn(fun() -> do_originate_call(C2CId, Context, Contact, Request) end),
     JObj = kz_json:normalize(kz_json:from_list(kz_api:remove_defaults(Request))),
     lager:debug("attempting call in ~p", [JObj]),
     crossbar_util:response_202(<<"processing request">>, JObj, cb_context:set_resp_data(Context, Request));
@@ -370,7 +375,7 @@ handle_response(C2CId, Context, Contact, Resp) ->
                                kz_datamgr:data_error().
 do_originate_call(C2CId, Context, Contact, Request) ->
     ReqId = cb_context:req_id(Context),
-    kz_util:put_callid(ReqId),
+    kz_log:put_callid(ReqId),
 
     Resp = exec_originate(Request),
     lager:debug("got status for ~p", [Resp]),

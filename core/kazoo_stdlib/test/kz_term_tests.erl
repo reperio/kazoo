@@ -1,3 +1,12 @@
+%%%-----------------------------------------------------------------------------
+%%% @copyright (C) 2011-2019, 2600Hz
+%%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
+%%% @end
+%%%-----------------------------------------------------------------------------
 -module(kz_term_tests).
 
 -ifdef(PROPER).
@@ -350,6 +359,11 @@ to_pid_test_() ->
              ]
      end
     }.
+
+iolist_join_test_() ->
+    [?_assertEqual([], kz_term:iolist_join($,, []))
+    ,?_assertEqual([$a,<<" || ">>,$b,<<" || ">>,$c], kz_term:iolist_join(<<" || ">>, [$a,$b,$c]))
+    ].
 
 -ifdef(PERF).
 -define(REPEAT, 100000).

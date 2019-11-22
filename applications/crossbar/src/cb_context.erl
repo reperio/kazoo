@@ -2,6 +2,11 @@
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc Helpers for manipulating the `#cb_context{}' record.
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(cb_context).
@@ -26,6 +31,8 @@
         ,is_superduper_admin/1, set_is_superduper_admin/2
         ,is_account_admin/1, is_account_admin/2
         ,set_is_account_admin/2
+
+        ,master_account_id/1, set_master_account_id/2
 
         ,system_error/2
 
@@ -216,18 +223,32 @@ account_realm(Context) ->
     kzd_accounts:realm(account_doc(Context)).
 
 -spec account_doc(context()) -> kz_term:api_object().
-account_doc(#cb_context{account_id = undefined}) -> undefined;
+account_doc(#cb_context{account_id = 'undefined'}) -> 'undefined';
 account_doc(#cb_context{account_id = AccountId}) ->
     case kzd_accounts:fetch(AccountId) of
-        {ok, AccountJObj} -> AccountJObj;
-        {error, _R} ->
+        {'ok', AccountJObj} -> AccountJObj;
+        {'error', _R} ->
             lager:warning("error fetching account doc for ~p: ~p", [AccountId,_R]),
-            undefined
+            'undefined'
     end.
 
 -spec is_authenticated(context()) -> boolean().
 is_authenticated(#cb_context{auth_doc='undefined'}) -> 'false';
 is_authenticated(#cb_context{}) -> 'true'.
+
+
+-spec master_account_id(context()) -> kz_term:api_ne_binary().
+master_account_id(#cb_context{master_account_id = ?NE_BINARY = MasterId}) ->
+    MasterId;
+master_account_id(_) ->
+    case kapps_util:get_master_account_id() of
+        {'ok', Id} -> Id;
+        {'error', _} -> 'undefined'
+    end.
+
+-spec set_master_account_id(context(), kz_term:api_ne_binary()) -> context().
+set_master_account_id(#cb_context{}=Context, MasterId) ->
+    Context#cb_context{master_account_id = MasterId}.
 
 %%------------------------------------------------------------------------------
 %% @doc Returns true if the request contains a system admin module.
@@ -236,8 +257,21 @@ is_authenticated(#cb_context{}) -> 'true'.
 -spec is_superduper_admin(kz_term:api_ne_binary() | context()) -> boolean().
 is_superduper_admin('undefined') -> 'false';
 is_superduper_admin(AccountId=?NE_BINARY) ->
-    lager:debug("checking if the requester is superduper admin: ~s", [AccountId]),
-    case kzd_accounts:is_superduper_admin(AccountId) of
+    check_requestor_is_superduper(AccountId, 'undefined');
+is_superduper_admin(#cb_context{is_superduper_admin=Bol}) when is_boolean(Bol) ->
+    Bol;
+is_superduper_admin(Context) ->
+    case fetch(Context, 'is_superduper_admin') of
+        Bol when is_boolean(Bol) -> Bol;
+        _ ->
+            check_requestor_is_superduper(auth_account_id(Context), master_account_id(Context))
+    end.
+
+-spec check_requestor_is_superduper(kz_term:api_ne_binary(), kz_term:api_ne_binary()) -> boolean().
+check_requestor_is_superduper('undefined', _) -> 'false';
+check_requestor_is_superduper(AuthId, 'undefined') ->
+    lager:debug("checking if the requester is superduper admin: ~s", [AuthId]),
+    case kzd_accounts:is_superduper_admin(AuthId) of
         'true' ->
             lager:debug("the requestor is a superduper admin"),
             'true';
@@ -245,13 +279,8 @@ is_superduper_admin(AccountId=?NE_BINARY) ->
             lager:debug("the requestor is not a superduper admin"),
             'false'
     end;
-is_superduper_admin(#cb_context{is_superduper_admin=Bol}) when is_boolean(Bol) ->
-    Bol;
-is_superduper_admin(Context) ->
-    case fetch(Context, 'is_superduper_admin') of
-        Bol when is_boolean(Bol) -> Bol;
-        _ -> is_superduper_admin(auth_account_id(Context))
-    end.
+check_requestor_is_superduper(MasterId, MasterId) -> 'true';
+check_requestor_is_superduper(_, _) -> 'false'.
 
 -spec is_account_admin(context()) -> boolean().
 is_account_admin(#cb_context{is_account_admin=Bol}) when is_boolean(Bol) ->
@@ -296,13 +325,13 @@ auth_doc(#cb_context{auth_doc=AuthDoc}) -> AuthDoc.
 auth_account_id(#cb_context{auth_account_id=AuthBy}) -> AuthBy.
 
 -spec auth_account_doc(context()) -> kz_term:api_object().
-auth_account_doc(#cb_context{auth_account_id = undefined}) -> undefined;
+auth_account_doc(#cb_context{auth_account_id = 'undefined'}) -> 'undefined';
 auth_account_doc(#cb_context{auth_account_id = AccountId}) ->
     case kzd_accounts:fetch(AccountId) of
-        {ok, AuthAccountJObj} -> AuthAccountJObj;
-        {error, _R} ->
+        {'ok', AuthAccountJObj} -> AuthAccountJObj;
+        {'error', _R} ->
             lager:warning("error fetching auth account doc for ~p: ~p", [AccountId,_R]),
-            undefined
+            'undefined'
     end.
 
 -spec auth_user_id(context()) -> kz_term:api_ne_binary().
@@ -392,12 +421,11 @@ method(#cb_context{method=M}) -> M.
 pretty_print(#cb_context{pretty_print = PrettyPrint}) -> PrettyPrint.
 
 -spec path_token(binary()) -> binary().
-path_token(Token) ->
-    kz_util:uri_decode(Token).
+path_token(Token) -> kz_http_util:urldecode(Token).
 
 -spec path_tokens(context()) -> kz_term:ne_binaries().
 path_tokens(#cb_context{raw_path=Path}) ->
-    [path_token(kz_util:uri_decode(Token))
+    [path_token(Token)
      || Token <- binary:split(Path, <<"/">>, ['global', 'trim'])
     ].
 
@@ -811,7 +839,7 @@ fetch(#cb_context{storage=Storage}, Key, Default) ->
 %%------------------------------------------------------------------------------
 -spec put_reqid(context()) -> 'ok'.
 put_reqid(#cb_context{req_id=ReqId}) ->
-    kz_util:put_callid(ReqId).
+    kz_log:put_callid(ReqId).
 
 -spec has_errors(context()) -> boolean().
 has_errors(#cb_context{validation_errors=JObj
@@ -832,8 +860,8 @@ import_errors(#cb_context{}=Context) ->
                               }
     end.
 
--spec response(context()) -> {ok, kz_json:object()} |
-                             {error, {pos_integer(), kz_term:ne_binary(), kz_json:object()}}.
+-spec response(context()) -> {'ok', kz_json:object()} |
+                             {'error', {pos_integer(), kz_term:ne_binary(), kz_json:object()}}.
 response(#cb_context{resp_status='success'
                     ,resp_data=JObj
                     }) ->
@@ -917,7 +945,7 @@ validate_request_data(SchemaJObj, Context, OnSuccess, OnFailure, _SchemaRequired
     catch
         ?STACKTRACE('error', 'function_clause', ST)
         lager:debug("function clause failure"),
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         Context#cb_context{resp_status = 'fatal'
                           ,resp_error_code = 500
                           ,resp_data = kz_json:new()

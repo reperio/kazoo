@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_auth_jwt).
@@ -266,7 +270,8 @@ sign(#{digest := Digest
 
 -spec set_provider(map()) -> map().
 set_provider(#{payload := #{<<"iss">> := Issuer}}=Token) ->
-    Token#{auth_provider => kz_auth_providers:provider_by_issuer(Issuer)}.
+    Token#{auth_provider => kz_auth_providers:provider_by_issuer(Issuer)};
+set_provider(Token) -> Token.
 
 -spec parse(kz_term:ne_binary()) -> {'ok', jwt()} | {'error', 'invalid_jwt'}.
 parse(JWTToken) when is_binary(JWTToken) ->

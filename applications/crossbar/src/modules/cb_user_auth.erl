@@ -3,6 +3,11 @@
 %%% @doc User auth module
 %%% @author Karl Anderson
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(cb_user_auth).
@@ -362,7 +367,7 @@ maybe_account_is_expired(Context, Account) ->
     case kzd_accounts:is_expired(Account) of
         'false' -> maybe_account_is_enabled(Context, Account);
         {'true', Expired} ->
-            _ = kz_util:spawn(fun crossbar_util:maybe_disable_account/1, [Account]),
+            _ = kz_process:spawn(fun crossbar_util:maybe_disable_account/1, [Account]),
             Cause =
                 kz_json:from_list(
                   [{<<"message">>, <<"account expired">>}

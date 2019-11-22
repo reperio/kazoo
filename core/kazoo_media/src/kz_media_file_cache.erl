@@ -2,6 +2,11 @@
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_media_file_cache).
@@ -72,8 +77,8 @@ continuous(Srv) -> gen_server:call(Srv, 'continuous').
                       {'stop', any()}.
 init([Db, Id, Attachment, CallId]) ->
     case kz_term:is_empty(CallId) of
-        'true' -> kz_util:put_callid(?DEFAULT_LOG_SYSTEM_ID);
-        'false' -> kz_util:put_callid(CallId)
+        'true' -> kz_log:put_callid(?DEFAULT_LOG_SYSTEM_ID);
+        'false' -> kz_log:put_callid(CallId)
     end,
     maybe_start_file_cache(Db, Id, Attachment).
 

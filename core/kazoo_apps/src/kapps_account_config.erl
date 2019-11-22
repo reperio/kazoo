@@ -3,6 +3,11 @@
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kapps_account_config).
@@ -162,19 +167,8 @@ get_from_reseller(Account, Category, Key, Default) ->
             kapps_config:get(Category, Key, Default)
     end.
 
--ifdef(TEST).
-%% for passing knm tests
-maybe_load_config_from_reseller(Account, _) when Account =:= <<"master_account_6992af0e9504d0b27">>;
-                                                 Account =:= <<"reseller_account_b113394f16cb76d">>;
-                                                 Account =:= <<"child_account_670a04df0014d0b27a">>;
-                                                 Account =:= <<"unrelated_account_b113394f16cb71">> ->
-    {'error', 'not_found'};
 maybe_load_config_from_reseller(Account, Category) ->
     load_config_from_reseller(Account, Category).
--else.
-maybe_load_config_from_reseller(Account, Category) ->
-    load_config_from_reseller(Account, Category).
--endif.
 
 %% @equiv get_hierarchy(Account, Category, Key, undefined)
 
@@ -394,7 +388,7 @@ load_config_from_ancestors_fold([ParentId|AncestorIds], Category, JObjs) ->
 find_reseller_account(AccountId) ->
     case kz_services_reseller:get_id(AccountId) of
         'undefined' ->
-            lager:debug("failed to find account ~s parents and reseller"),
+            lager:debug("failed to find account ~s parents and reseller", [AccountId]),
             [];
         AccountId -> []; %% should get from direct reseller only
         ResellerId -> [ResellerId]

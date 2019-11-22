@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(ci_parser_kamailio).
@@ -57,7 +61,7 @@ start_link(Args) ->
                   {'stop', any()}.
 init({'parser_args', LogFile, LogIP, LogPort} = Args) ->
     ParserId = ci_parsers_util:make_name(Args),
-    _ = kz_util:put_callid(ParserId),
+    _ = kz_log:put_callid(ParserId),
     case ci_parsers_util:open_file_for_read(LogFile) of
         {'ok', IoDevice} ->
             State = #state{parser_id = ParserId

@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(stepswitch_resource_selectors).
@@ -87,7 +91,7 @@ rule_to_resource(Rule, Resources, Number, OffnetJObj, SelectorsDb) ->
     catch
         ?STACKTRACE('error', R, ST)
         lager:error("failed to run module: ~p, error: ~p",[Module, R]),
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         [];
         'throw':T ->
             lager:error("module ~p (~p) throw exception: ~p",[Module, ModuleName, T]),

@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_auth_profile).
@@ -73,7 +77,7 @@ token_fold(Token, [Fun | Routines]) ->
     catch
         ?STACKTRACE(_E, _R, ST)
         lager:debug("exception executing ~p : ~p , ~p", [Fun, _E, _R]),
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         token_fold(Token, Routines)
         end.
 

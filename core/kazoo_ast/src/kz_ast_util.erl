@@ -2,6 +2,10 @@
 %%% @copyright (C) 2015-2019, 2600Hz
 %%% @doc Provide some utilities to work with AST.
 %%% @author James Aimonetti
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_ast_util).
@@ -30,6 +34,7 @@
 -include_lib("kazoo_stdlib/include/kazoo_json.hrl").
 -include_lib("kazoo_amqp/src/api/kapi_dialplan.hrl").
 -include_lib("kazoo_amqp/src/api/kapi_call.hrl").
+-include_lib("kazoo_stdlib/include/kz_log.hrl").
 
 -type ast() :: [erl_parse:abstract_form()].
 -type abstract_code() :: {'raw_abstract_v1', ast()}.
@@ -78,6 +83,19 @@ add_module_ast_fold(?AST_FUNCTION(F, Arity, Clauses), Module, #module_ast{functi
     Acc#module_ast{functions=[{Module, F, Arity, Clauses}|Fs]};
 add_module_ast_fold(?AST_RECORD(Name, Fields), _Module, #module_ast{records=Rs}=Acc) ->
     Acc#module_ast{records=[{Name, Fields}|Rs]};
+add_module_ast_fold(?AST_EXPORTS(Exports), _Module, #module_ast{exports=Es}=Acc) ->
+    Acc#module_ast{exports=Exports++Es};
+add_module_ast_fold(?AST_EXPORTED_TYPES(Types), _Module, #module_ast{exported_types=Ts}=Acc) ->
+    Acc#module_ast{exported_types=Types++Ts};
+add_module_ast_fold(?SPEC(Fun, Arity, Args, Return), _Module, #module_ast{specs=Specs}=Acc) ->
+    Acc#module_ast{specs=[{Fun, Arity, Args, Return} | Specs]};
+add_module_ast_fold(?TYPE(Name, TypeDef), _Module, #module_ast{types=Ts}=Acc) ->
+    Acc#module_ast{types=[{Name, TypeDef} | Ts]};
+add_module_ast_fold(?AST_ATTRIBUTE_FILE(_Path), _Module, Acc) -> Acc;
+add_module_ast_fold(?EOF, _Module, Acc) -> Acc;
+add_module_ast_fold(?LAGER_RECORDS, _Module, Acc) -> Acc;
+add_module_ast_fold(?AST_ATTRIBUTE_MODULE(Module), Module, Acc) -> Acc;
+add_module_ast_fold(?BEHAVIOUR(Behaviour), _Module, Acc) -> Acc#module_ast{behaviour=Behaviour};
 add_module_ast_fold(_Other, _Module, Acc) ->
     Acc.
 
@@ -110,8 +128,8 @@ binary_match_to_binary(?BINARY_STRING(V)) ->
     kz_term:to_binary(V);
 binary_match_to_binary(?BINARY_MATCH(Match)) ->
     binary_match_to_binary(Match);
-binary_match_to_binary(?FUN_ARGS(atom_to_binary, [?ATOM(Atom), ?ATOM(utf8)])) ->
-    atom_to_binary(Atom, utf8);
+binary_match_to_binary(?FUN_ARGS('atom_to_binary', [?ATOM(Atom), ?ATOM('utf8')])) ->
+    atom_to_binary(Atom, 'utf8');
 binary_match_to_binary(Match) when is_list(Match) ->
     iolist_to_binary(
       [binary_part_to_binary(BP) || BP <- Match]
@@ -205,7 +223,8 @@ siblings_of(App) ->
     [dir_to_app_name(Dir)
      || Dir <- filelib:wildcard(filename:join([code:lib_dir(App), "..", "*"])),
         filelib:is_dir(Dir),
-        ".git" =/= filename:basename(Dir)
+        ".git" =/= filename:basename(Dir),
+        ".erlang.mk" =/= filename:basename(Dir)
     ].
 
 dir_to_app_name(Dir) ->

@@ -3,6 +3,11 @@
 %%% @doc Listing of all expected v1 callbacks
 %%% @author Karl Anderson
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(cb_comments).
@@ -258,7 +263,8 @@ create(Context, {<<"port_requests">>, _}) ->
         {'ok', _} ->
             crossbar_doc:save(Context);
         {'error', _} ->
-            cb_context:add_system_error('datastore_fault', <<"unable to submit comment to carrier">>, Context)
+            Context1 = cb_context:store(Context, 'req_comments', []),
+            cb_context:add_system_error('datastore_fault', <<"unable to submit comment to carrier">>, Context1)
     end;
 create(Context, _Resource) ->
     Doc = cb_context:doc(Context),

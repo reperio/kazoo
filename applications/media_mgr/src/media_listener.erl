@@ -3,6 +3,11 @@
 %%% @doc
 %%% @author James Aimonetti
 %%% @author Karl Anderson
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(media_listener).
@@ -49,7 +54,7 @@ start_link() ->
 -spec handle_media_req(kz_json:object(), kz_term:proplist()) -> kz_amqp_worker:cast_return().
 handle_media_req(JObj, _Props) ->
     'true' = kapi_media:req_v(JObj),
-    _ = kz_util:put_callid(JObj),
+    _ = kz_log:put_callid(JObj),
     lager:debug("recv media req for msg id: ~s", [kz_api:msg_id(JObj)]),
     MediaName = kz_json:get_value(<<"Media-Name">>, JObj),
     case kz_media_url:playback(MediaName, JObj) of

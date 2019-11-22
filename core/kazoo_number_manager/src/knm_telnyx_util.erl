@@ -2,6 +2,10 @@
 %%% @copyright (C) 2014-2019, 2600Hz
 %%% @doc
 %%% @author Pierre Fenoll
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(knm_telnyx_util).
@@ -16,7 +20,6 @@
 -define(CARRIER, 'knm_telnyx').
 
 -ifdef(TEST).
--include_lib("eunit/include/eunit.hrl").
 -define(DEBUG_WRITE(_Format, _Args), 'ok').
 -define(DEBUG_APPEND(_Format, _Args), 'ok').
 -else.

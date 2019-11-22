@@ -2,6 +2,11 @@
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(fax_request).
@@ -458,7 +463,7 @@ end_receive_fax(#state{}=State) ->
 
 -spec store_document(state()) -> kz_term:pid_ref().
 store_document(#state{}=State) ->
-    kz_util:spawn_monitor(fun store_document/2, [self(), State]).
+    kz_process:spawn_monitor(fun store_document/2, [self(), State]).
 
 -spec store_document(pid(), state() ) -> 'ok'.
 store_document(Pid, #state{fax_result=JObj
@@ -475,7 +480,7 @@ store_document(Pid, #state{fax_result=JObj
 
 -spec store_attachment(state()) -> kz_term:pid_ref().
 store_attachment(#state{}=State) ->
-    kz_util:spawn_monitor(fun store_attachment/2, [self(), State]).
+    kz_process:spawn_monitor(fun store_attachment/2, [self(), State]).
 
 -spec store_attachment(pid(), state()) -> 'ok'.
 store_attachment(Pid, #state{call=Call

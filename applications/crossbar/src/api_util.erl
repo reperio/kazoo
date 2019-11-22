@@ -4,6 +4,11 @@
 %%% @author James Aimonetti
 %%% @author Karl Anderson
 %%% @author Jon Blanton
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(api_util).
@@ -224,7 +229,7 @@ maybe_extract_multipart(Context, Req0, QS) ->
     catch
         ?STACKTRACE(_E, _R, ST)
         lager:debug("failed to extract multipart ~s: ~p", [_E, _R]),
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         handle_failed_multipart(Context, Req0, QS)
         end.
 
@@ -578,7 +583,7 @@ req_noun_requires_envelope(Context, [{Mod, Params} | _]) ->
     Event = create_event_name(Context, <<"requires_envelope.", Mod/binary>>),
     Payload = [Context | Params],
     case crossbar_bindings:pmap(Event, Payload) of
-        [Value | _] -> not Value;
+        [Value | _] -> Value;
         _Else -> 'true'
     end.
 
@@ -685,7 +690,7 @@ is_cb_module([Module|Modules]) ->
 %% `POST' from the allowed methods.
 %% @end
 %%------------------------------------------------------------------------------
--spec allow_methods([http_methods(),...], kz_term:ne_binary(), http_method()) -> http_methods().
+-spec allow_methods([http_methods()], kz_term:ne_binary(), http_method()) -> http_methods().
 allow_methods(Responses, ReqVerb, HttpVerb) ->
     case crossbar_bindings:succeeded(Responses) of
         [] -> [];
@@ -1198,7 +1203,7 @@ finish_request(_Req, Context) ->
     [{Mod, _}|_] = cb_context:req_nouns(Context),
     Verb = cb_context:req_verb(Context),
     Event = create_event_name(Context, [<<"finish_request">>, Verb, Mod]),
-    _ = kz_util:spawn(fun crossbar_bindings:pmap/2, [Event, Context]),
+    _ = kz_process:spawn(fun crossbar_bindings:pmap/2, [Event, Context]),
     maybe_cleanup_file(cb_context:resp_file(Context)).
 
 -spec maybe_cleanup_file(binary()) -> 'ok'.

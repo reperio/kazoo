@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_media_util).
@@ -51,6 +55,7 @@
 
 -define(USE_ACCOUNT_OVERRIDES, kapps_config:get_is_true(?CONFIG_CAT, <<"support_account_overrides">>, 'true')).
 
+-define(DEFAULT_MAX_RECORDING_LIMIT, 3*?SECONDS_IN_HOUR).
 %%------------------------------------------------------------------------------
 %% @doc Normalize audio file to the system default or specified sample rate.
 %% Accepts media file content binary as input.
@@ -366,7 +371,7 @@ recording_url(CallId, Data) ->
 
 -spec max_recording_time_limit() -> ?SECONDS_IN_HOUR.
 max_recording_time_limit() ->
-    kapps_config:get_integer(?CONFIG_CAT, <<"max_recording_time_limit">>, ?SECONDS_IN_HOUR).
+    kapps_config:get_integer(?CONFIG_CAT, <<"max_recording_time_limit">>, ?DEFAULT_MAX_RECORDING_LIMIT).
 
 %% base_url(Host) ->
 %%     Port = kz_couch_connections:get_port(),

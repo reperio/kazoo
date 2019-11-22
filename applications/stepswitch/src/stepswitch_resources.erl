@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2013-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(stepswitch_resources).
@@ -547,7 +551,7 @@ maybe_resource_to_endpoints(#resrc{id=Id
                                    'false' -> <<"no_classifier">>
                                end,
             lager:debug("building resource ~s endpoints (classifier ~s)", [Id, _MaybeClassifier]),
-            CCVUpdates = [{<<"Global-Resource">>, kz_term:to_binary(Global)}
+            CCVUpdates = [{<<"Global-Resource">>, Global}
                          ,{<<"Resource-ID">>, Id}
                          ,{<<"E164-Destination">>, Number}
                          ,{<<"DID-Classifier">>, knm_converters:classify(Number)}

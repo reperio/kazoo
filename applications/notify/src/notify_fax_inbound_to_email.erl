@@ -5,6 +5,11 @@
 %%%
 %%%
 %%% @author James Aimonetti <james@2600hz.org>
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(notify_fax_inbound_to_email).
@@ -31,7 +36,7 @@ init() ->
 handle_req(JObj, _Props) ->
     'true' = kapi_notifications:fax_inbound_v(JObj),
 
-    _ = kz_util:put_callid(JObj),
+    _ = kz_log:put_callid(JObj),
 
     lager:debug("new fax left, sending to email if enabled"),
 

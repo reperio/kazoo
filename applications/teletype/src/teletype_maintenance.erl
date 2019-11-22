@@ -2,6 +2,11 @@
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(teletype_maintenance).
@@ -100,7 +105,7 @@ restore_system_template(TemplateId) ->
     catch
         ?STACKTRACE(_E, _T, ST)
         io:format("  crashed for reason ~p:~p ~n", [_E, _T]),
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         io:format("St: ~p~n~n", [ST])
 
         end.
@@ -206,7 +211,7 @@ start_module(Module) when is_atom(Module) ->
         lager:error("failed to start teletype module ~s with reason: ~s ~p"
                    ,[Module, _Type, Reason]
                    ),
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         {'error', Reason}
         end;
 start_module(Module) ->

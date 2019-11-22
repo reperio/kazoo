@@ -6,6 +6,11 @@
 %%%
 %%% @author Karl Anderson
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(cb_quickcall).
@@ -271,7 +276,7 @@ originate_quickcall(Endpoints, Call, Context) ->
     originate(Request, Context, cb_context:req_verb(Context), CallTimeoutS).
 
 originate(Request, Context, ?HTTP_GET, _CallTimeoutS) ->
-    kz_amqp_worker:cast(Request, fun kapi_resource:publish_originate_req/1),
+    _ = kz_amqp_worker:cast(Request, fun kapi_resource:publish_originate_req/1),
     JObj = kz_json:normalize(kz_api:remove_defaults(Request)),
     crossbar_util:response_202(<<"quickcall initiated">>, JObj, cb_context:set_resp_data(Context, Request));
 originate(Request, Context, ?HTTP_POST, CallTimeoutS) ->
@@ -373,14 +378,14 @@ get_media(Context) ->
 get_cid_name(Context, Default) ->
     case cb_context:req_value(Context, <<"cid-name">>, Default) of
         'undefined' -> 'undefined';
-        CIDName -> kz_util:uri_decode(CIDName)
+        CIDName -> kz_http_util:urldecode(CIDName)
     end.
 
 -spec get_cid_number(cb_context:context(), kz_term:api_binary()) -> kz_term:api_binary().
 get_cid_number(Context, Default) ->
     case cb_context:req_value(Context, <<"cid-number">>, Default) of
         'undefined' -> 'undefined';
-        CIDNumber -> kz_util:uri_decode(CIDNumber)
+        CIDNumber -> kz_http_util:urldecode(CIDNumber)
     end.
 
 -spec maybe_retain_cid(cb_context:context()) -> kz_term:proplist().
@@ -389,4 +394,3 @@ maybe_retain_cid(Context) ->
         'undefined' -> [{<<"Retain-CID">>, <<"false">>}];
         _Found -> [{<<"Retain-CID">>, <<"true">>}]
     end.
-

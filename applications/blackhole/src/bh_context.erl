@@ -2,6 +2,11 @@
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc Helpers for manipulating the #bh_context{} record
 %%% @author Ben Wann
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(bh_context).
@@ -290,7 +295,7 @@ req_id(#bh_context{req_id=Id}) ->
 
 -spec set_req_id(context(), kz_term:ne_binary()) -> context().
 set_req_id(#bh_context{}=Context, ReqId) ->
-    kz_util:put_callid(ReqId),
+    kz_log:put_callid(ReqId),
     Context#bh_context{req_id=ReqId}.
 
 %%%=============================================================================

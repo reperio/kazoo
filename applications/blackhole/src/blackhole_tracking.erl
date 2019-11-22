@@ -2,6 +2,11 @@
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc
 %%% @author Peter Defebvre
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(blackhole_tracking).
@@ -66,7 +71,7 @@ start_link() ->
 -spec handle_req(kz_json:object(), kz_term:proplist()) -> 'ok'.
 handle_req(ApiJObj, _Props) ->
     'true' = kapi_websockets:get_req_v(ApiJObj),
-    kz_util:put_callid(ApiJObj),
+    kz_log:put_callid(ApiJObj),
 
     Node = kz_json:get_binary_value(<<"Node">>, ApiJObj),
     RespData =

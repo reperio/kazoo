@@ -2,6 +2,11 @@
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc Controls how a queue process progresses a member_call
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(acdc_queue_fsm).
@@ -191,7 +196,7 @@ cdr_url(ServerRef) ->
 %%------------------------------------------------------------------------------
 -spec init(list()) -> {'ok', atom(), state()}.
 init([WorkerSup, MgrPid, AccountId, QueueId]) ->
-    kz_util:put_callid(<<"statem_", QueueId/binary, "_", (kz_term:to_binary(self()))/binary>>),
+    kz_log:put_callid(<<"statem_", QueueId/binary, "_", (kz_term:to_binary(self()))/binary>>),
 
     _ = webseq:start(?WSD_ID),
     webseq:reg_who(?WSD_ID, self(), iolist_to_binary([<<"qFSM">>, pid_to_list(self())])),
@@ -248,7 +253,7 @@ ready('cast', {'member_call', CallJObj, Delivery}, #state{listener_proc=Listener
                                                          }=State) ->
     Call = kapps_call:from_json(kz_json:get_value(<<"Call">>, CallJObj)),
     CallId = kapps_call:call_id(Call),
-    kz_util:put_callid(CallId),
+    kz_log:put_callid(CallId),
 
     case acdc_queue_manager:should_ignore_member_call(MgrSrv, Call, CallJObj) of
         'false' ->
@@ -718,7 +723,7 @@ clear_member_call(#state{connection_timer_ref=ConnRef
                         ,collect_ref=CollectRef
                         ,queue_id=QueueId
                         }=State) ->
-    kz_util:put_callid(QueueId),
+    kz_log:put_callid(QueueId),
     maybe_stop_timer(ConnRef),
     maybe_stop_timer(AgentRef),
     maybe_stop_timer(CollectRef),

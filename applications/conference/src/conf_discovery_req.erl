@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2011-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(conf_discovery_req).
@@ -288,6 +292,7 @@ handle_search_error(Conference, Call, Srv) ->
     Arbitrator = kz_amqp_connections:arbitrator_broker(),
     Queue = kapps_conference:id(Conference),
     kz_amqp_channel:remove_consumer_pid(),
+    kz_amqp_channel:remove_consumer_channel(),
     _ = kz_amqp_channel:consumer_broker(Arbitrator),
     _ = kz_amqp_util:new_queue(Queue),
     try kz_amqp_util:basic_consume(Queue, [{'exclusive', 'true'}]) of

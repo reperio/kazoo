@@ -2,6 +2,10 @@
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kzt_twiml).
@@ -64,7 +68,7 @@ exec_elements(Call, [El|Els]) ->
             {'error', kzt_util:add_error(Call, <<"unknown_element">>, Name)};
         ?STACKTRACE(_E, _R, ST)
         lager:error("'~s' when execing el ~p: ~p", [_E, El, _R]),
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         {'error', Call}
         end.
 
@@ -280,7 +284,7 @@ exec_gather_els(Parent, Call, [SubAction|SubActions]) ->
                              {'ok', kapps_call:call()}.
 exec_gather_els(Call, SubActions) ->
     {_Pid, _Ref}=PidRef =
-        kz_util:spawn_monitor(fun exec_gather_els/3, [self(), Call, SubActions]),
+        kz_process:spawn_monitor(fun exec_gather_els/3, [self(), Call, SubActions]),
     lager:debug("started to exec gather els: ~p(~p)", [_Pid, _Ref]),
     {'ok', kzt_util:set_gather_pidref(PidRef, Call)}.
 

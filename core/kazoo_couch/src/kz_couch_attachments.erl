@@ -2,6 +2,10 @@
 %%% @copyright (C) 2011-2019, 2600Hz
 %%% @doc Util functions used by kazoo_couch
 %%% @author James Aimonetti
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_couch_attachments).
@@ -92,7 +96,7 @@ do_stream_attachment(#db{}=Db, DocId, AName, Caller) ->
         {'ok', Ref}=Ret ->
             Msg = couchbeam:stream_attachment(Ref),
             St = get(Ref),
-            kz_util:spawn(fun relay_stream_attachment/4, [Caller, Ref, Msg, St]),
+            kz_process:spawn(fun relay_stream_attachment/4, [Caller, Ref, Msg, St]),
             Ret;
         Else -> Else
     end.
@@ -112,10 +116,14 @@ relay_stream_attachment(Caller, Ref, Msg) ->
 -spec do_put_attachment(couchbeam_db(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:proplist()) ->
                                {'ok', kz_json:object()} |
                                couchbeam_error().
-do_put_attachment(#db{}=Db, DocId, AttName, Contents, Options) ->
+do_put_attachment(#db{}=Db, DocId, AttName, Contents, Options0) ->
     %% At the time of this change, couchbeam is striping "/" from attachment name when put_attachment only.
     %% Fetch and delete are encoding properly
     AName = kz_http_util:urlencode(AttName),
+    Options = case props:get_value('content_type', Options0) of
+                  'undefined' -> [{'content_type', kz_mime:from_filename(AName)} | Options0];
+                  _CT -> Options0
+              end,
     ?RETRY_504(couchbeam:put_attachment(Db, DocId, AName, Contents, Options)).
 
 -spec do_del_attachment(couchbeam_db(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:proplist()) ->

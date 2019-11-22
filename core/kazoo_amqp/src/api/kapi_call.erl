@@ -3,6 +3,10 @@
 %%% @doc Call-related messages, like switch events, status requests, etc AMQP API.
 %%% @author James Aimonetti
 %%% @author Karl Anderson
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kapi_call).
@@ -55,8 +59,12 @@
 -export([get_status/1]).
 -export([event_routing_key/2]).
 
+-export_type([event/0]).
+
 -include_lib("kazoo_amqp/src/kz_amqp_util.hrl").
 -include("kapi_call.hrl").
+
+-type event() :: kz_json:object().
 
 -spec optional_call_event_headers() -> kz_term:ne_binaries().
 optional_call_event_headers() ->
@@ -340,7 +348,8 @@ publish_event(Event, ContentType) when is_list(Event) ->
                                                  ,{'remove_recursive', 'false'}
                                                  ]
                                                 ),
-    kz_amqp_util:callevt_publish(?CALL_EVENT_ROUTING_KEY(EventName, CallId), Payload, ContentType);
+    Props = [{'headers', [{<<"call-id">>, binary, CallId}]}],
+    kz_amqp_util:callevt_publish(?CALL_EVENT_ROUTING_KEY(EventName, CallId), Payload, ContentType, Props);
 publish_event(Event, ContentType) ->
     publish_event(kz_json:to_proplist(Event), ContentType).
 

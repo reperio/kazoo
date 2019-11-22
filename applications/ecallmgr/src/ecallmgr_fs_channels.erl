@@ -3,6 +3,11 @@
 %%% @doc Track the FreeSWITCH channel information, and provide accessors
 %%% @author James Aimonetti
 %%% @author Karl Anderson
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(ecallmgr_fs_channels).
@@ -212,8 +217,13 @@ update(UUID, Key, Value) ->
 
 -spec updates(kz_term:ne_binary(), channel_updates()) -> 'ok'.
 updates(UUID, Updates) ->
-    lager:debug("updating channel properties: ~p", [Updates]),
     gen_server:cast(?SERVER, {'channel_updates', UUID, Updates}).
+
+-spec format_updates(kz_term:proplist()) -> kz_term:ne_binary().
+format_updates(Updates) ->
+    Fields = record_info('fields', 'channel'),
+    Out = [io_lib:format("~s=~p", [lists:nth(Field - 1, Fields), V]) || {Field, V} <- Updates],
+    kz_binary:join(Out, <<",">>).
 
 -spec count() -> non_neg_integer().
 count() -> ets:info(?CHANNELS_TBL, 'size').
@@ -223,7 +233,8 @@ match_presence(PresenceId) ->
     MatchSpec = [{#channel{uuid = '$1'
                           ,presence_id = '$2'
                           ,node = '$3'
-                          , _ = '_'}
+                          , _ = '_'
+                          }
                  ,[{'=:=', '$2', {'const', PresenceId}}]
                  ,[{{'$1', '$3'}}]}
                 ],
@@ -330,7 +341,7 @@ handle_query_channels(JObj, _Props) ->
 -spec handle_channel_status(kz_json:object(), kz_term:proplist()) -> 'ok'.
 handle_channel_status(JObj, _Props) ->
     'true' = kapi_call:channel_status_req_v(JObj),
-    _ = kz_util:put_callid(JObj),
+    _ = kz_log:put_callid(JObj),
     CallId = kz_api:call_id(JObj),
     lager:debug("channel status request received"),
     case ecallmgr_fs_channel:fetch(CallId) of
@@ -389,7 +400,7 @@ send_empty_channel_resp(CallId, JObj) ->
 %%------------------------------------------------------------------------------
 -spec init([]) -> {'ok', state()}.
 init([]) ->
-    kz_util:put_callid(?DEFAULT_LOG_SYSTEM_ID),
+    kz_log:put_callid(?DEFAULT_LOG_SYSTEM_ID),
     process_flag('trap_exit', 'true'),
     lager:debug("starting new fs channels"),
     _ = ets:new(?CHANNELS_TBL, ['set'
@@ -439,11 +450,13 @@ handle_call(_, _, State) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec handle_cast(any(), state()) -> {'noreply', state()}.
-handle_cast({'channel_updates', UUID, Update}, State) ->
-    ets:update_element(?CHANNELS_TBL, UUID, Update),
+handle_cast({'channel_updates', UUID, Updates}, State) ->
+    kz_log:put_callid(UUID),
+    lager:debug("updating channel properties: ~s", [format_updates(Updates)]),
+    ets:update_element(?CHANNELS_TBL, UUID, Updates),
     {'noreply', State};
 handle_cast({'destroy_channel', UUID, Node}, State) ->
-    kz_util:put_callid(UUID),
+    kz_log:put_callid(UUID),
     MatchSpec = [{#channel{uuid='$1', node='$2', _ = '_'}
                  ,[{'andalso', {'=:=', '$2', {'const', Node}}
                    ,{'=:=', '$1', UUID}}
@@ -464,17 +477,15 @@ handle_cast({'sync_channels', Node, Channels}, State) ->
     SyncChannels = sets:from_list(Channels),
     Remove = sets:subtract(CachedChannels, SyncChannels),
     Add = sets:subtract(SyncChannels, CachedChannels),
-    _ = [begin
-             lager:debug("removed channel ~s from cache during sync with ~s", [UUID, Node]),
-             ets:delete(?CHANNELS_TBL, UUID)
-         end
+    _ = [delete_and_maybe_disconnect(Node, UUID, ets:lookup(?CHANNELS_TBL, UUID))
          || UUID <- sets:to_list(Remove)
         ],
     _ = [begin
-             lager:debug("added channel ~s to cache during sync with ~s", [UUID, Node]),
+             lager:debug("trying to add channel ~s to cache during sync with ~s", [UUID, Node]),
              case ecallmgr_fs_channel:renew(Node, UUID) of
                  {'error', _R} -> lager:warning("failed to sync channel ~s: ~p", [UUID, _R]);
                  {'ok', C} ->
+                     lager:debug("added channel ~s to cache during sync with ~s", [UUID, Node]),
                      ets:insert(?CHANNELS_TBL, C),
                      PublishReconect = kapps_config:get_boolean(?APP_NAME, <<"publish_channel_reconnect">>, 'false'),
                      handle_channel_reconnected(C, PublishReconect)
@@ -497,7 +508,7 @@ handle_cast({'flush_node', Node}, State) ->
         [] ->
             lager:debug("no locally handled channels");
         LocalChannels ->
-            _P = kz_util:spawn(fun handle_channels_disconnected/1, [LocalChannels]),
+            _P = kz_process:spawn(fun handle_channels_disconnected/1, [LocalChannels]),
             lager:debug("sending channel disconnects for local channels: ~p", [LocalChannels])
     end,
 
@@ -799,8 +810,6 @@ publish_channel_connection_event(#channel{uuid=UUID
                                          ,to=To
                                          }=Channel
                                 ,ChannelSpecific) ->
-    lager:debug("CHANNEL ~p", [Channel]),
-    lager:debug_unsafe("CHANNEL json ~s", [kz_json:encode(ecallmgr_fs_channel:to_api_json(Channel), ['pretty'])]),
     Event = [{<<"Timestamp">>, kz_time:now_s()}
             ,{<<"Call-ID">>, UUID}
             ,{<<"Call-Direction">>, Direction}
@@ -853,7 +862,7 @@ maybe_cleanup_old_channels() ->
     case max_channel_uptime() of
         N when N =< 0 -> 'ok';
         MaxAge ->
-            _P = kz_util:spawn(fun cleanup_old_channels/1, [MaxAge]),
+            _P = kz_process:spawn(fun cleanup_old_channels/1, [MaxAge]),
             'ok'
     end.
 
@@ -895,3 +904,14 @@ hangup_old_channel([UUID, Node, Started]) ->
     lager:debug("killing channel ~s on ~s, started ~s"
                ,[UUID, Node, kz_time:pretty_print_datetime(Started)]),
     freeswitch:api(Node, 'uuid_kill', UUID).
+
+-spec delete_and_maybe_disconnect(atom(), kz_term:ne_binary(), [channel()]) -> 'ok' | 'true'.
+delete_and_maybe_disconnect(Node, UUID, [#channel{handling_locally='true'}=Channel]) ->
+    lager:debug("emitting channel disconnect ~s during sync with ~s", [UUID, Node]),
+    handle_channel_disconnected(Channel),
+    ets:delete(?CHANNELS_TBL, UUID);
+delete_and_maybe_disconnect(Node, UUID, [_Channel]) ->
+    lager:debug("removed channel ~s from cache during sync with ~s", [UUID, Node]),
+    ets:delete(?CHANNELS_TBL, UUID);
+delete_and_maybe_disconnect(Node, UUID, []) ->
+    lager:debug("channel ~s not found during sync delete with ~s", [UUID, Node]).

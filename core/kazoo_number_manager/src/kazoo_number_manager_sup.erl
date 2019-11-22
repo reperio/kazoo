@@ -3,6 +3,10 @@
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kazoo_number_manager_sup).
@@ -19,11 +23,15 @@
 
 -define(SERVER, ?MODULE).
 
+
+-ifdef(TEST).
+-define(CACHE_PROPS, []).
+-else.
 -define(ORIGIN_BINDINGS, [[{'type', <<"number">>}]
                          ]).
-
 -define(CACHE_PROPS, [{'origin_bindings', ?ORIGIN_BINDINGS}
                      ]).
+-endif.
 
 %% Helper macro for declaring children of supervisor
 -define(CHILDREN, [?CACHE_ARGS(?CACHE_NAME, ?CACHE_PROPS)

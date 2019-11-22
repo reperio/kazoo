@@ -13,6 +13,10 @@
 %%%
 %%% @author James Aimonetti
 %%% @author Karl Anderson
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_api).
@@ -68,6 +72,12 @@
 -export([has_any/2, has_all/2]).
 -endif.
 
+-export_type([api_formatter_return/0
+             ,api_headers/0
+             ,api_types/0
+             ,api_valid_values/0
+             ]).
+
 %%%=============================================================================
 %%% API
 %%%=============================================================================
@@ -88,7 +98,7 @@ queue_id(JObj) ->
 event_category(JObj) ->
     kz_json:get_value(?KEY_EVENT_CATEGORY, JObj).
 
--spec event_name(kz_json:object() | kz_json:json_proplist()) -> kz_term:api_binary().
+-spec event_name(kz_term:api_terms()) -> kz_term:api_binary().
 event_name(Props) when is_list(Props) ->
     props:get_value(?KEY_EVENT_NAME, Props);
 event_name(JObj) ->
@@ -180,13 +190,14 @@ default_headers(EvtCat, EvtName, AppName, AppVsn) ->
 
 -spec default_headers(kz_term:api_binary(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) -> kz_term:proplist().
 default_headers(ServerID, EvtCat, EvtName, AppName, AppVsn) ->
-    [{?KEY_SERVER_ID, ServerID}
-    ,{?KEY_EVENT_CATEGORY, EvtCat}
-    ,{?KEY_EVENT_NAME, EvtName}
-    ,{?KEY_APP_NAME, AppName}
-    ,{?KEY_APP_VERSION, AppVsn}
-    ,{?KEY_NODE, kz_term:to_binary(node())}
-    ].
+    props:filter_empty(
+      [{?KEY_SERVER_ID, ServerID}
+      ,{?KEY_EVENT_CATEGORY, EvtCat}
+      ,{?KEY_EVENT_NAME, EvtName}
+      ,{?KEY_APP_NAME, AppName}
+      ,{?KEY_APP_VERSION, AppVsn}
+      ,{?KEY_NODE, kz_term:to_binary(node())}
+      ]).
 
 -spec default_headers_v(kz_term:api_terms()) -> boolean().
 
@@ -449,7 +460,7 @@ build_message_specific(Prop, ReqH, OptH) ->
 
 -spec headers_to_json(kz_term:proplist()) -> api_formatter_return().
 headers_to_json([_|_]=HeadersProp) ->
-    _ = kz_util:kz_log_md_put('msg_id', msg_id(HeadersProp)),
+    _ = kz_log:kz_log_md_put('msg_id', msg_id(HeadersProp)),
     try kz_json:encode(kz_json:from_list(HeadersProp)) of
         JSON -> {'ok', JSON}
     catch

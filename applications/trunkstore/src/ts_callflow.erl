@@ -2,6 +2,11 @@
 %%% @copyright (C) 2011-2019, 2600Hz
 %%% @doc Common functionality for onnet and offnet call handling
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(ts_callflow).
@@ -47,7 +52,7 @@
                   {'error', 'not_ts_account'}.
 init(RouteReqJObj, Type) ->
     CallID = kapi_route:call_id(RouteReqJObj),
-    kz_util:put_callid(CallID),
+    kz_log:put_callid(CallID),
     case is_trunkstore_acct(RouteReqJObj, Type) of
         'false' ->
             lager:info("request is not for a trunkstore account"),
@@ -220,7 +225,7 @@ process_event_for_bridge(State, JObj, {<<"error">>, _, <<"bridge">>}) ->
             {'error', State}
     end;
 process_event_for_bridge(_State, _JObj, {<<"call_event">>, <<"CHANNEL_EXECUTE_COMPLETE">>, <<"answer">>}) ->
-    %% support one legged bridges such as on-net conference
+    %% support one legged bridges such as onnet conference
     lager:info("channel was answered"),
     'ignore';
 process_event_for_bridge(#ts_callflow_state{aleg_callid=ALeg}=State

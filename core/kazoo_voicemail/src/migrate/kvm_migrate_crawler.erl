@@ -2,6 +2,10 @@
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc
 %%% @author Hesaam Farhang
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kvm_migrate_crawler).
@@ -104,7 +108,7 @@ update_stats(Server, AccountId, Stats) ->
 init([]) -> init('undefined');
 init(Pid) ->
     _ = process_flag('trap_exit', 'true'),
-    kz_util:put_callid(?SERVER),
+    kz_log:put_callid(?SERVER),
     lager:debug("started ~s", [?SERVER]),
     case kapps_util:get_all_accounts('raw') of
         [] ->
@@ -283,7 +287,7 @@ maybe_spawn_worker(#state{workers = Workers
     CallId = make_callid(Ref, AccountId),
     Self = self(),
     Pid = erlang:spawn_link(fun () ->
-                                    _ = kz_util:put_callid(CallId),
+                                    _ = kz_log:put_callid(CallId),
                                     kvm_migrate_account:start_worker(NextAccount, Self)
                             end),
     lager:debug(":: started ~p (~b/~b) to process account ~s"

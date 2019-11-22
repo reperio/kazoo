@@ -2,6 +2,11 @@
 %%% @copyright (C) 2013-2019, 2600Hz
 %%% @doc Handlers for various AMQP payloads
 %%% @author Luis Azedo
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(doodle_notify_handler).
@@ -13,7 +18,7 @@
 -spec handle_req(kz_json:object(), kz_term:proplist()) -> 'ok'.
 handle_req(JObj, _Props) ->
     'true' = kapi_registration:success_v(JObj),
-    _ = kz_util:put_callid(JObj),
+    _ = kz_log:put_callid(JObj),
     Username = kz_json:get_value(<<"Username">>, JObj),
     Realm = kz_json:get_value(<<"Realm">>, JObj),
     case kapps_util:get_account_by_realm(Realm) of

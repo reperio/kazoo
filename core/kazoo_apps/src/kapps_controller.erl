@@ -3,6 +3,11 @@
 %%% @doc
 %%% @author James Aimonetti
 %%% @author Karl Anderson
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kapps_controller).
@@ -68,7 +73,7 @@
 %%------------------------------------------------------------------------------
 -spec start_link() -> kz_types:startlink_ret().
 start_link() ->
-    _ = kz_util:spawn(fun initialize_kapps/0),
+    _ = kz_process:spawn(fun initialize_kapps/0),
     'ignore'.
 
 -spec ready() -> boolean().
@@ -80,11 +85,16 @@ ready(Verbose) ->
     Configured = [kz_term:to_binary(App) || App <- start_which_kapps(Verbose)],
     Running = [kz_term:to_binary(App) || App <- running_apps(), is_atom(App)],
 
-    0 =:= sets:size(
-            sets:subtract(sets:from_list(Configured)
-                         ,sets:from_list(Running)
-                         )
-           ).
+    Diff = sets:subtract(sets:from_list(Configured)
+                        ,sets:from_list(Running)
+                        ),
+    case sets:size(Diff) of
+        0 -> 'true';
+        _Size when Verbose ->
+            lager:info("still waiting on ~p", [sets:to_list(Diff)]),
+            'false';
+        _Size -> 'false'
+    end.
 
 -spec start_default_apps() -> [{atom(), 'ok' | {'error', any()}}].
 start_default_apps() ->
@@ -182,7 +192,7 @@ running_apps_list() ->
 
 -spec initialize_kapps() -> 'ok'.
 initialize_kapps() ->
-    kz_util:put_callid(?DEFAULT_LOG_SYSTEM_ID),
+    kz_log:put_callid(?DEFAULT_LOG_SYSTEM_ID),
     _ = kapps_maintenance:init_system(),
     kapps_config:migrate(),
     ToStart = lists:sort(fun sysconf_first/2

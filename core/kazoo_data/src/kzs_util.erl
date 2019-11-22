@@ -1,6 +1,11 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2011-2019, 2600Hz
 %%% @doc kazoo data utils
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kzs_util).
@@ -65,6 +70,7 @@ db_classification(?KZ_ACDC_DB) -> 'aggregate';
 db_classification(?KZ_SERVICES_DB) -> 'aggregate';
 db_classification(?KZ_PORT_REQUESTS_DB) -> 'aggregate';
 db_classification(?KZ_WEBHOOKS_DB) -> 'aggregate';
+db_classification(?KZ_FUNCTIONS_DB) -> 'aggregate';
 db_classification(<<?KNM_DB_PREFIX, _/binary>>) -> 'numbers';
 db_classification(<<?KNM_DB_PREFIX_ENCODED, _/binary>>) -> 'numbers';
 db_classification(<<?KNM_DB_PREFIX_encoded, _/binary>>) -> 'numbers';
@@ -97,7 +103,7 @@ find_first(_Database, [Classification | _]) -> Classification.
 unknown_db_classification(_Database) ->
     lager:warning("unknown type for database ~s", [_Database]),
     {'current_stacktrace', ST} = erlang:process_info(self(), 'current_stacktrace'),
-    kz_util:log_stacktrace(ST),
+    kz_log:log_stacktrace(ST),
     'undefined'.
 
 -spec binding_db_classify(kz_term:ne_binary()) -> kz_term:ne_binary().

@@ -3,6 +3,11 @@
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kapps_maintenance).
@@ -250,7 +255,7 @@ parallel_migrate(_, [], Refs) -> wait_for_parallel_migrate(Refs);
 parallel_migrate(Pause, [Databases|Jobs], Refs) ->
     Self = self(),
     Ref = make_ref(),
-    _Pid = kz_util:spawn_link(fun parallel_migrate_worker/4, [Ref, Pause, Databases, Self]),
+    _Pid = kz_process:spawn_link(fun parallel_migrate_worker/4, [Ref, Pause, Databases, Self]),
     parallel_migrate(Pause, Jobs, [Ref|Refs]).
 
 -spec parallel_migrate_worker(reference(), integer(), kz_term:ne_binaries(), pid()) -> reference().
@@ -2140,7 +2145,7 @@ init_system() ->
 
 -spec check_release() -> 'ok' | 'error'.
 check_release() ->
-    kz_util:put_callid('check_release'),
+    kz_log:put_callid('check_release'),
     Checks = [fun kapps_started/0
              ,fun check_system_configs/0
              ,fun master_account_created/0
@@ -2158,13 +2163,13 @@ check_release() ->
             init:stop(1);
         ?STACKTRACE(_E, _R, ST)
         lager:error("check_release/0 crashed: ~s: ~p", [_E, _R]),
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         init:stop(1)
         end.
 
 -spec run_check(fun()) -> 'ok'.
 run_check(CheckFun) ->
-    {Pid, Ref} = kz_util:spawn_monitor(CheckFun, []),
+    {Pid, Ref} = kz_process:spawn_monitor(CheckFun, []),
     wait_for_check(Pid, Ref).
 
 -spec wait_for_check(pid(), reference()) -> 'ok'.
@@ -2187,14 +2192,16 @@ kapps_started() ->
 
 -spec kapps_started(integer()) -> 'true'.
 kapps_started(Timeout) when Timeout > 0 ->
-    kapps_controller:ready()
-        orelse begin
-                   timer:sleep(100),
-                   kapps_started(Timeout - 100)
-               end;
+    kapps_started(Timeout, kapps_controller:ready());
 kapps_started(_Timeout) ->
     lager:error("timed out waiting for kapps to start"),
     throw({'error', 'timeout'}).
+
+-spec kapps_started(integer(), boolean()) -> 'true'.
+kapps_started(_Timeout, 'true') -> 'true';
+kapps_started(Timeout, 'false') ->
+    timer:sleep(500),
+    kapps_started(Timeout - 500).
 
 -spec master_account_created() -> 'true'.
 master_account_created() ->

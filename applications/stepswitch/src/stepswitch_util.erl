@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2011-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(stepswitch_util).
@@ -401,7 +405,7 @@ maybe_resource_to_endpoints(Resource
     %% DestinationNumber = maybe_update_number(Resource, Number),
     DestinationNumber = Number,
     lager:debug("building resource ~s endpoints", [Id]),
-    CCVUpdates = [{<<"Global-Resource">>, kz_term:to_binary(Global)}
+    CCVUpdates = [{<<"Global-Resource">>, Global}
                  ,{<<"Resource-ID">>, Id}
                  ,{<<"E164-Destination">>, DestinationNumber}
                  ,{<<"Original-Number">>, kapi_offnet_resource:to_did(OffnetJObj)}

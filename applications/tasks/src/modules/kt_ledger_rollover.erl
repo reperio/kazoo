@@ -1,6 +1,11 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2013-2019, 2600Hz
 %%% @doc Handle rolling over ledgers at the start of the month
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kt_ledger_rollover).
@@ -30,12 +35,12 @@ handle_req() ->
 
 -spec handle_req(kz_time:date()) -> 'ok'.
 handle_req({Year, Month, 1}) ->
-    _P = kz_util:spawn(fun rollover_accounts/2, [Year, Month]),
+    _P = kz_process:spawn(fun rollover_accounts/2, [Year, Month]),
     lager:info("its a new month ~p-~p, rolling over ledgers in ~p", [Year, Month, _P]);
 handle_req({Year, Month, _Day}) ->
     case kapps_config:is_true(?MOD_CAT, <<"refresh_view_enabled">>, 'true') of
         'true' ->
-            _P = kz_util:spawn(fun refresh_ledger_view/2, [Year, Month]),
+            _P = kz_process:spawn(fun refresh_ledger_view/2, [Year, Month]),
             lager:debug("refreshing ledger totals in ~p", [_P]);
         'false' -> 'ok'
     end.

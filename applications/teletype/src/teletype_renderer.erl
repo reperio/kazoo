@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2014-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(teletype_renderer).
@@ -112,7 +116,7 @@ init(_) ->
     Self = kz_term:to_hex_binary(list_to_binary(pid_to_list(self()))),
     ModuleBin = <<"teletype_", Self/binary, "_", (kz_binary:rand_hex(4))/binary>>,
     Module = kz_term:to_atom(ModuleBin, 'true'),
-    kz_util:put_callid(Module),
+    kz_log:put_callid(Module),
     %% ?LOG_DEBUG("starting template renderer, using ~s as compiled module name", [Module]),
     lager:debug("starting template renderer, using ~s as compiled module name", [Module]),
     {'ok', Module}.

@@ -18,6 +18,11 @@
 %%%
 %%% @author James Aimonetti
 %%% @author Karl Anderson
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(crossbar_bindings).
@@ -192,7 +197,7 @@ start_link() ->
 -spec init() -> 'ok'.
 init() ->
     lager:debug("initializing bindings"),
-    kz_util:put_callid(?DEFAULT_LOG_SYSTEM_ID),
+    kz_log:put_callid(?DEFAULT_LOG_SYSTEM_ID),
     AutoloadModules = crossbar_config:autoload_modules(?DEFAULT_MODULES),
     lists:foreach(fun maybe_init_mod/1, AutoloadModules).
 

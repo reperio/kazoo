@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2013-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(listener_federator).
@@ -139,6 +143,7 @@ handle_event(JObj, Props, #state{parent=Parent
 %% @end
 %%------------------------------------------------------------------------------
 -spec terminate(any(), state()) -> 'ok'.
+terminate('shutdown', _State) -> 'ok';
 terminate(_Reason, _State) ->
     lager:debug("listener federator terminating: ~p", [_Reason]).
 

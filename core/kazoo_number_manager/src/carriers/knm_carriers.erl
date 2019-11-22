@@ -3,6 +3,10 @@
 %%% @doc
 %%% @author Peter Defebvre
 %%% @author Pierre Fenoll
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(knm_carriers).
@@ -30,18 +34,11 @@
         ,is_local/1
         ]).
 
--ifdef(TEST).
--define(CARRIER_MODULES(AccountId)
-       ,(fun (?CHILD_ACCOUNT_ID) ->
-                 %% CHILD_ACCOUNT_ID is not a reseller but that's okay
-                 [?CARRIER_LOCAL, <<"knm_bandwidth2">>];
-             (_) -> ?CARRIER_MODULES
-         end)(AccountId)).
--else.
+%% CHILD_ACCOUNT_ID is not a reseller but that's okay:
+%% [?CARRIER_LOCAL, <<"knm_bandwidth2">>]
 -define(CARRIER_MODULES(AccountId)
        ,kapps_account_config:get_ne_binaries(AccountId, ?KNM_CONFIG_CAT, <<"carrier_modules">>, ?CARRIER_MODULES)
        ).
--endif.
 
 -define(CARRIER_MODULES
        ,kapps_config:get_ne_binaries(?KNM_CONFIG_CAT, <<"carrier_modules">>, ?DEFAULT_CARRIER_MODULES)
@@ -54,6 +51,8 @@
 -define(DEFAULT_CARRIER_MODULES, [?DEFAULT_CARRIER_MODULE]).
 
 -ifdef(TEST).
+%% TODO: write testable code so we don't depend on passing these
+%% for testing
 -type option() :: {'quantity', pos_integer()} |
                   {'carriers', kz_term:ne_binaries()} |
                   {'phonebook_url', kz_term:ne_binary()} |
@@ -105,7 +104,7 @@ check_numbers(Module, Nums) ->
         {error, _} -> {#{}, maps:from_list([{Num,<<"error">>} || Num <- Nums])}
     catch
         ?STACKTRACE(_, _, ST)
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         {#{}, maps:from_list([{Num,<<"error">>} || Num <- Nums])}
         end.
 
@@ -165,6 +164,7 @@ all_modules() ->
     ,<<"knm_telnyx">>
     ,<<"knm_vitelity">>
     ,<<"knm_voip_innovations">>
+    ,<<"knm_voxbone">>
     ].
 
 %%------------------------------------------------------------------------------
@@ -181,7 +181,7 @@ info(AuthAccountId, AccountId, ResellerId) ->
     Map = lists:foldl(fun info_fold/2, Acc0, AvailableCarriers),
     kz_json:from_map(
       Map#{?CARRIER_INFO_USABLE_CARRIERS => usable_carriers()
-          ,?CARRIER_INFO_USABLE_CREATION_STATES => allowed_creation_states(AuthAccountId)
+          ,?CARRIER_INFO_USABLE_CREATION_STATES => knm_number:allowed_creation_states(AuthAccountId)
           }
      ).
 
@@ -195,7 +195,7 @@ info_fold(Module, Info=#{?CARRIER_INFO_MAX_PREFIX := MaxPrefix}) ->
         _ -> Info
     catch
         ?STACKTRACE(_E, _R, ST)
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         Info
         end.
 
@@ -205,19 +205,6 @@ usable_carriers() ->
                                ,?CARRIER_RESERVED_RESELLER
                                ],
     [CarrierName || <<"knm_",CarrierName/binary>> <- Modules].
-
--spec allowed_creation_states(kz_term:api_ne_binary()) -> kz_term:ne_binaries().
--ifdef(TEST).
-allowed_creation_states(AccountId=?RESELLER_ACCOUNT_ID) ->
-    AccountJObj = kzd_accounts:set_allow_number_additions(?RESELLER_ACCOUNT_DOC, true),
-    Options = [{<<"auth_by_account">>, AccountJObj}],
-    knm_number:allowed_creation_states(Options, AccountId);
-allowed_creation_states(AccountId) ->
-    knm_number:allowed_creation_states(AccountId).
--else.
-allowed_creation_states(AccountId) ->
-    knm_number:allowed_creation_states(AccountId).
--endif.
 
 %%------------------------------------------------------------------------------
 %% @doc Buy a number from its carrier module
@@ -343,7 +330,7 @@ is_local(Carrier) ->
     try apply(Carrier, is_local, [])
     catch
         ?STACKTRACE(_E, _R, ST)
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         true
         end.
 

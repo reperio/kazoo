@@ -18,6 +18,11 @@
 %%% @author James Aimonetti
 %%% @author Karl Anderson
 %%% @author Ben Wann
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(tasks_bindings).
@@ -220,7 +225,7 @@ is_task_module(_) -> 'false'.
 -spec init() -> 'ok'.
 init() ->
     lager:debug("initializing tasks bindings"),
-    kz_util:put_callid(?DEFAULT_LOG_SYSTEM_ID),
+    kz_log:put_callid(?DEFAULT_LOG_SYSTEM_ID),
     lists:foreach(fun init_mod/1, ?TASKS).
 
 -spec init_mod(module()) -> any().

@@ -1,6 +1,10 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kz_services_recurring).
@@ -228,7 +232,7 @@ collect_bookkeeper(Invoice, Services, DueTimestamp) ->
     Request = [{<<"Account-ID">>, kz_services:account_id(Services)}
               ,{<<"Bookkeeper-ID">>, kz_services_invoice:bookkeeper_id(Invoice)}
               ,{<<"Bookkeeper-Type">>, kz_services_invoice:bookkeeper_type(Invoice)}
-              ,{<<"Call-ID">>, kz_util:get_callid()}
+              ,{<<"Call-ID">>, kz_log:get_callid()}
               ,{<<"Due-Timestamp">>, DueTimestamp}
               ,{<<"Vendor-ID">>, kz_services_invoice:bookkeeper_vendor_id(Invoice)}
                | kz_api:default_headers(?APP_NAME, ?APP_VERSION)

@@ -2,6 +2,11 @@
 %%% @copyright (C) 2012-2019, 2600Hz
 %%% @doc Common functions for the provisioner modules
 %%% @author Peter Defebvre
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(provisioner_v5).
@@ -479,6 +484,7 @@ get_line_key(<<"grandstream">>, _) -> <<"1">>;
 get_line_key(<<"obihai">>, _) -> <<"1">>;
 get_line_key(<<"vtech">>, _) -> <<"1">>;
 get_line_key(<<"yealink">>, _) -> <<"1">>;
+get_line_key(<<"htek">>, _) -> <<"1">>;
 get_line_key(_, _) -> 'undefined'.
 
 -spec get_feature_key_type(kz_json:object(), kz_term:ne_binary(), binary(), binary()) -> kz_term:api_object().
@@ -644,7 +650,7 @@ req_uri('devices', AccountId, MACAddress) ->
 -spec provisioning_uri(iolist()) -> iolist().
 provisioning_uri(ExplodedPath) ->
     Url = kapps_config:get_binary(?MOD_CONFIG_CAT, <<"provisioning_url">>),
-    Uri = kz_util:uri(Url, ExplodedPath),
+    Uri = kz_http_util:uri(Url, ExplodedPath),
     binary:bin_to_list(Uri).
 
 -spec account_payload(kz_json:object(), kz_term:ne_binary()) -> kz_json:object().

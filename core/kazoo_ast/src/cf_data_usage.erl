@@ -2,6 +2,10 @@
 %%% @copyright (C) 2015-2019, 2600Hz
 %%% @doc Module for parsing Callflow actions for `Data' usage.
 %%% @author James Aimonetti
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(cf_data_usage).
@@ -12,6 +16,7 @@
 
 -include_lib("kazoo_ast/include/kz_ast.hrl").
 -include_lib("kazoo_stdlib/include/kazoo_json.hrl").
+-include_lib("kazoo_stdlib/include/kz_log.hrl").
 -include_lib("kazoo_ast/src/kz_ast.hrl").
 
 -record(usage, {usages = [] %% places the Data is accessed
@@ -227,6 +232,7 @@ process_expression(Acc, ?TUPLE(Elements)) ->
 process_expression(Acc, ?CLAUSE(Exprs, _Guards, Body)) ->
     process_clause_body(process_expressions(Acc, Exprs), Body);
 process_expression(Acc, ?MATCH(Left, Right)) ->
+    ?LOG_DEBUG("process match ~p = ~p~n", [Left, Right]),
     process_match(Acc, Left, Right);
 process_expression(#usage{current_module=Module}=Acc, ?FUN_ARGS(Function, Args)) ->
     process_mfa(Acc, Module, Function, Args);
@@ -343,6 +349,14 @@ process_match_mfa(#usage{data_var_name=DataName
                  ) ->
     ?LOG_DEBUG("adding alias ~p~n", [VarName]),
     Acc#usage{data_var_aliases=[VarName|Aliases]};
+process_match_mfa(#usage{data_var_name=DataName
+                        ,data_var_aliases=Aliases
+                        }=Acc
+                 ,VarName
+                 ,'kz_json', 'set_values', [?VAR(_), ?VAR(DataName)]
+                 ) ->
+    ?LOG_DEBUG("adding alias ~p~n", [VarName]),
+    Acc#usage{data_var_aliases=[VarName|Aliases]};
 process_match_mfa(Acc, _VarName, M, F, As) ->
     process_mfa(Acc, M, F, As).
 
@@ -367,8 +381,22 @@ process_mfa(#usage{data_var_name=DataName
            ) ->
     ?LOG_DEBUG("adding set_value usage ~p, ~p, ~p~n", [Key, Value, DataName]),
     Acc#usage{usages=maybe_add_usage(Usages, {M, F, arg_to_key(Key), DataName, arg_to_key(Value)})};
+process_mfa(#usage{data_var_name=DataName}=Acc
+           ,'kz_json'=_M, 'set_values'=_F, [?VAR(_KVs), ?VAR(DataName)]
+           ) ->
+    Acc;
+process_mfa(#usage{data_var_name=DataName}=Acc
+           ,'kz_json'=M, 'set_values'=_F, [KVs, ?VAR(DataName)=DN]
+           ) ->
+    ?LOG_DEBUG("adding set_values usage ~p: ~p~n", [KVs, DataName]),
+    lists:foldl(fun({Key, Value}, Usage) ->
+                        process_mfa(Usage, M, 'set_value', [Key, Value, DN])
+                end
+               ,Acc
+               ,KVs
+               );
 process_mfa(#usage{}=Acc
-           ,'kz_json', _F, [{call, _, _, _}=_Key|_]
+           ,'kz_json', _F, [{'call', _, _, _}=_Key|_]
            ) ->
     Acc;
 process_mfa(#usage{data_var_name=DataName
@@ -717,6 +745,9 @@ process_mfa_clause(#usage{data_var_name=DataName
         ?VAR(DataName) -> process_clause_body(Acc, Body);
         ?MOD_FUN_ARGS('kz_json', 'set_value', _Args)=_ClauseArgs ->
             ?LOG_DEBUG("skipping set_value on ~p(~p)~n", [_Args, element(2, _ClauseArgs)]),
+            process_clause_body(Acc, Body);
+        ?MOD_FUN_ARGS('kz_json', 'set_values', _Args)=_ClauseArgs ->
+            ?LOG_DEBUG("skipping set_values on ~p(~p)~n", [_Args, element(2, _ClauseArgs)]),
             process_clause_body(Acc, Body);
         ?VAR(NewName) ->
             ?LOG_DEBUG("  data name changed from ~p to ~p~n", [DataName, NewName]),

@@ -3,6 +3,10 @@
 %%% @doc
 %%% @author Peter Defebvre
 %%% @author Pierre Fenoll
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(knm_number_options).
@@ -34,10 +38,6 @@
         ,should_force_outbound/1
         ,transfer_media_id/1
         ]).
-
--ifdef(TEST).
--include_lib("eunit/include/eunit.hrl").
--endif.
 
 -include("knm.hrl").
 
@@ -89,7 +89,7 @@ mdn_options() ->
 -spec to_phone_number_setters(options()) -> knm_phone_number:set_functions().
 to_phone_number_setters(Options) ->
     [{setter_fun(Option), Value}
-     || {Option, Value} <- kz_util:uniq(Options),
+     || {Option, Value} <- props:unique(Options),
         is_atom(Option),
         Option =/= 'crossbar'
     ].
@@ -227,33 +227,3 @@ should_force_outbound(Props) when is_list(Props) ->
 -spec transfer_media_id(extra_options()) -> kz_term:api_binary().
 transfer_media_id(Props) when is_list(Props) ->
     props:get_value('transfer_media', Props).
-%%------------------------------------------------------------------------------
-
-
--ifdef(TEST).
-
-to_phone_number_setters_test_() ->
-    A_1 = kz_json:from_list([{<<"a">>, 1}]),
-    M_1 = ?CARRIER_LOCAL,
-    [?_assertEqual([{fun knm_phone_number:reset_doc/2, A_1}]
-                  ,to_phone_number_setters([{'public_fields', A_1}])
-                  )
-    ,?_assertEqual([{fun knm_phone_number:set_auth_by/2, ?KNM_DEFAULT_AUTH_BY}
-                   ,{fun knm_phone_number:set_ported_in/2, 'false'}
-                   ,{fun knm_phone_number:set_dry_run/2, [[[]]]}
-                   ]
-                  ,to_phone_number_setters([{'auth_by', ?KNM_DEFAULT_AUTH_BY}
-                                           ,{'ported_in', 'false'}
-                                           ,{<<"batch_run">>, 'false'}
-                                           ,{'dry_run', [[[]]]}
-                                           ])
-                  )
-    ,?_assertEqual([{fun knm_phone_number:set_module_name/2, M_1}]
-                  ,to_phone_number_setters([{module_name, M_1}
-                                           ,{module_name, <<"blaaa">>}
-                                           ,{module_name, ?CARRIER_MDN}
-                                           ])
-                  )
-    ].
-
--endif.

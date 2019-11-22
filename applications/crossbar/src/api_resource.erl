@@ -4,6 +4,11 @@
 %%% @author Karl Anderson
 %%% @author James Aimonetti
 %%% @author Jon Blanton
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(api_resource).
@@ -80,6 +85,11 @@ rest_init(Req, Opts) ->
 
     Path = find_path(Req, Opts),
 
+    MasterId = case kapps_util:get_master_account_id() of
+                   {'ok', Id} -> Id;
+                   {'error', _} -> 'undefined'
+               end,
+
     Setters = [{fun cb_context:set_req_id/2, get_request_id(Req)}
               ,{fun cb_context:set_req_headers/2, cowboy_req:headers(Req)}
               ,{fun host_url/2, Req}
@@ -95,6 +105,7 @@ rest_init(Req, Opts) ->
               ,{fun cb_context:set_api_version/2, find_version(Path, Req)}
               ,{fun cb_context:set_magic_pathed/2, props:is_defined('magic_path', Opts)}
               ,{fun cb_context:store/3, 'metrics', metrics()}
+              ,{fun cb_context:set_master_account_id/2, MasterId}
               ,fun req_nouns/1
               ],
 
@@ -146,7 +157,7 @@ get_request_id(Req) ->
                 'undefined' -> kz_datamgr:get_uuid();
                 UserReqId -> kz_term:to_binary(UserReqId)
             end,
-    kz_util:put_callid(ReqId),
+    kz_log:put_callid(ReqId),
     ReqId.
 
 -spec get_profile_id(cowboy_req:req()) -> kz_term:api_ne_binary().

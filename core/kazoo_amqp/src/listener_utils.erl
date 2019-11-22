@@ -2,6 +2,10 @@
 %%% @copyright (C) 2011-2019, 2600Hz
 %%% @doc Utility functions for AMQP listeners to use to add/remove responders.
 %%% @author James Aimonetti
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(listener_utils).
@@ -127,5 +131,5 @@ init_responder(Responder) ->
     catch
         ?STACKTRACE(_E, _R, ST)
         lager:debug("responder ~s crashed: ~s: ~p", [Responder, _E, _R]),
-        kz_util:log_stacktrace(ST)
+        kz_log:log_stacktrace(ST)
         end.

@@ -7,6 +7,7 @@
 *.plt
 *.app
 .deps.mk
+.deps.rules
 .test.deps
 *.beam
 *.so
@@ -40,6 +41,7 @@ core/sup/sup
 
 core/kazoo_number_manager/dialcodes.json
 core/kazoo_number_manager/src/knm_iso3166a2_itu.erl
+core/kazoo_number_manager/src/knm_iso3166_util.erl
 
 make/erlang-formatter/
 /TAGS
@@ -90,3 +92,4 @@ core/kazoo_proper/priv/mp3.mp3
 /doc/engineering/.org/proper.pdf
 /doc/engineering/.org/proper.tex
 /todo.org
+*.tar

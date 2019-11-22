@@ -3,6 +3,11 @@
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(cf_park).
@@ -588,7 +593,7 @@ load_parked_call(JObj) ->
 %%------------------------------------------------------------------------------
 -spec maybe_cleanup_slot(kz_term:ne_binary(), kapps_call:call(), kz_term:ne_binary()) -> 'ok'.
 maybe_cleanup_slot(SlotNumber, Call, OldCallId) ->
-    _ = kz_util:put_callid(OldCallId),
+    _ = kz_log:put_callid(OldCallId),
     ParkedCalls = get_parked_calls(Call),
     AccountDb   = kapps_call:account_db(Call),
 
@@ -682,7 +687,7 @@ wait_for_pickup(SlotNumber, Slot, Data, Call) ->
                     lager:info("parked caller ringback was answered"),
                     _ = cleanup_slot(SlotNumber, cf_exe:callid(Call), kapps_call:account_db(Call)),
                     _ = publish_retrieved(Call, SlotNumber),
-                    cf_exe:transfer(Call);
+                    wait_for_bridge(Call);
                 'failed' ->
                     unanswered_action(SlotNumber, Slot, Data, Call);
                 'channel_hungup' ->
@@ -1025,3 +1030,8 @@ error_occupied_slot(Call) ->
                 kapps_call_command:b_prompt(<<"park-already_in_use">>, Call)
         end,
     cf_exe:stop(Call).
+
+-spec wait_for_bridge(kapps_call:call()) -> 'ok'.
+wait_for_bridge(Call) ->
+    _ = kapps_call_command:wait_for_bridge('infinity', Call),
+    cf_exe:continue(Call).

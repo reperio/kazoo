@@ -1,3 +1,12 @@
+%%%-----------------------------------------------------------------------------
+%%% @copyright (C) 2011-2019, 2600Hz
+%%% @doc
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
+%%% @end
+%%%-----------------------------------------------------------------------------
 -module(gcm).
 -behaviour(gen_server).
 
@@ -53,7 +62,7 @@ start_link(Name, Key) ->
 
 -spec init(any()) -> {ok, #state{}} | {ok, #state{}, non_neg_integer()} | {ok, #state{}, hibernate} | {stop, any()} | ignore.
 init([Key]) ->
-    kz_util:put_callid(?MODULE),
+    kz_log:put_callid(?MODULE),
     lager:debug("starting with key ~s", [Key]),
     {ok, #state{key=Key}}.
 
@@ -71,7 +80,7 @@ handle_call(_Request, _From, State) ->
 
 -spec handle_cast(any(), #state{}) -> {noreply, #state{}} | {noreply, #state{}, non_neg_integer()} | {noreply, #state{}, hibernate} | {stop, any(), #state{}}.
 handle_cast({send, RegIds, Message, Retry}, #state{key=Key} = State) ->
-    do_push(RegIds, Message, Key, Retry),
+    _ = do_push(RegIds, Message, Key, Retry),
     {noreply, State};
 
 handle_cast(_Msg, State) ->

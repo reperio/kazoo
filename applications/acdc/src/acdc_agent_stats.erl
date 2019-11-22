@@ -2,6 +2,11 @@
 %%% @copyright (C) 2014-2019, 2600Hz
 %%% @doc Collector of stats for agents
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(acdc_agent_stats).
@@ -334,26 +339,23 @@ status_match_builder_fold(_, _, Acc) -> Acc.
 
 -spec query_statuses(kz_term:ne_binary(), kz_term:ne_binary(), ets:match_spec(), pos_integer() | 'no_limit') -> 'ok'.
 query_statuses(RespQ, MsgId, Match, Limit) ->
-    case ets:select(status_table_id(), Match) of
-        [] ->
-            lager:debug("no stats found, sorry ~s", [RespQ]),
-            Resp = [{<<"Error-Reason">>, <<"No agents found">>}
-                   ,{<<"Msg-ID">>, MsgId}
-                    | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
-                   ],
-            kapi_acdc_stats:publish_status_err(RespQ, Resp);
-        Stats ->
-            QueryResults = lists:foldl(fun query_status_fold/2, kz_json:new(), Stats),
-            TrimmedResults = kz_json:map(fun(A, B) ->
-                                                 {A, trim_query_statuses(B, Limit)}
-                                         end, QueryResults),
+    Stats = ets:select(status_table_id(), Match),
 
-            Resp = [{<<"Agents">>, TrimmedResults}
-                   ,{<<"Msg-ID">>, MsgId}
-                    | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
-                   ],
-            kapi_acdc_stats:publish_status_resp(RespQ, Resp)
-    end.
+    case Stats of
+        [] -> lager:debug("no stats found (requester: ~s)", [RespQ]);
+        _ -> 'ok'
+    end,
+
+    QueryResults = lists:foldl(fun query_status_fold/2, kz_json:new(), Stats),
+    TrimmedResults = kz_json:map(fun(A, B) ->
+                                         {A, trim_query_statuses(B, Limit)}
+                                 end, QueryResults),
+
+    Resp = [{<<"Agents">>, TrimmedResults}
+           ,{<<"Msg-ID">>, MsgId}
+            | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+           ],
+    kapi_acdc_stats:publish_status_resp(RespQ, Resp).
 
 -spec trim_query_statuses(kz_json:object(), pos_integer() | 'no_limit') -> kz_json:object().
 trim_query_statuses(Statuses, Limit) ->
@@ -406,7 +408,7 @@ status_stat_to_doc(#status_stat{id=Id
 
 -spec archive_status_data(pid(), boolean()) -> 'ok'.
 archive_status_data(Srv, 'true') ->
-    kz_util:put_callid(<<"acdc_stats.force_status_archiver">>),
+    kz_log:put_callid(<<"acdc_stats.force_status_archiver">>),
     Match = [{#status_stat{is_archived='$1'
                           ,_='_'
                           }
@@ -416,7 +418,7 @@ archive_status_data(Srv, 'true') ->
     maybe_archive_status_data(Srv, Match);
 
 archive_status_data(Srv, 'false') ->
-    kz_util:put_callid(<<"acdc_stats.status_archiver">>),
+    kz_log:put_callid(<<"acdc_stats.status_archiver">>),
     Past = kz_time:now_s() - ?ARCHIVE_WINDOW,
     Match = [{#status_stat{timestamp='$1'
                           ,is_archived='$2'

@@ -17,6 +17,10 @@
 %%%
 %%% @author James Aimonetti
 %%% @author Karl Anderson
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(kazoo_bindings).
@@ -398,7 +402,7 @@ gift_data() -> 'ok'.
 %%------------------------------------------------------------------------------
 -spec init([]) -> {'ok', state()}.
 init([]) ->
-    kz_util:put_callid(?DEFAULT_LOG_SYSTEM_ID),
+    kz_log:put_callid(?DEFAULT_LOG_SYSTEM_ID),
     lager:debug("starting bindings server"),
     {'ok', #state{}}.
 
@@ -667,7 +671,7 @@ fold_bind_results([#kz_responder{module=M
         fold_bind_results(Responders, Payload, Route, RespondersLen, ReRunResponders);
         ?STACKTRACE(_T, _E, ST)
         lager:error("excepted: ~s: ~p", [_T, _E]),
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         fold_bind_results(Responders, Payload, Route, RespondersLen, ReRunResponders)
         end;
 fold_bind_results([#kz_responder{}=_R | Responders]
@@ -698,7 +702,7 @@ log_undefined(M, F, Length, [{RealM, RealF, RealArgs,_}|_]) ->
     ?LOG_DEBUG("in call ~s:~s/~b", [M, F, Length]);
 log_undefined(M, F, Length, ST) ->
     ?LOG_DEBUG("undefined function ~s:~s/~b", [M, F, Length]),
-    kz_util:log_stacktrace(ST).
+    kz_log:log_stacktrace(ST).
 
 log_function_clause(M, F, Length, [{M, F, _Args, _}|_]) ->
     ?LOG_INFO("unable to find function clause for ~s:~s/~b", [M, F, Length]);
@@ -714,7 +718,7 @@ log_function_clause(M, F, Length, [{RealM, RealF, RealArgs, Where}|_ST]) ->
     'ok';
 log_function_clause(M, F, Lenth, ST) ->
     ?LOG_ERROR("no matching function clause for ~s:~s/~p", [M, F, Lenth]),
-    kz_util:log_stacktrace(ST).
+    kz_log:log_stacktrace(ST).
 
 -spec map_processor(kz_term:ne_binary(), payload(), kz_rt_options()) -> map_results().
 map_processor(Routing, Payload, Options) when not is_list(Payload) ->
@@ -837,16 +841,16 @@ apply_map_responder(#kz_responder{module=M
         {'EXIT', {'undef', ST}};
         ?STACKTRACE('error', Exp, ST)
         lager:error("exception: error:~p", [Exp]),
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         {'EXIT', {Exp, ST}};
         ?STACKTRACE(_Type, Exp, ST)
         lager:error("exception: ~s:~p", [_Type, Exp]),
-        kz_util:log_stacktrace(ST),
+        kz_log:log_stacktrace(ST),
         {'EXIT', Exp}
         end.
 
 log_apply(Format, Args) ->
-    Silent = erlang:get('kazoo_bindinds_silent_apply'),
+    Silent = erlang:get('kazoo_bindings_silent_apply'),
     log_apply(Format, Args, Silent).
 
 log_apply(_Format, _Args, 'true') -> 'ok';

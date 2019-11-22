@@ -2,6 +2,11 @@
 %%% @copyright (C) 2010-2019, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(pqc_cb_phone_numbers).
@@ -115,12 +120,12 @@ correct() ->
            ,commands(?MODULE)
            ,?TRAPEXIT(
                begin
+                   timer:sleep(1000),
                    {History, Model, Result} = run_commands(?MODULE, Cmds),
-
                    pqc_cb_accounts:cleanup_accounts(pqc_kazoo_model:api(Model), ?ACCOUNT_NAMES),
 
                    ?WHENFAIL(io:format("Final Model : ~p~nFailing Cmds: ~p~n"
-                                      ,[Model, zip(Cmds, History)]
+                                      ,[pqc_kazoo_model:pp(Model), zip(Cmds, History)]
                                       )
                             ,aggregate(command_names(Cmds), Result =:= 'ok')
                             )

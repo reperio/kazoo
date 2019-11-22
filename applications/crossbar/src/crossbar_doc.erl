@@ -3,6 +3,11 @@
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
+%%%
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(crossbar_doc).
@@ -176,7 +181,7 @@ maybe_open_cache_docs(DbName, DocIds, Options) ->
 %%------------------------------------------------------------------------------
 -spec check_document_type(cb_context:context(), kz_json:object() | kz_json:objects(), kz_term:proplist()) ->
                                  boolean().
-check_document_type(_Context, [], _Options) -> true;
+check_document_type(_Context, [], _Options) -> 'true';
 check_document_type(Context, [_|_]=JObjs, Options) ->
     F = fun(JObj) -> check_document_type(Context, JObj, Options) end,
     lists:all(F, JObjs);
@@ -192,6 +197,7 @@ document_type_match('undefined', _ExpectedType, _ReqType) ->
     lager:debug("document doesn't have type, requested type is ~p", [_ReqType]),
     'true';
 document_type_match(_JObjType, <<"any">>, _) -> 'true';
+document_type_match(_JObjType, 'undefined', _) -> 'true';
 document_type_match(ExpectedType, ExpectedTypes, _)
   when is_list(ExpectedTypes) ->
     lists:member(ExpectedType, ExpectedTypes);
@@ -533,9 +539,13 @@ load_attachment(<<_/binary>>=DocId, AName, Options, Context) ->
             Context1 = load(DocId, Context, Options),
             'success' = cb_context:resp_status(Context1),
 
+            CT = kz_doc:attachment_content_type(cb_context:doc(Context1), AName, <<"application/octet-stream">>),
+            lager:debug("adding content type ~s from attachment ~s", [CT, AName]),
+
             cb_context:setters(Context1
                               ,[{fun cb_context:set_resp_data/2, AttachBin}
                                ,{fun cb_context:set_resp_etag/2, rev_to_etag(cb_context:doc(Context1))}
+                               ,{fun cb_context:add_resp_headers/2, #{<<"content-type">> => CT}}
                                ])
     end;
 load_attachment(Doc, AName, Options, Context) ->
@@ -597,19 +607,19 @@ save_jobjs(Context, JObjs0, Options) ->
 maybe_send_contact_list(Context) ->
     case cb_context:resp_status(Context) of
         'success' ->
-            _ = kz_util:spawn(fun provisioner_util:maybe_send_contact_list/4
-                             ,[cb_context:account_id(Context)
-                              ,cb_context:auth_token(Context)
-                              ,cb_context:doc(Context)
-                              ,cb_context:fetch(Context, 'db_doc')
-                              ]),
+            _ = kz_process:spawn(fun provisioner_util:maybe_send_contact_list/4
+                                ,[cb_context:account_id(Context)
+                                 ,cb_context:auth_token(Context)
+                                 ,cb_context:doc(Context)
+                                 ,cb_context:fetch(Context, 'db_doc')
+                                 ]),
             'ok';
         _Status -> 'ok'
     end.
 
 -spec maybe_spawn_service_updates(cb_context:context(), kz_json:object() | kz_json:objects(), boolean()) -> 'ok'.
 maybe_spawn_service_updates(Context, JObjs, 'false') ->
-    _ = kz_util:spawn(fun crossbar_services:update_subscriptions/2, [Context, JObjs]),
+    _ = kz_process:spawn(fun crossbar_services:update_subscriptions/2, [Context, JObjs]),
     lager:debug("executing service subscriptions update in the background");
 maybe_spawn_service_updates(Context, JObjs, 'true') ->
     lager:debug("executing service subscriptions update in the foreground, this will take a while"),
@@ -713,13 +723,7 @@ save_attachment(DocId, Name, Contents, Context, Options) ->
     end.
 
 handle_saved_attachment(Context, DocId) ->
-    {'ok', Rev1} = kz_datamgr:lookup_doc_rev(cb_context:account_db(Context), DocId),
-    cb_context:setters(Context
-                      ,[{fun cb_context:set_doc/2, kz_json:new()}
-                       ,{fun cb_context:set_resp_status/2, 'success'}
-                       ,{fun cb_context:set_resp_data/2, kz_json:new()}
-                       ,{fun cb_context:set_resp_etag/2, rev_to_etag(Rev1)}
-                       ]).
+    load(DocId, Context).
 
 -spec maybe_delete_doc(cb_context:context(), kz_term:ne_binary()) ->
                               {'ok', _} |
@@ -1053,6 +1057,7 @@ handle_thing_success(Thing, Context) ->
 handle_json_success(JObj, Context) ->
     handle_json_success(JObj, Context, cb_context:req_verb(Context)).
 
+-spec public_and_read_only(kz_json:object()) -> kz_json:object().
 public_and_read_only(JObj) ->
     Public = kz_doc:public_fields(JObj),
     case kz_json:get_json_value(<<"_read_only">>, JObj) of
@@ -1060,6 +1065,7 @@ public_and_read_only(JObj) ->
         ReadOnly -> kz_json:set_value(<<"_read_only">>, ReadOnly, Public)
     end.
 
+-spec add_location_header(kz_json:object(), map()) -> map().
 add_location_header(JObj, RHs) ->
     maps:put(<<"location">>, kz_doc:id(JObj), RHs).
 
