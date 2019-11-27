@@ -66,15 +66,15 @@
 -spec handle(kz_json:object(), kapps_call:call()) -> 'ok'.
 handle(Data, Call) ->
     Number = kapps_call:kvs_fetch('cf_capture_group', Call),
-    PickupType = kz_json:get_ne_binary_value(<<"type">>, Data),
+    PickupType = kz_json:get_ne_binary_value(<<"type">>, Data, <<"extension">>),
     case build_pickup_params(Number, PickupType, Call) of
         {'ok', Params} ->
-            cf_group_pickup:handle(kz_json:from_list(Params), Call);
+            cf_group_pickup:handle(kz_json:set_values(Params, Data), Call);
         {'error', _E} ->
             lager:info("error <<~s>> processing pickup '~s' for number ~s"
                       ,[_E, PickupType, Number]
                       ),
-            _ = kapps_call_command:b_play(<<"park-no_caller">>, Call),
+            _ = kapps_call_command:b_prompt(<<"park-no_caller">>, Call),
             cf_exe:stop(Call)
     end.
 
@@ -102,8 +102,6 @@ build_pickup_params(Number, <<"extension">>, Call) ->
             {'error', <<"no callflow with extension ", Number/binary>>};
         {'error', _} = E -> E
     end;
-build_pickup_params(_ ,'undefined', _) ->
-    {'error', <<"parameter 'type' not defined">>};
 build_pickup_params(_, Other, _) ->
     {'error', <<Other/binary," not implemented">>}.
 

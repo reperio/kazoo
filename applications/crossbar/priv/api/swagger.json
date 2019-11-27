@@ -1812,6 +1812,19 @@
         "callflows.branch_bnumber": {
             "description": "Validator for the branch_bnumber callflow data object",
             "properties": {
+                "hunt": {
+                    "default": false,
+                    "description": "Should the capture group be used to hunt for a new callflow",
+                    "type": "boolean"
+                },
+                "hunt_allow": {
+                    "description": "A regexp used to match against the capture group to whitelist allowed numbers to hunt",
+                    "type": "string"
+                },
+                "hunt_deny": {
+                    "description": "A regexp used to match against the capture group to blacklist denied numbers to hunt",
+                    "type": "string"
+                },
                 "skip_module": {
                     "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
                     "type": "boolean"
@@ -2526,6 +2539,7 @@
                     "type": "boolean"
                 },
                 "type": {
+                    "default": "extension",
                     "description": "The type of collection to pickup",
                     "enum": [
                         "group",
@@ -2536,6 +2550,9 @@
                     "type": "string"
                 }
             },
+            "required": [
+                "type"
+            ],
             "type": "object"
         },
         "callflows.hangup": {
@@ -12855,6 +12872,9 @@
                 "Custom-Channel-Vars": {
                     "type": "object"
                 },
+                "Disposition": {
+                    "type": "string"
+                },
                 "Error-Message": {
                     "type": "string"
                 },
@@ -12868,6 +12888,12 @@
                     "enum": [
                         "dialplan"
                     ],
+                    "type": "string"
+                },
+                "Hangup-Cause": {
+                    "type": "string"
+                },
+                "Hangup-Code": {
                     "type": "string"
                 },
                 "Request": {
@@ -32216,7 +32242,7 @@
                     "type": "boolean"
                 },
                 "max_recording_time_limit": {
-                    "default": 3600,
+                    "default": 10800,
                     "description": "media maximum recording time limit",
                     "type": "integer"
                 },

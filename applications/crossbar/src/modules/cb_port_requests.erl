@@ -45,7 +45,6 @@
                                ]).
 
 -define(ACCOUNTS_BY_SIMPLE_ID, <<"accounts/listing_by_simple_id">>).
--define(PORT_REQ_NUMBERS, <<"port_requests/port_in_numbers">>).
 -define(ALL_PORT_REQ_NUMBERS, <<"port_requests/all_port_in_numbers">>).
 -define(LISTING_BY_STATE, <<"port_requests/listing_by_state">>).
 -define(LISTING_BY_NUMBER, <<"port_requests/listing_by_number">>).
@@ -310,8 +309,8 @@ validate(Context, Id, ?PATH_TOKEN_LOA) ->
 validate(Context, Id, ?PATH_TOKEN_TIMELINE) ->
     C1 = load_port_request(set_port_authority(Context), Id),
     case 'success' =:= cb_context:resp_status(C1) of
-        false -> C1;
-        true ->
+        'false' -> C1;
+        'true' ->
             NewDoc = prepare_timeline(C1, cb_context:doc(C1)),
             cb_context:set_resp_data(C1, NewDoc)
     end.
@@ -388,10 +387,8 @@ patch(Context, Id, NewState=?PORT_SUBMITTED) ->
         {'ok', Response} ->
             C1 = handle_phonebook_response(Context, Response),
             save_then_maybe_notify(C1, Id, NewState);
-        {'error', {Code, Response}} ->
-            handle_phonebook_error(Context, Code, Response);
-        {'error', Message} ->
-            cb_context:add_system_error('datastore_fault', Message, Context)
+        {'error', Error} ->
+            handle_phonebook_error(Context, Error)
     end;
 patch(Context, Id, NewState=?PORT_PENDING) ->
     save_then_maybe_notify(Context, Id, NewState);
@@ -403,14 +400,7 @@ patch(Context, Id, NewState=?PORT_COMPLETED) ->
 patch(Context, Id, NewState=?PORT_REJECTED) ->
     save_then_maybe_notify(Context, Id, NewState);
 patch(Context, Id, NewState=?PORT_CANCELED) ->
-    case phonebook:maybe_cancel_port_in(Context) of
-        {'ok', _} ->
-            save_then_maybe_notify(Context, Id, NewState);
-        {'error', {Code, Response}} ->
-            handle_phonebook_error(Context, Code, Response);
-        {'error', Message} ->
-            cb_context:add_system_error('datastore_fault', Message, Context)
-    end.
+    save_then_maybe_notify(Context, Id, NewState).
 
 %%------------------------------------------------------------------------------
 %% @doc If the HTTP verb is POST, execute the actual action, usually a db save
@@ -441,14 +431,7 @@ post(Context, Id, ?PORT_ATTACHMENT, AttachmentId) ->
 %%------------------------------------------------------------------------------
 -spec delete(cb_context:context(), path_token()) -> cb_context:context().
 delete(Context, _Id) ->
-    case phonebook:maybe_cancel_port_in(Context) of
-        {'ok', _} ->
-            crossbar_doc:delete(Context);
-        {'error', {Code, Response}} ->
-            handle_phonebook_error(Context, Code, Response);
-        {'error', Message} ->
-            cb_context:add_system_error('datastore_fault', Message, Context)
-    end.
+    crossbar_doc:delete(Context).
 
 -spec delete(cb_context:context(), path_token(), path_token(), path_token()) ->
                     cb_context:context().
@@ -498,10 +481,8 @@ save_and_send_comments(Context, Id, NewComments) ->
                 _ ->
                     Context1
             end;
-        {'error', {Code, Response}} ->
-            handle_phonebook_error(Context, Code, Response);
-        {'error', Message} ->
-            cb_context:add_system_error('datastore_fault', Message, Context)
+        {'error', Error} ->
+            handle_phonebook_error(Context, Error)
     end.
 
 -spec save_then_maybe_notify(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) -> cb_context:context().
@@ -520,7 +501,7 @@ save_then_maybe_notify(Context, PortId, NewState) ->
 -spec maybe_set_scheduled_date_from_schedule_on(kz_json:object()) -> kz_json:object().
 maybe_set_scheduled_date_from_schedule_on(Doc) ->
     case kz_json:get_ne_value(<<"schedule_on">>, Doc) of
-        undefined -> Doc;
+        'undefined' -> Doc;
         DateJObj ->
             TZ = kz_json:get_ne_binary_value(<<"timezone">>, DateJObj),
             Datetime = kz_json:get_ne_binary_value(<<"date_time">>, DateJObj),
@@ -552,18 +533,95 @@ date_as_configured_timezone(Date, Time, FromTimezone) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec handle_phonebook_error(cb_context:context(), integer(), kz_json:object()) -> cb_context:context().
-handle_phonebook_error(Context, Code, Response) ->
-    Ctx = cb_context:setters(Context, [{fun cb_context:set_resp_error_code/2, Code}
-                                      ,{fun cb_context:set_resp_status/2, 'error'}
-                                      ,{fun cb_context:set_resp_error_msg/2, kz_json:get_ne_binary_value(<<"message">>, Response)}
-                                      ,{fun cb_context:set_validation_errors/2, kz_json:get_value(<<"data">>, Response)}
-                                      ]),
-    Env = cb_context:resp_envelope(Ctx),
-    Env1 = kz_json:set_values([{<<"passthrough">>, true}
+-spec handle_phonebook_error(cb_context:context(), phonebook:errors()) -> cb_context:context().
+handle_phonebook_error(Context, #{code := Code
+                                 ,payload := Payload
+                                 ,reason := 'bad_phonebook'
+                                 }=Error) ->
+    Env = cb_context:resp_envelope(Context),
+    Env1 = kz_json:set_values([{<<"passthrough">>, 'true'}
                               ,{<<"error_format">>, <<"phonebook">>}
                               ], Env),
-    cb_context:set_resp_envelope(Ctx, Env1).
+    Setters = [{fun cb_context:set_resp_error_code/2, Code}
+              ,{fun cb_context:set_resp_status/2, 'error'}
+              ,{fun cb_context:set_resp_error_msg/2, <<"request is rejected by port automation system">>}
+              ,{fun cb_context:set_validation_errors/2, kz_json:get_value(<<"data">>, Payload, kz_json:new())}
+              ,{fun cb_context:set_resp_envelope/2, Env1}
+              ],
+    Context1 = maybe_reject_port(Context, Error),
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            %% returning successful failure
+            Context1;
+        _ ->
+            %% for port_in: even rejecting the port is failed, shame!
+            %% for add_comment: to let client know why comment did not added
+            cb_context:setters(Context, Setters)
+    end;
+handle_phonebook_error(Context, #{payload := Payload}) ->
+    cb_context:add_system_error('datastore_fault', kz_json:get_value(<<"message">>, Payload), Context).
+
+%% Adding a second to transition timestamp, because the port is just transitioned
+%% to submitted and it is immediately transitioning to rejected so if the seconds are same
+%% this could cause the UI to not showing the 'Fix' button.
+-define(IMMEDIATELY_REJECTION_FUDGE_SECONDS, 1).
+
+-spec maybe_reject_port(cb_context:context(), phonebook:errors()) -> cb_context:context().
+maybe_reject_port(Context, #{code := Code
+                            ,req_type := 'port_in'
+                            ,payload := Payload
+                            }) ->
+    lager:debug("phonebook submission failed, rejecting the port request"),
+    Reason = <<"There was some issue with your port request. Please wait while we investigate the issue.">>,
+    PhonebookPayload = kz_json:from_list(
+                         [{<<"http_code">>, kz_term:to_binary(Code)}
+                         ,{<<"payload">>, Payload}
+                         ]),
+    CommentText = kz_term:to_binary(
+                    ["Phonebook/carrier reject to submit port request.\n "
+                    ,kz_json:encode(Payload, ['pretty'])
+                    ]),
+    Comment = kz_doc:setters(
+                [{fun kzd_comment:set_account_id/2, cb_context:auth_account_id(Context)}
+                ,{fun kzd_comment:set_action_required/2, 'false'}
+                ,{fun kzd_comment:set_author/2, <<"Port Automation">>}
+                ,{fun kzd_comment:set_content/2, CommentText}
+                ,{fun kzd_comment:set_is_private/2, 'true'}
+                ,{fun kzd_comment:set_timestamp/2, kz_time:now_s()}
+                ]),
+    Metadata = knm_port_request:transition_metadata(cb_context:auth_account_id(Context)
+                                                   ,cb_context:auth_user_id(Context)
+                                                   ,Reason
+                                                   ,kz_time:now_s() + ?IMMEDIATELY_REJECTION_FUDGE_SECONDS
+                                                   ),
+    Context1 = move_state(Context, ?PORT_REJECTED, Metadata),
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            send_port_comment_notifications(Context, kz_doc:id(cb_context:doc(Context)), [Comment]),
+            Doc = cb_context:doc(Context1),
+            DocSetters = [{fun kzd_port_requests:set_comments/2, kzd_port_requests:comments(Doc, []) ++ [Comment]}
+                         ,{fun kzd_port_requests:set_pvt_last_phonebook_error/2, PhonebookPayload}
+                         ],
+            CtxSetters = [{fun cb_context:set_doc/2, kz_doc:setters(Doc, DocSetters)}
+                         ,{fun cb_context:store/3, 'req_comments', []}
+                         ],
+            Context2 = save(cb_context:setters(Context1, CtxSetters)),
+            case cb_context:resp_status(Context2) of
+                'success' ->
+                    lager:debug("congratulation, port submission has been successfully rejected"),
+                    Context2;
+                _ ->
+                    lager:warning("failed to save rejected port request, halp"),
+                    Context2
+            end;
+        _ ->
+            lager:warning("failed to reject port request, halp"),
+            Context1
+    end;
+maybe_reject_port(Context, _) ->
+    %% changing resp_status so we return phonebook error above why adding comment is failed
+    Context1 = cb_context:store(Context, 'req_comments', []),
+    cb_context:add_system_error('datastore_fault', <<"unable to submit comment to carrier">>, Context1).
 
 -spec handle_phonebook_response(cb_context:context(), kz_json:object()) -> cb_context:context().
 handle_phonebook_response(Context, Response) ->
@@ -1185,15 +1243,6 @@ successful_validation(Context, _Id) ->
     Normalized = knm_port_request:normalize_numbers(cb_context:doc(Context)),
     cb_context:set_doc(Context, Normalized).
 
--spec fetch_by_number(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
-fetch_by_number(Context, Number) ->
-    Options = [{'keymap', Number}
-              ,{'databases', [?KZ_PORT_REQUESTS_DB]}
-              ,{'unchunkable', 'true'}
-              ,{'should_paginate', 'false'}
-              ],
-    crossbar_view:load(Context, ?PORT_REQ_NUMBERS, Options).
-
 %%------------------------------------------------------------------------------
 %% @doc
 %% @end
@@ -1203,12 +1252,12 @@ fetch_by_number(Context, Number) ->
 check_number_portability(PortId, Number, Context) ->
     E164 = knm_converters:normalize(Number),
     lager:debug("checking ~s(~s) for portability", [E164, Number]),
-    Context1 = fetch_by_number(Context, E164),
-    case cb_context:resp_status(Context1) of
-        'success' ->
-            DataResp = cb_context:resp_data(Context1),
-            check_number_portability(PortId, Number, Context1, E164, DataResp);
-        _ -> Context1
+    case knm_port_request:get_portin_number(cb_context:account_id(Context), E164) of
+        {'error', Reason}->
+            lager:debug("failed to check ports for number portability: ~p", [Reason]),
+            crossbar_doc:handle_datamgr_errors(Reason, PortId, Context);
+        {'ok', Result} ->
+            check_number_portability(PortId, Number, Context, E164, Result)
     end.
 
 -spec check_number_portability(kz_term:api_binary(), kz_term:ne_binary(), cb_context:context(), kz_term:ne_binary(), kz_json:objects()) ->
@@ -1216,28 +1265,31 @@ check_number_portability(PortId, Number, Context) ->
 check_number_portability(_PortId, Number, Context, E164, []) ->
     check_number_existence(E164, Number, Context);
 check_number_portability(PortId, Number, Context, E164, [PortReq]) ->
-    case {kz_json:get_value(<<"value">>, PortReq) =:= cb_context:account_id(Context)
+    case {kz_doc:account_id(PortReq) =:= cb_context:account_id(Context)
          ,kz_doc:id(PortReq) =:= PortId
          }
     of
         {'true', 'true'} ->
             lager:debug("number ~s(~s) is on this existing port request for this account(~s)"
-                       ,[E164, Number, cb_context:account_id(Context)]),
+                       ,[E164, Number, cb_context:account_id(Context)]
+                       ),
             cb_context:set_resp_status(Context, 'success');
         {'true', 'false'} ->
             lager:debug("number ~s(~s) is on a different port request in this account(~s): ~s"
-                       ,[E164, Number, cb_context:account_id(Context), kz_doc:id(PortReq)]),
+                       ,[E164, Number, cb_context:account_id(Context), kz_doc:id(PortReq)]
+                       ),
             Message = <<"Number is on a port request already: ", (kz_doc:id(PortReq))/binary>>,
             number_validation_error(Context, Number, Message);
         {'false', _} ->
             lager:debug("number ~s(~s) is on existing port request for other account(~s)"
-                       ,[E164, Number, kz_json:get_value(<<"value">>, PortReq)]),
+                       ,[E164, Number, kz_doc:account_id(PortReq)]),
             Message = <<"Number is being ported for a different account">>,
             number_validation_error(Context, Number, Message)
     end;
 check_number_portability(_PortId, Number, Context, E164, [_|_]) ->
-    lager:debug("number ~s(~s) exists on multiple port request docs. That's bad!",
-                [E164, Number]),
+    lager:debug("number ~s(~s) exists on multiple port request docs. That's bad!"
+               ,[E164, Number]
+               ),
     Msg = <<"Number is currently on multiple port requests. Contact a system admin to rectify">>,
     number_validation_error(Context, Number, Msg).
 
@@ -1313,8 +1365,13 @@ maybe_move_state(Context, PortState, 'success') ->
                                                    ,cb_context:auth_user_id(Context)
                                                    ,cb_context:req_value(Context, ?REQ_TRANSITION)
                                                    ),
+    move_state(Context, PortState, Metadata);
+maybe_move_state(Context, _, _) ->
+    Context.
+
+-spec move_state(cb_context:context(), kz_term:ne_binary(), knm_port_request:transition_metadata()) -> cb_context:context().
+move_state(Context, PortState, Metadata) ->
     try knm_port_request:attempt_transition(cb_context:doc(Context), Metadata, PortState) of
-        'false' -> Context;
         {'ok', PortRequest} ->
             lager:debug("loaded new port request state ~s", [PortState]),
             cb_context:set_doc(Context, PortRequest);
@@ -1338,9 +1395,7 @@ maybe_move_state(Context, PortState, 'success') ->
     catch
         'throw':{'error', 'failed_to_charge'} ->
             cb_context:add_system_error('no_credit', Context)
-    end;
-maybe_move_state(Context, _, _) ->
-    Context.
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -1439,9 +1494,7 @@ maybe_revert_patch(Context, 'false') ->
     Rev = kz_doc:revision(Doc),
     RevertedDoc = kz_doc:set_revision(DBDoc, Rev),
     _ = crossbar_doc:save(cb_context:set_doc(Context, RevertedDoc)),
-    Msg = kz_json:from_list(
-            [{<<"message">>, <<"failed to send port state change email notification">>}
-            ]),
+    Msg = kz_json:from_list([{<<"message">>, <<"failed to send port state change email notification">>}]),
     cb_context:add_system_error('bad_gateway', Msg, Context).
 
 %%------------------------------------------------------------------------------
