@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc Account API auth module
 %%% This is a non-standard module:
 %%% * it authenticates and authorizes itself
@@ -44,8 +44,8 @@
 %%------------------------------------------------------------------------------
 -spec init() -> ok.
 init() ->
-    _ = crossbar_bindings:bind(<<"*.authenticate">>, ?MODULE, 'authenticate'),
-    _ = crossbar_bindings:bind(<<"*.authorize">>, ?MODULE, 'authorize'),
+    _ = crossbar_bindings:bind(<<"*.authenticate.api_auth">>, ?MODULE, 'authenticate'),
+    _ = crossbar_bindings:bind(<<"*.authorize.api_auth">>, ?MODULE, 'authorize'),
     _ = crossbar_bindings:bind(<<"*.allowed_methods.api_auth">>, ?MODULE, 'allowed_methods'),
     _ = crossbar_bindings:bind(<<"*.resource_exists.api_auth">>, ?MODULE, 'resource_exists'),
     _ = crossbar_bindings:bind(<<"*.validate.api_auth">>, ?MODULE, 'validate'),
@@ -137,7 +137,7 @@ on_successful_validation(Context) ->
 validate_by_api_key(Context, ApiKey) ->
     Context1 = crossbar_doc:load_view(?AGG_VIEW_API
                                      ,[{'key', ApiKey}]
-                                     ,cb_context:set_account_db(Context, ?KZ_ACCOUNTS_DB)
+                                     ,cb_context:set_db_name(Context, ?KZ_ACCOUNTS_DB)
                                      ),
     case cb_context:resp_status(Context1) of
         'success' ->
@@ -146,7 +146,7 @@ validate_by_api_key(Context, ApiKey) ->
     end.
 
 -spec validate_by_api_key(cb_context:context(), kz_term:ne_binary(), kz_json:object() | kz_json:objects()) ->
-                                 cb_context:context().
+          cb_context:context().
 validate_by_api_key(Context, ApiKey, []) ->
     lager:debug("api key '~s' not associated with any accounts"
                ,[ApiKey]

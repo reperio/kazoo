@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2019, 2600Hz
+%%% @copyright (C) 2013-2020, 2600Hz
 %%% @doc Provides a similar interface to the SUP command-line utility. Maps to SUP
 %%% commands most are familiar with already.
 %%%
@@ -135,7 +135,7 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.allowed_methods.sup">>, ?MODULE, 'allowed_methods'),
     _ = crossbar_bindings:bind(<<"*.resource_exists.sup">>, ?MODULE, 'resource_exists'),
     _ = crossbar_bindings:bind(<<"*.validate.sup">>, ?MODULE, 'validate'),
-    _ = crossbar_bindings:bind(<<"*.authorize">>, ?MODULE, 'authorize'),
+    _ = crossbar_bindings:bind(<<"*.authorize.sup">>, ?MODULE, 'authorize'),
     Ret.
 
 %%------------------------------------------------------------------------------

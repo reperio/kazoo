@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @author James Aimonetti
 %%% @doc
 %%% invoke with `proper:quickcheck(hon_trie_lru_pqc:correct())` or `correct_parallel`
@@ -258,8 +258,8 @@ bump_matched(Cache, NowMs, Prefix, RateIds) ->
     props:set_value(Prefix, BumpedRateIds, Cache).
 
 -spec find_prefix(cache(), string()) ->
-                         'error' |
-                         {'ok', prefix(), any()}.
+          'error' |
+          {'ok', prefix(), any()}.
 find_prefix(Cache, PhoneNumber) ->
     PNBin = kz_term:to_binary(PhoneNumber),
     case lists:foldl(fun longest_prefix/2, {PNBin, <<>>, 0, []}, Cache) of

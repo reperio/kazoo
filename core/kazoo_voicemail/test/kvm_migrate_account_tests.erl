@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -90,7 +90,7 @@ this_month_db_exists() ->
             %% meck_code_gen:get_current_call/1 returns undefined and it cause bad_match
             %% in meck:passthrough/1
             kz_datamgr:db_classification(Db) =:= 'modb'
-                andalso is_db_under_test(Db, kazoo_modb:get_modb(kz_util:format_account_id(Db)))
+                andalso is_db_under_test(Db, kazoo_modb:get_modb(kzs_util:format_account_id(Db)))
                 orelse erlang:apply('kz_fixturedb_db_meck_original', 'db_exists', [Server, Db])
     end.
 

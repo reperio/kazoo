@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -42,7 +42,7 @@
 fetch_account(Services) ->
     AccountId = kz_services:account_id(Services),
     lager:debug("fetching account quantities for ~s", [AccountId]),
-    AccountDb = kz_util:format_account_db(AccountId),
+    AccountDb = kzs_util:format_account_db(AccountId),
     ViewOptions = ['reduce'
                   ,'group'
                   ],
@@ -263,7 +263,7 @@ cascade_item(Services, CategoryName, ItemName) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec calculate_updates(kz_services:services(), billable() | billables(), billable() | billables()) ->
-                               kz_json:object().
+          kz_json:object().
 calculate_updates(Services, 'undefined', ProposedJObjs) ->
     lager:debug("calculating service updates for addition(s)", []),
     calculate_updates(Services, [], ProposedJObjs);
@@ -556,8 +556,21 @@ calculate_vmbox_updates(JObj, Updates) ->
     case kz_doc:type(JObj) =:= <<"vmbox">> of
         'false' -> Updates;
         'true' ->
-            Key = [<<"voicemails">>, <<"mailbox">>],
-            [{Key, 1} | Updates]
+            Keys = [<<"mailbox">>, <<"transcription">>],
+            Fun = calculate_vmbox_updates_foldl(JObj),
+            lists:foldl(Fun, Updates, Keys)
+    end.
+
+-spec calculate_vmbox_updates_foldl(kz_json:object()) -> fun((kz_term:ne_binary(), kz_term:proplist()) -> kz_term:proplist()).
+calculate_vmbox_updates_foldl(JObj) ->
+    fun(<<"transcription">> = Key, Updates) ->
+            case kz_json:get_boolean_value(<<"transcribe">>, JObj, 'false') of
+                'true' ->
+                    [{[<<"voicemails">>, Key], 1} | Updates];
+                _ -> Updates
+            end;
+       (Key, Updates) ->
+            [{[<<"voicemails">>, Key], 1} | Updates]
     end.
 
 -spec calculate_faxbox_updates(kz_json:object(), kz_term:proplist()) -> kz_term:proplist().

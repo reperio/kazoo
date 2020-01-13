@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2019, 2600Hz
+%%% @copyright (C) 2013-2020, 2600Hz
 %%% @doc
 %%% @author Pierre Fenoll
 %%%
@@ -37,7 +37,7 @@
 -endif.
 
 -include("tasks.hrl").
--include("src/modules/kt_compactor.hrl").
+-include("kt_compactor.hrl").
 
 -define(CATEGORY, "compaction").
 -define(ACTIONS, [<<"compact_all">>
@@ -199,7 +199,7 @@ compact_db(_Extra, 'true', #{<<"database">> := Database}=Row) ->
 -spec compact_db(kz_term:ne_binary()) -> 'ok'.
 compact_db(?MATCH_ACCOUNT_RAW(AccountId)) ->
     lager:info("adjusting account id ~s to db name", [AccountId]),
-    compact_db(kz_util:format_account_id(AccountId, 'unencoded'));
+    compact_db(kzs_util:format_account_id(AccountId, 'unencoded'));
 compact_db(Database) ->
     CallIdBin = kz_term:to_binary(kz_log:get_callid()),
     print_csv(maybe_track_compact_db(Database, ?HEUR_NONE, CallIdBin)).
@@ -280,7 +280,7 @@ maybe_track_compact_node(Node, Heur, _CallId) ->
     do_compact_node(Node, Heur).
 
 -spec do_compact_node(kz_term:ne_binary(), heuristic()) ->
-                             rows().
+          rows().
 do_compact_node(Node, Heuristic) ->
     #{server := {_App, #server{}=Conn}} = kzs_plan:plan(),
 
@@ -293,7 +293,7 @@ do_compact_node(Node, Heuristic) ->
     end.
 
 -spec do_compact_node(kz_term:ne_binary(), heuristic(), kz_data:connection(), kz_data:connection()) ->
-                             rows().
+          rows().
 do_compact_node(Node, Heuristic, APIConn, AdminConn) ->
     case kz_datamgr:get_results(kazoo_couch:get_admin_dbs(APIConn)
                                ,<<"compactor/listing_by_node">>
@@ -364,13 +364,13 @@ do_compact_db_fold(Database, Rows) ->
 -spec do_compact_db_by_nodes(kz_term:ne_binary(), heuristic()) -> rows().
 do_compact_db_by_nodes(?MATCH_ACCOUNT_RAW(_)=AccountId, Heuristic) ->
     lager:info("formatting raw account id ~s", [AccountId]),
-    do_compact_db_by_nodes(kz_util:format_account_id(AccountId, 'unencoded'), Heuristic);
+    do_compact_db_by_nodes(kzs_util:format_account_id(AccountId, 'unencoded'), Heuristic);
 do_compact_db_by_nodes(?MATCH_ACCOUNT_ENCODED(_)=AccountDb, Heuristic) ->
     lager:info("formatting unencoded account db ~s", [AccountDb]),
-    do_compact_db_by_nodes(kz_util:format_account_id(AccountDb, 'unencoded'), Heuristic);
+    do_compact_db_by_nodes(kzs_util:format_account_id(AccountDb, 'unencoded'), Heuristic);
 do_compact_db_by_nodes(?MATCH_MODB_SUFFIX_RAW(_AccountId, _Year, _Month)=MODB, Heuristic) ->
     lager:info("formatting raw modb ~s", [MODB]),
-    do_compact_db_by_nodes(kz_util:format_account_modb(MODB, 'unencoded'), Heuristic);
+    do_compact_db_by_nodes(kzs_util:format_account_modb(MODB, 'unencoded'), Heuristic);
 do_compact_db_by_nodes(Database, Heuristic) ->
     AdminDbs = kazoo_couch:get_admin_dbs(),
     lager:info("opening in ~s: ~p", [AdminDbs, Database]),
@@ -409,13 +409,13 @@ db_usage_cols(Conn, Database) ->
     end.
 
 -spec node_compactor(kz_term:ne_binary(), heuristic(), kz_data:connection(), kz_data:connection(), kz_term:ne_binary()) ->
-                            kt_compactor_worker:compactor().
+          kt_compactor_worker:compactor().
 node_compactor(Node, Heuristic, APIConn, AdminConn, Database) ->
     kt_compactor_worker:new(Node, Heuristic, APIConn, AdminConn, Database).
 
 -spec get_node_connections(kz_term:ne_binary(), kz_data:connection()) ->
-                                  {kz_data:connection(), kz_data:connection()} |
-                                  {'error', 'no_connection'}.
+          {kz_data:connection(), kz_data:connection()} |
+          {'error', 'no_connection'}.
 get_node_connections(Node, #server{options=Options}) ->
     [_, Host] = binary:split(Node, <<"@">>),
     Hostname = kz_term:to_list(Host),

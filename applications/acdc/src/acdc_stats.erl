@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc Collector of stats
 %%% @author James Aimonetti
 %%% @author Sponsored by GTNetwork LLC, Implemented by SIPLABS LLC
@@ -23,16 +23,6 @@
 
         ,find_call/1
         ,call_stat_to_json/1
-        ,agent_ready/2
-        ,agent_logged_in/2
-        ,agent_logged_out/2
-        ,agent_connecting/3, agent_connecting/5
-        ,agent_connected/3, agent_connected/5
-        ,agent_wrapup/3
-        ,agent_paused/3
-        ,agent_outbound/3
-
-        ,agent_statuses/0
         ]).
 
 %% ETS config
@@ -141,117 +131,6 @@ call_processed(AccountId, QueueId, AgentId, CallId, Initiator) ->
              ]),
     call_state_change(AccountId, 'processed', Prop),
     'ok' = kz_amqp_worker:cast(Prop, fun kapi_acdc_stats:publish_call_processed/1).
-
--spec agent_ready(kz_term:ne_binary(), kz_term:ne_binary()) -> 'ok'.
-agent_ready(AcctId, AgentId) ->
-    Prop = props:filter_undefined(
-             [{<<"Account-ID">>, AcctId}
-             ,{<<"Agent-ID">>, AgentId}
-             ,{<<"Timestamp">>, kz_time:now_s()}
-             ,{<<"Status">>, <<"ready">>}
-              | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
-             ]),
-    'ok' = kz_amqp_worker:cast(Prop, fun kapi_acdc_stats:publish_status_ready/1).
-
--spec agent_logged_in(kz_term:ne_binary(), kz_term:ne_binary()) -> 'ok'.
-agent_logged_in(AcctId, AgentId) ->
-    Prop = props:filter_undefined(
-             [{<<"Account-ID">>, AcctId}
-             ,{<<"Agent-ID">>, AgentId}
-             ,{<<"Timestamp">>, kz_time:now_s()}
-             ,{<<"Status">>, <<"logged_in">>}
-              | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
-             ]),
-    'ok' = kz_amqp_worker:cast(Prop, fun kapi_acdc_stats:publish_status_logged_in/1).
-
--spec agent_logged_out(kz_term:ne_binary(), kz_term:ne_binary()) -> 'ok'.
-agent_logged_out(AcctId, AgentId) ->
-    Prop = props:filter_undefined(
-             [{<<"Account-ID">>, AcctId}
-             ,{<<"Agent-ID">>, AgentId}
-             ,{<<"Timestamp">>, kz_time:now_s()}
-             ,{<<"Status">>, <<"logged_out">>}
-              | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
-             ]),
-    'ok' = kz_amqp_worker:cast(Prop, fun kapi_acdc_stats:publish_status_logged_out/1).
-
--spec agent_connecting(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) -> 'ok'.
-agent_connecting(AcctId, AgentId, CallId) ->
-    agent_connecting(AcctId, AgentId, CallId, 'undefined', 'undefined').
-
--spec agent_connecting(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:api_ne_binary(), kz_term:api_ne_binary()) -> 'ok'.
-agent_connecting(AcctId, AgentId, CallId, CallerIDName, CallerIDNumber) ->
-    Prop = props:filter_undefined(
-             [{<<"Account-ID">>, AcctId}
-             ,{<<"Agent-ID">>, AgentId}
-             ,{<<"Timestamp">>, kz_time:now_s()}
-             ,{<<"Status">>, <<"connecting">>}
-             ,{<<"Call-ID">>, CallId}
-             ,{<<"Caller-ID-Name">>, CallerIDName}
-             ,{<<"Caller-ID-Number">>, CallerIDNumber}
-              | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
-             ]),
-    'ok' = kz_amqp_worker:cast(Prop, fun kapi_acdc_stats:publish_status_connecting/1).
-
--spec agent_connected(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) -> 'ok'.
-agent_connected(AcctId, AgentId, CallId) ->
-    agent_connected(AcctId, AgentId, CallId, 'undefined', 'undefined').
-
--spec agent_connected(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:api_ne_binary(), kz_term:api_ne_binary()) -> 'ok'.
-agent_connected(AcctId, AgentId, CallId, CallerIDName, CallerIDNumber) ->
-    Prop = props:filter_undefined(
-             [{<<"Account-ID">>, AcctId}
-             ,{<<"Agent-ID">>, AgentId}
-             ,{<<"Timestamp">>, kz_time:now_s()}
-             ,{<<"Status">>, <<"connected">>}
-             ,{<<"Call-ID">>, CallId}
-             ,{<<"Caller-ID-Name">>, CallerIDName}
-             ,{<<"Caller-ID-Number">>, CallerIDNumber}
-              | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
-             ]),
-    'ok' = kz_amqp_worker:cast(Prop, fun kapi_acdc_stats:publish_status_connected/1).
-
--spec agent_wrapup(kz_term:ne_binary(), kz_term:ne_binary(), pos_integer()) -> 'ok'.
-agent_wrapup(AcctId, AgentId, WaitTime) ->
-    Prop = props:filter_undefined(
-             [{<<"Account-ID">>, AcctId}
-             ,{<<"Agent-ID">>, AgentId}
-             ,{<<"Timestamp">>, kz_time:now_s()}
-             ,{<<"Status">>, <<"wrapup">>}
-             ,{<<"Wait-Time">>, WaitTime}
-              | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
-             ]),
-    'ok' = kz_amqp_worker:cast(Prop, fun kapi_acdc_stats:publish_status_wrapup/1).
-
--spec agent_paused(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:api_pos_integer()) -> 'ok'.
-agent_paused(AcctId, AgentId, 'undefined') ->
-    lager:debug("undefined pause time for ~s(~s)", [AgentId, AcctId]);
-agent_paused(AcctId, AgentId, PauseTime) ->
-    Prop = props:filter_undefined(
-             [{<<"Account-ID">>, AcctId}
-             ,{<<"Agent-ID">>, AgentId}
-             ,{<<"Timestamp">>, kz_time:now_s()}
-             ,{<<"Status">>, <<"paused">>}
-             ,{<<"Pause-Time">>, PauseTime}
-              | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
-             ]),
-    'ok' = kz_amqp_worker:cast(Prop, fun kapi_acdc_stats:publish_status_paused/1).
-
--spec agent_outbound(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) -> 'ok'.
-agent_outbound(AcctId, AgentId, CallId) ->
-    Prop = props:filter_undefined(
-             [{<<"Account-ID">>, AcctId}
-             ,{<<"Agent-ID">>, AgentId}
-             ,{<<"Timestamp">>, kz_time:now_s()}
-             ,{<<"Status">>, <<"outbound">>}
-             ,{<<"Call-ID">>, CallId}
-              | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
-             ]),
-    'ok' = kz_amqp_worker:cast(Prop, fun kapi_acdc_stats:publish_status_outbound/1).
-
--spec agent_statuses() -> kz_term:ne_binaries().
-agent_statuses() ->
-    ?STATUS_STATUSES.
 
 %% ETS config
 
@@ -493,8 +372,8 @@ call_build_match_spec(JObj) ->
     end.
 
 -spec call_build_match_spec(kz_json:object(), {call_stat(), list()}) ->
-                                   {'ok', ets:match_spec()} |
-                                   {'error', kz_json:object()}.
+          {'ok', ets:match_spec()} |
+          {'error', kz_json:object()}.
 call_build_match_spec(JObj, AccountMatch) ->
     case kz_json:foldl(fun call_match_builder_fold/3, AccountMatch, JObj) of
         {'error', _Errs}=Errors -> Errors;
@@ -591,7 +470,7 @@ average_wait_time_build_match_spec(JObj) ->
     average_wait_time_build_match_spec(Match, Window).
 
 -spec average_wait_time_build_match_spec(ets:match_spec(), kz_term:api_integer()) ->
-                                                ets:match_spec().
+          ets:match_spec().
 average_wait_time_build_match_spec(Match, 'undefined') ->
     Match;
 average_wait_time_build_match_spec([{CallStat, Conditions, Results}], Window) ->
@@ -669,7 +548,7 @@ average_wait_time_fold(Stats) ->
     end.
 
 -spec average_wait_time_fold([non_neg_integer()], {non_neg_integer(), non_neg_integer()}) ->
-                                    {non_neg_integer(), non_neg_integer()}.
+          {non_neg_integer(), non_neg_integer()}.
 average_wait_time_fold([EnteredT, AbandonedT, HandledT], {CallCount, TotalWaitTime}) ->
     WaitTime = wait_time(EnteredT, AbandonedT, HandledT),
     {CallCount + 1, TotalWaitTime + WaitTime}.
@@ -701,7 +580,7 @@ cleanup_data(Srv) ->
                  }],
     gen_listener:cast(Srv, {'remove_call', CallMatch}),
 
-    StatusMatch = [{#status_stat{timestamp='$1', _='_'}
+    StatusMatch = [{#status_stat{key=#status_stat_key{timestamp='$1'}, _='_'}
                    ,[{'=<', '$1', Past}]
                    ,['$_']
                    }],

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -252,16 +252,16 @@ get_event_bindings(#state{bindings=Bindings}=State, Acc) when is_list(Bindings) 
                       ).
 
 -spec maybe_bind(atom(), kz_term:atoms()) ->
-                        {'ok', {kz_term:text(), inet:port_number()}} |
-                        {'error', any()} |
-                        {'EXIT', any()}.
+          {'ok', {kz_term:text(), inet:port_number()}} |
+          {'error', any()} |
+          {'EXIT', any()}.
 maybe_bind(Node, Bindings) ->
     maybe_bind(Node, Bindings, 0).
 
 -spec maybe_bind(atom(), kz_term:atoms(), non_neg_integer()) ->
-                        {'ok', {kz_term:text(), inet:port_number()}} |
-                        {'error', any()} |
-                        {'EXIT', any()}.
+          {'ok', {kz_term:text(), inet:port_number()}} |
+          {'error', any()} |
+          {'EXIT', any()}.
 maybe_bind(Node, Bindings, 2) ->
     case catch gen_server:call({'mod_kazoo', Node}, {'event', Bindings}, 2 * ?MILLISECONDS_IN_SECOND) of
         {'ok', {_IP, _Port}}=OK -> OK;

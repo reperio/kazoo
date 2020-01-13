@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2019, 2600Hz
+%%% @copyright (C) 2010-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -243,7 +243,7 @@ handle_cast(_Msg, State) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec handle_info(?HOOK_EVT(kz_term:ne_binary(), kz_term:ne_binary(), kz_json:object()), state()) ->
-                         {'noreply', state()}.
+          {'noreply', state()}.
 handle_info(?HOOK_EVT(AccountId, EventType, JObj), State) ->
     _ = kz_process:spawn(fun handle_hook_event/3, [AccountId, EventType, JObj]),
     {'noreply', State};

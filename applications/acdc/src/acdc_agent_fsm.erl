@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc Tracks the agent's state, responds to messages from the corresponding
 %%% acdc_agent gen_listener process.
 %%%
@@ -394,7 +394,7 @@ init([AccountId, AgentId, Supervisor, Props, IsThief]) ->
     {'ok'
     ,'wait'
     ,#state{account_id = AccountId
-           ,account_db = kz_util:format_account_db(AccountId)
+           ,account_db = kzs_util:format_account_db(AccountId)
            ,agent_id = AgentId
            ,statem_call_id = StateMCallId
            ,max_connect_failures = max_failures(AccountId)
@@ -1624,7 +1624,7 @@ clear_call(#state{statem_call_id=StateMCallId
                }.
 
 -spec current_call(kapps_call:call() | 'undefined', atom(), kz_term:ne_binary(), 'undefined' | kz_time:start_time()) ->
-                          kz_term:api_object().
+          kz_term:api_object().
 current_call('undefined', _, _, _) -> 'undefined';
 current_call(Call, AgentState, QueueId, Start) ->
     kz_json:from_list([{<<"call_id">>, kapps_call:call_id(Call)}
@@ -1790,8 +1790,8 @@ convert_to_endpoint(EPDoc) ->
     end.
 
 -spec get_endpoints(kz_json:objects(), kapps_call:call(), kz_term:api_binary(), kz_term:api_binary()) ->
-                           {'ok', kz_json:objects()} |
-                           {'error', any()}.
+          {'ok', kz_json:objects()} |
+          {'error', any()}.
 get_endpoints(OrigEPs, Call, AgentId, QueueId) ->
     case catch acdc_util:get_endpoints(Call, AgentId) of
         [] ->

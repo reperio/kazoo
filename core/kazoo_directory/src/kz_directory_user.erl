@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -68,7 +68,7 @@ profile(EndpointId, AccountId, Options) ->
 generate_ccvs(_EndpointId, AccountId, Endpoint) ->
     Realm = kz_json:get_ne_binary_value(<<"realm">>, Endpoint),
     Props = [{<<"Account-ID">>, AccountId}
-            ,{<<"Reseller-ID">>, kzd_accounts:reseller_id(AccountId)}
+            ,{<<"Reseller-ID">>, kz_services_reseller:get_id(AccountId)}
             ,{<<"Realm">>, Realm}
             ,{<<"Username">>, kzd_devices:sip_username(Endpoint)}
             ,{<<"SIP-Invite-Domain">>, Realm}
@@ -151,7 +151,7 @@ generate_profile(EndpointId, AccountId, Endpoint, Options) ->
 -spec owned_by_query(kz_term:ne_binary(), kz_term:ne_binary()) -> kz_term:api_binaries().
 owned_by_query(OwnerId, AccountId) ->
     ViewOptions = [{'key', [OwnerId, <<"device">>]}],
-    AccountDb = kz_util:format_account_db(AccountId),
+    AccountDb = kzs_util:format_account_db(AccountId),
     case kz_datamgr:get_results(AccountDb, <<"attributes/owned">>, ViewOptions) of
         {'ok', JObjs} -> [kz_json:get_value(<<"id">>, JObj) || JObj <- JObjs];
         {'error', _R} -> []

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2019, 2600Hz
+%%% @copyright (C) 2010-2020, 2600Hz
 %%% @doc Various utilities to work with time.
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -87,6 +87,7 @@
              ,now/0
              ,ordinal/0
              ,second/0
+             ,start_time/0
              ,time/0
              ,unix_seconds/0
              ,weeknum/0

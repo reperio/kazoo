@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2019, 2600Hz
+%%% @copyright (C) 2013-2020, 2600Hz
 %%% @doc
 %%% @author Pierre Fenoll
 %%%
@@ -22,7 +22,7 @@
         ]).
 
 -include("tasks.hrl").
--include_lib("kazoo_number_manager/include/knm_port_request.hrl").
+-include_lib("kazoo_numbers/include/knm_port_request.hrl").
 
 -define(LISTING_BY_STATE, <<"port_requests/listing_by_state">>).
 
@@ -64,7 +64,7 @@ cleanup(_) -> 'ok'.
 
 -spec unconfirmed_port_reminder(kz_term:ne_binary()) -> 'ok'.
 unconfirmed_port_reminder(AccountDb) ->
-    AccountId = kz_util:format_account_id(AccountDb, 'raw'),
+    AccountId = kzs_util:format_account_id(AccountDb),
     ViewOpts = [{'startkey', [AccountId, ?PORT_UNCONFIRMED, kz_json:new()]}
                ,{'endkey', [AccountId, ?PORT_UNCONFIRMED]}
                ,'descending'

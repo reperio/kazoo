@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc Callflow gen server for CRUD
 %%% @author Vladimir Darmin
 %%% @author James Aimonetti
@@ -168,7 +168,7 @@ load_callflow(CallflowId, Context) ->
     case cb_context:resp_status(Context1) of
         'success' ->
             Meta = get_metadata(kz_json:get_value(<<"flow">>, cb_context:doc(Context1))
-                               ,cb_context:account_db(Context1)
+                               ,cb_context:db_name(Context1)
                                ),
             cb_context:set_resp_data(Context1
                                     ,kz_json:set_value(<<"metadata">>, Meta, cb_context:resp_data(Context1))
@@ -251,7 +251,7 @@ validate_unique_numbers(Context, CallflowId) ->
 validate_unique_numbers(Context, _CallflowId, []) -> Context;
 validate_unique_numbers(Context, CallflowId, Numbers) ->
     Options = [{'keys', Numbers}],
-    case kz_datamgr:get_results(cb_context:account_db(Context), ?CB_LIST_BY_NUMBER, Options) of
+    case kz_datamgr:get_results(cb_context:db_name(Context), ?CB_LIST_BY_NUMBER, Options) of
         {'error', Error} ->
             lager:debug("failed to load callflows from account: ~p", [Error]),
             cb_context:add_system_error(Error, Context);
@@ -289,7 +289,7 @@ validate_unique_patterns(Context, CallflowId) ->
 validate_unique_patterns(Context, _CallflowId, []) -> Context;
 validate_unique_patterns(Context, CallflowId, Patterns) ->
     Options = [{'keys', Patterns}],
-    case kz_datamgr:get_results(cb_context:account_db(Context), ?CB_LIST_BY_PATTERN, Options) of
+    case kz_datamgr:get_results(cb_context:db_name(Context), ?CB_LIST_BY_PATTERN, Options) of
         {'error', Error} ->
             lager:debug("failed to load callflows from account: ~p", [Error]),
             cb_context:add_system_error(Error, Context);
@@ -343,7 +343,7 @@ on_successful_validation(CallflowId, Context) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec normalize_view_results(kz_json:object(), kz_json:objects()) ->
-                                    kz_json:objects().
+          kz_json:objects().
 normalize_view_results(JObj, Acc) ->
     [kz_json:get_value(<<"value">>, JObj)|Acc].
 
@@ -447,7 +447,7 @@ get_metadata('undefined', _Db) -> kz_json:new();
 get_metadata(Flow, Db) -> get_metadata(Flow, Db, kz_json:new()).
 
 -spec get_metadata(kz_json:object(), kz_term:ne_binary(), kz_json:object()) ->
-                          kz_json:object().
+          kz_json:object().
 get_metadata(Flow, Db, Metadata) ->
     UpdatedMetadata
         = lists:foldl(fun(ID, MetaAcc) -> create_metadata(Db, ID, MetaAcc) end
@@ -475,21 +475,23 @@ get_metadata(Flow, Db, Metadata) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec create_metadata(kz_term:ne_binary(), kz_term:ne_binary(), kz_json:object()) ->
-                             kz_json:object().
+          kz_json:object().
 create_metadata(_, <<"_">>, Metadata) -> Metadata;
 create_metadata(_, Id, Metadata) when byte_size(Id) < 2 -> Metadata;
 create_metadata(Db, Id, Metadata) ->
-    case 'undefined' =:= kz_json:get_ne_binary_value(Id, Metadata)
-        andalso fetch_id_from_db(Db, Id)
-    of
-        'false' -> Metadata;
+    create_metadata(Db, Id, Metadata, kz_json:get_ne_binary_value(Id, Metadata)).
+
+create_metadata(Db, Id, Metadata, 'undefined') ->
+    case fetch_id_from_db(Db, Id) of
         {'ok', Doc} ->  kz_json:set_value(Id, create_metadata(Doc), Metadata);
         {'error', _E} -> Metadata
-    end.
+    end;
+create_metadata(_Db, _Id, Metadata, _Value) ->
+    Metadata.
 
 -spec fetch_id_from_db(kz_term:ne_binary(), kz_term:ne_binary()) ->
-                              {'ok', kz_json:object()} |
-                              kz_datamgr:data_error().
+          {'ok', kz_json:object()} |
+          kz_datamgr:data_error().
 -ifdef(TEST).
 fetch_id_from_db(_Db, <<"{USER_ID}">>) ->
     {'ok', ?TEST_USER};
@@ -513,7 +515,7 @@ create_metadata(Doc) ->
                ).
 
 -spec metadata_builder(kz_json:key(), kz_json:object(), kz_json:object()) ->
-                              kz_json:object().
+          kz_json:object().
 metadata_builder(<<"name">> = Key, Doc, Metadata) ->
     case kz_doc:type(Doc) of
         <<"user">> ->
@@ -525,7 +527,7 @@ metadata_builder(Key, Doc, Metadata) ->
     maybe_copy_value(Key, Doc, Metadata).
 
 -spec maybe_copy_value(kz_json:key(), kz_json:object(), kz_json:object()) ->
-                              kz_json:object().
+          kz_json:object().
 maybe_copy_value(Key, Doc, Metadata) ->
     case kz_json:get_value(Key, Doc) of
         'undefined' -> Metadata;

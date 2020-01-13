@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc Renders a custom account email template, or the system default,
 %%% and sends the email with voicemail attachment to the user.
 %%%
@@ -50,7 +50,7 @@ handle_req(JObj, _Props) ->
     MsgId = kz_api:msg_id(JObj),
     notify_util:send_update(RespQ, MsgId, <<"pending">>),
 
-    AccountDb = kz_util:format_account_db(kz_json:get_value(<<"Account-ID">>, JObj)),
+    AccountDb = kzs_util:format_account_db(kz_json:get_value(<<"Account-ID">>, JObj)),
 
     VMBoxId = kz_json:get_value(<<"Voicemail-Box">>, JObj),
     lager:debug("loading vm box ~s", [VMBoxId]),
@@ -71,7 +71,7 @@ handle_req(JObj, _Props) ->
 
 -spec continue_processing(kz_json:object(), kz_term:ne_binary(), kz_json:object(), kz_term:ne_binaries()) -> send_email_return().
 continue_processing(JObj, AccountDb, VMBox, Emails) ->
-    AccountDb = kz_util:format_account_db(kz_json:get_value(<<"Account-ID">>, JObj)),
+    AccountDb = kzs_util:format_account_db(kz_json:get_value(<<"Account-ID">>, JObj)),
 
     lager:debug("VM->Email enabled for user, sending to ~p", [Emails]),
     {'ok', AccountJObj} = kzd_accounts:fetch(AccountDb),
@@ -102,7 +102,7 @@ get_owner(AccountDb, VMBox) ->
     get_owner(AccountDb, VMBox, kzd_voicemail_box:owner_id(VMBox)).
 
 -spec get_owner(kz_term:ne_binary(), kzd_voicemail_box:doc(), kz_term:api_binary()) ->
-                       {'ok', kzd_users:doc()}.
+          {'ok', kzd_users:doc()}.
 get_owner(_AccountDb, _VMBox, 'undefined') ->
     lager:debug("no owner of voicemail box ~s, using empty owner", [kz_doc:id(_VMBox)]),
     {'ok', kz_json:new()};
@@ -156,7 +156,7 @@ magic_hash(Event) ->
     VMBoxId = kz_json:get_value(<<"Voicemail-Box">>, Event),
     MessageId = kz_json:get_value(<<"Voicemail-ID">>, Event),
 
-    try list_to_binary([<<"/v1/accounts/">>, AccountId, <<"/vmboxes/">>, VMBoxId
+    try list_to_binary([<<"/v2/accounts/">>, AccountId, <<"/vmboxes/">>, VMBoxId
                        ,<<"/messages/">>, MessageId, <<"/raw">>
                        ])
     of

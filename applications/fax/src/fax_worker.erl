@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author Luis Azedo
@@ -558,8 +558,8 @@ apply_reschedule_logic(JObj) ->
     end.
 
 -spec apply_reschedule_rules({kz_json:objects(), kz_json:path()}, kz_json:object()) ->
-                                    {'ok', kz_json:object()} |
-                                    {'no_rules', kz_json:object()}.
+          {'ok', kz_json:object()} |
+          {'no_rules', kz_json:object()}.
 apply_reschedule_rules({[], _}, JObj) -> {'no_rules', JObj};
 apply_reschedule_rules({[Rule | Rules], [Key | Keys]}, JObj) ->
     Attempts = kz_json:get_integer_value(<<"attempts">>, JObj, 0),
@@ -616,8 +616,8 @@ maybe_notify(_JObj, _Resp, Status) ->
     lager:debug("notify Status ~p not handled",[Status]).
 
 -spec maybe_move_doc(kz_json:object(), kz_term:ne_binary()) ->
-                            {'ok', kz_json:object()} |
-                            {'error', any()}.
+          {'ok', kz_json:object()} |
+          {'error', any()}.
 maybe_move_doc(JObj, <<"completed">>) ->
     move_doc(JObj);
 maybe_move_doc(JObj, <<"failed">>) ->
@@ -626,15 +626,15 @@ maybe_move_doc(JObj, _) ->
     {'ok', JObj}.
 
 -spec move_doc(kz_json:object()) ->
-                      {'ok', kz_json:object()} |
-                      {'error', any()}.
+          {'ok', kz_json:object()} |
+          {'error', any()}.
 move_doc(JObj) ->
     FromId = kz_doc:id(JObj),
     {Year, Month, _D} = kz_term:to_date(kz_doc:created(JObj)),
     FromDB = kz_doc:account_db(JObj),
     AccountId = kz_doc:account_id(JObj),
     AccountMODb = kazoo_modb:get_modb(AccountId, Year, Month),
-    ToDB = kz_util:format_account_modb(AccountMODb, 'encoded'),
+    ToDB = kzs_util:format_account_modb(AccountMODb, 'encoded'),
     ToId = ?MATCH_MODB_PREFIX(kz_term:to_binary(Year), kz_date:pad_month(Month), FromId),
     Options = ['override_existing_document'
               ,{'transform', fun(_, B) -> kz_json:set_value(<<"folder">>, <<"outbox">>, B) end}
@@ -700,8 +700,8 @@ elapsed_time(JObj) ->
     Now - Created.
 
 -spec write_document(kz_json:object(), kz_term:ne_binary()) ->
-                            {'ok', kz_term:ne_binary(), kz_json:object()} |
-                            {'error', any()}.
+          {'ok', kz_term:ne_binary(), kz_json:object()} |
+          {'error', any()}.
 write_document(JObj, JobId) ->
     case kz_fax_attachment:fetch_faxable(?KZ_FAXES_DB, JObj) of
         {'ok', Content, _ContentType, Doc} ->
@@ -778,7 +778,7 @@ send_fax(JobId, JObj, Q, ToDID) ->
 
 -spec get_hunt_account_id(kz_term:ne_binary()) -> kz_term:api_binary().
 get_hunt_account_id(AccountId) ->
-    AccountDb = kz_util:format_account_db(AccountId),
+    AccountDb = kzs_util:format_account_db(AccountId),
     Options = [{'key', <<"no_match">>}, 'include_docs'],
     case kz_datamgr:get_results(AccountDb, ?CALLFLOW_LIST, Options) of
         {'ok', [JObj]} -> maybe_hunt_account_id(kz_json:get_value([<<"doc">>, <<"flow">>], JObj), AccountId);

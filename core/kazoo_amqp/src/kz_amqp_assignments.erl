@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -21,6 +21,7 @@
 -export([request_channel/2]).
 -export([add_channel/3]).
 -export([release/1]).
+-export([release_consumer/1, release_consumer/2, release_consumer/3]).
 -export([init/1
         ,handle_call/3
         ,handle_cast/2
@@ -67,8 +68,8 @@ find(Consumer) when is_pid(Consumer) ->
 get_channel() -> get_channel(kz_amqp_channel:consumer_pid()).
 
 -spec get_channel(pid() | non_neg_integer() | 'infinity') ->
-                         kz_amqp_assignment() |
-                         {'error', 'timeout'}.
+          kz_amqp_assignment() |
+          {'error', 'timeout'}.
 get_channel(Consumer) when is_pid(Consumer) ->
     get_channel(Consumer, 'infinity');
 get_channel(Timeout) when is_integer(Timeout)
@@ -76,8 +77,8 @@ get_channel(Timeout) when is_integer(Timeout)
     get_channel(kz_amqp_channel:consumer_pid(), Timeout).
 
 -spec get_channel(pid(), non_neg_integer() | 'infinity') ->
-                         kz_amqp_assignment() |
-                         {'error', 'timeout'}.
+          kz_amqp_assignment() |
+          {'error', 'timeout'}.
 get_channel(Consumer, Timeout) when is_pid(Consumer) ->
     case find(Consumer) of
         #kz_amqp_assignment{channel=Channel}=Assignment
@@ -717,9 +718,11 @@ handle_down_msg(Matches, _Pid, Reason) ->
     lists:foreach(fun(M) -> handle_down_match(M, Reason) end, Matches).
 
 -spec handle_down_match(down_match(), any()) -> 'ok'.
-handle_down_match({'consumer', _}
+handle_down_match({'consumer', #kz_amqp_assignment{consumer=Consumer}}
                  ,'shutdown'
-                 ) -> 'ok';
+                 ) ->
+    Pattern = #kz_amqp_assignment{consumer=Consumer, _='_'},
+    release_assignments(ets:match_object(?TAB, Pattern, 1));
 handle_down_match({'consumer', #kz_amqp_assignment{consumer=Consumer}=Assignment}
                  ,_Reason
                  ) ->
@@ -845,7 +848,7 @@ add_watcher(#kz_amqp_assignment{watchers=Watchers
 
 -spec wait_for_assignment('infinity') -> kz_amqp_assignment();
                          (non_neg_integer()) -> kz_amqp_assignment() |
-                                                {'error', 'timeout'}.
+          {'error', 'timeout'}.
 wait_for_assignment(Timeout) ->
     receive
         #kz_amqp_assignment{channel=Channel}=Assignment
@@ -855,8 +858,8 @@ wait_for_assignment(Timeout) ->
     end.
 
 -spec request_and_wait(pid(), kz_term:api_ne_binary(), timeout()) ->
-                              kz_amqp_assignment() |
-                              {'error', 'timeout'}.
+          kz_amqp_assignment() |
+          {'error', 'timeout'}.
 request_and_wait(Consumer, Broker, Timeout) when is_pid(Consumer) ->
     request_channel(Consumer, Broker, self()),
     wait_for_assignment(Timeout).
@@ -935,3 +938,25 @@ release_handlers({[#kz_amqp_assignment{channel=Channel}]
     release_handlers(ets:match(Continuation));
 release_handlers({[#kz_amqp_assignment{}], Continuation}) ->
     release_handlers(ets:match(Continuation)).
+
+-spec release_consumer(kz_term:ne_binaries()) -> 'ok'.
+release_consumer(Tags) ->
+    case kz_amqp_channel:is_consumer_channel_valid() of
+        'true' -> release_consumer(self(), kz_amqp_channel:consumer_channel(), Tags);
+        'false' -> gen_server:cast(?SERVER, {'release_assignments', self()})
+    end.
+
+-spec release_consumer(pid(), kz_term:ne_binaries()) -> 'ok'.
+release_consumer(Channel, Tags) ->
+    case is_process_alive(Channel) of
+        'true' -> release_consumer(self(), Channel, Tags);
+        'false' -> gen_server:cast(?SERVER, {'release_assignments', self()})
+    end.
+
+-spec release_consumer(pid(), pid(), kz_term:ne_binaries()) -> 'ok'.
+release_consumer(Consumer, Channel, Tags) ->
+    amqp_channel:unregister_return_handler(Channel),
+    amqp_channel:unregister_confirm_handler(Channel),
+    amqp_channel:unregister_flow_handler(Channel),
+    _ = [amqp_channel:cast( Channel, #'basic.cancel'{consumer_tag=Tag}) || Tag <- Tags],
+    gen_server:cast(?SERVER, {'release_assignments', Consumer}).

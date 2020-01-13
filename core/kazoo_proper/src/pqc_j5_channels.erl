@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2019-, 2600Hz
+%%% @copyright (C) 2020-, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -22,7 +22,7 @@
 -spec seq() -> 'ok'.
 seq() ->
     API = pqc_cb_api:init_api(['crossbar', 'jonny5']
-                             ,['cb_accounts', 'cb_limits_v2']
+                             ,['cb_accounts', 'cb_limits']
                              ),
     AccountId = create_account(API),
     ResellerId = reseller_id(API, AccountId),

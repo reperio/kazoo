@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author Michael Dunton
@@ -36,7 +36,7 @@
 %%------------------------------------------------------------------------------
 -spec check_initial_call(kz_term:ne_binary()) -> 'ok'.
 check_initial_call(Account) when is_binary(Account) ->
-    AccountId = kz_util:format_account_id(Account, 'raw'),
+    AccountId = kzs_util:format_account_id(Account),
     case kzd_accounts:fetch(AccountId) of
         {'ok', JObj} ->
             case kz_json:is_true([<<"notifications">>, <<"first_occurrence">>, <<"sent_initial_call">>], JObj) of
@@ -53,7 +53,7 @@ check_initial_call(Account) when is_binary(Account) ->
 %%------------------------------------------------------------------------------
 -spec check_initial_registration(kz_term:ne_binary()) -> 'ok'.
 check_initial_registration(Account) when is_binary(Account) ->
-    AccountId = kz_util:format_account_id(Account, 'raw'),
+    AccountId = kzs_util:format_account_id(Account),
     case kzd_accounts:fetch(AccountId) of
         {'ok', JObj} ->
             case kz_json:is_true([<<"notifications">>, <<"first_occurrence">>, <<"sent_initial_registration">>], JObj) of
@@ -283,8 +283,8 @@ compare_template_system_config([{Key, FileTemplate}|Props], JObj) ->
     end.
 
 -spec compare_template_system_config(kz_term:api_binaries(), kz_term:api_binary(), kz_term:api_binary()) ->
-                                            'default' | 'file' |
-                                            'doc' | 'ok'.
+          'default' | 'file' |
+          'doc' | 'ok'.
 compare_template_system_config('undefined', _, _) ->
     io:format("default template is undefined~n");
 compare_template_system_config(_, 'undefined', _) ->

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2019, 2600Hz
+%%% @copyright (C) 2010-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -92,7 +92,8 @@
 -include("kz_documents.hrl").
 
 -type doc() :: kz_json:object().
--export_type([doc/0]).
+-type docs() :: [doc()].
+-export_type([doc/0, docs/0]).
 
 -define(SCHEMA, <<"devices">>).
 -define(STATIC_FLAGS, <<"static">>).
@@ -896,9 +897,9 @@ set_timezone(Doc, Timezone) ->
     kz_json:set_value([<<"timezone">>], Timezone, Doc).
 
 -spec fetch(kz_term:api_ne_binary(), kz_term:api_ne_binary()) -> {'ok', doc()} |
-                                                                 {'error', any()}.
+          {'error', any()}.
 fetch(Account=?NE_BINARY, DeviceId=?NE_BINARY) ->
-    AccountDb = kz_util:format_account_db(Account),
+    AccountDb = kzs_util:format_account_db(Account),
     kz_datamgr:open_cache_doc(AccountDb, DeviceId, [{'cache_failures', 'false'}]);
 fetch(_, _) ->
     {'error', 'invalid_parameters'}.
@@ -959,7 +960,7 @@ set_custom_sip_headers_outbound(Device, Headers) ->
     set_sip_custom_sip_headers(Device, OutboundCSH).
 
 -spec set_outbound_flags(kz_json:object(), kz_term:api_ne_binaries(), kz_term:api_ne_binaries()) ->
-                                kz_json:object().
+          kz_json:object().
 set_outbound_flags(JObj, 'undefined', DynamicFlags) ->
     set_outbound_flags(JObj, [], DynamicFlags);
 set_outbound_flags(JObj, StaticFlags, 'undefined') ->

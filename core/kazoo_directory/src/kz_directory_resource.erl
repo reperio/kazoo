@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -55,7 +55,7 @@ number(Options) ->
 set_account_id(#{ccvs := CCVs, profile := Profile, number := #{account_id := AccountId}} = Map) ->
     {'ok', MasterAccountId} = kapps_util:get_master_account_id(),
     {'ok', Account} = kzd_accounts:fetch(AccountId, 'accounts'),
-    ResellerId = kzd_accounts:reseller_id(Account),
+    ResellerId = kz_services_reseller:get_id(AccountId),
     Realm = kzd_accounts:realm(Account),
     Map#{ccvs => [{<<"Account-ID">>, AccountId}
                  ,{<<"Account-Realm">>, Realm}
@@ -101,13 +101,13 @@ load_resource([DBName |DBs], DocId) ->
 %% should be created as resources in master or account
 -spec find_resource_id(resource_context()) -> resource_context().
 find_resource_id(#{endpoint_id := EndpointId, realm_id := MasterId, master_id := MasterId} = Map) ->
-    Map#{resource => load_resource([kz_util:format_account_db(MasterId)
+    Map#{resource => load_resource([kzs_util:format_account_db(MasterId)
                                    ,?KZ_OFFNET_DB
                                    ], EndpointId
                                   )
         };
 find_resource_id(#{endpoint_id := EndpointId, realm_id := AccountId} = Map) ->
-    Map#{resource => kz_datamgr:open_cache_doc(kz_util:format_account_db(AccountId), EndpointId)}.
+    Map#{resource => kz_datamgr:open_cache_doc(kzs_util:format_account_db(AccountId), EndpointId)}.
 
 -spec set_resource_id(resource_context()) -> resource_context().
 set_resource_id(#{resource := {'ok', Resource}, ccvs := CCVs, profile := Profile} = Map) ->

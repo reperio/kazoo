@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%%
@@ -26,8 +26,8 @@
                        ]).
 
 -spec init(cowboy_req:req(), map()) ->
-                  {'ok', cowboy_req:req(), map()} |
-                  {?MODULE, cowboy_req:req(), kz_term:proplist()}.
+          {'ok', cowboy_req:req(), map()} |
+          {?MODULE, cowboy_req:req(), kz_term:proplist()}.
 init(Req, HandlerOpts) ->
     kz_log:put_callid(?DEFAULT_LOG_SYSTEM_ID),
     Path = cowboy_req:path(Req),

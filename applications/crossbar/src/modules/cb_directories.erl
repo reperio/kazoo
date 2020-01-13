@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc Handle CRUD operations for Directories
 %%% @author James Aimonetti
 %%%
@@ -237,7 +237,7 @@ pdf_props(Context) ->
 %%------------------------------------------------------------------------------
 -spec pdf_users(kz_term:ne_binary(), kz_term:ne_binary(), kz_json:objects()) -> any().
 pdf_users(AccountId, SortBy, Users) ->
-    AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
+    AccountDb = kzs_util:format_account_db(AccountId),
     pdf_users(AccountDb, SortBy, Users, []).
 
 -spec pdf_users(kz_term:ne_binary(), kz_term:ne_binary(), kz_json:objects(), any()) -> any().

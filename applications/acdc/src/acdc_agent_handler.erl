@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc Handlers for various call events, acdc events, etc
 %%% @author James Aimonetti
 %%% @author Daniel Finke
@@ -131,14 +131,14 @@ login_resp(JObj, Status) ->
     end.
 
 -spec maybe_start_agent(kz_term:api_binary(), kz_term:api_binary()) ->
-                               {'ok', pid()} |
-                               {'exists', pid()} |
-                               {'error', any()}.
+          {'ok', pid()} |
+          {'exists', pid()} |
+          {'error', any()}.
 maybe_start_agent(AccountId, AgentId) ->
     case acdc_agents_sup:find_agent_supervisor(AccountId, AgentId) of
         'undefined' ->
             lager:debug("agent ~s (~s) not found, starting", [AgentId, AccountId]),
-            case kz_datamgr:open_doc(kz_util:format_account_id(AccountId, 'encoded'), AgentId) of
+            case kz_datamgr:open_doc(kzs_util:format_account_db(AccountId), AgentId) of
                 {'ok', AgentJObj} -> acdc_agents_sup:new(AgentJObj);
                 {'error', _E}=E ->
                     lager:debug("error opening agent doc: ~p", [_E]),
@@ -441,7 +441,7 @@ handle_presence_probe(JObj, _Props) ->
     Realm = kz_json:get_value(<<"Realm">>, JObj),
     case kapps_util:get_account_by_realm(Realm) of
         {'ok', AcctDb} ->
-            AccountId = kz_util:format_account_id(AcctDb, 'raw'),
+            AccountId = kzs_util:format_account_id(AcctDb),
             maybe_respond_to_presence_probe(JObj, AccountId);
         _ -> lager:debug("ignoring presence probe from realm ~s", [Realm])
     end.

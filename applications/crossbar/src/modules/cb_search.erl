@@ -1,6 +1,6 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
-%%% @doc Listing of all expected v1 callbacks
+%%% @copyright (C) 2011-2020, 2600Hz
+%%% @doc Crossbar API for search.
 %%% @author Luis Azedo
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -124,7 +124,7 @@ validate_search(Context, 'undefined') ->
     cb_context:add_validation_error(<<"t">>, <<"required">>, Message, Context);
 validate_search(Context, <<"account">>=Type) ->
     lager:debug("validating search on accounts"),
-    validate_search(cb_context:set_account_db(Context, ?KZ_ACCOUNTS_DB)
+    validate_search(cb_context:set_db_name(Context, ?KZ_ACCOUNTS_DB)
                    ,Type
                    ,cb_context:req_value(Context, <<"q">>)
                    );
@@ -132,11 +132,11 @@ validate_search(Context, Type) ->
     validate_search(Context, Type, cb_context:req_value(Context, <<"q">>)).
 
 -spec validate_search(cb_context:context(), kz_term:ne_binary(), kz_term:api_binary()) ->
-                             cb_context:context().
+          cb_context:context().
 validate_search(Context, _Type, 'undefined') ->
     lager:debug("'q' required"),
     NeedViewMsg = kz_json:from_list([{<<"message">>, <<"search needs a view to search in">>}
-                                    ,{<<"target">>, available_query_options(cb_context:account_db(Context))}
+                                    ,{<<"target">>, available_query_options(cb_context:db_name(Context))}
                                     ]),
     cb_context:add_validation_error(<<"q">>, <<"required">>, NeedViewMsg, Context);
 validate_search(Context, Type, Query) ->
@@ -149,7 +149,7 @@ validate_search(Context, Type, Query) ->
     end.
 
 -spec validate_search(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:api_binary()) ->
-                             cb_context:context().
+          cb_context:context().
 validate_search(Context, _Type, _Query, 'undefined') ->
     Message = kz_json:from_list([{<<"message">>, <<"search needs a value to search for">>}]),
     cb_context:add_validation_error(<<"v">>, <<"required">>, Message, Context);
@@ -173,7 +173,7 @@ validate_multi(Context, 'undefined') ->
     cb_context:add_validation_error(<<"t">>, <<"required">>, Message, Context);
 validate_multi(Context, <<"account">>=Type) ->
     lager:debug("validating search on accounts"),
-    validate_multi(cb_context:set_account_db(Context, ?KZ_ACCOUNTS_DB)
+    validate_multi(cb_context:set_db_name(Context, ?KZ_ACCOUNTS_DB)
                   ,Type
                   ,kz_json:to_proplist(cb_context:query_string(Context))
                   );
@@ -195,7 +195,7 @@ validate_multi(Context, Type, Query) ->
 
 -spec validate_query(cb_context:context(), kz_term:proplist() | kz_term:ne_binary()) -> cb_context:context().
 validate_query(Context, Query) ->
-    QueryOptions = available_query_options(cb_context:account_db(Context)),
+    QueryOptions = available_query_options(cb_context:db_name(Context)),
     validate_query(Context, QueryOptions, Query).
 
 -spec validate_query(cb_context:context(), kz_term:proplist(), kz_term:proplist() | kz_term:ne_binary()) -> cb_context:context().

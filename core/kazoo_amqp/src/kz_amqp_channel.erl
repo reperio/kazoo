@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -69,7 +69,10 @@ remove_consumer_pid() ->
 -spec consumer_channel() -> pid() | kz_amqp_assignment() | {'error', 'timeout'}.
 consumer_channel() ->
     case get('$kz_amqp_consumer_channel') of
-        'undefined' -> kz_amqp_assignments:get_channel();
+        'undefined' ->
+            #kz_amqp_assignment{channel=Channel} = kz_amqp_assignments:get_channel(),
+            put('$kz_amqp_consumer_channel', Channel),
+            Channel;
         Channel -> Channel
     end.
 

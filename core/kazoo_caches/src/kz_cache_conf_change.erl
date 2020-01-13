@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2019-, 2600Hz
+%%% @copyright (C) 2020-, 2600Hz
 %%% @doc Handles document change AMQP payloads and flushes caches appropriately
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -106,7 +106,7 @@ log_changed(Keys, Db, Id, Type) ->
     lager:debug("removed ~p keys for ~s/~s/~s", [length(Keys), Db, Id, Type]).
 
 -spec handle_document_change(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), atom()) ->
-                                    list().
+          list().
 handle_document_change(Db, <<"database">>, _Id, Name) ->
     MatchSpec = match_db_changed(Db),
     lists:foldl(fun(Obj, Removed) ->

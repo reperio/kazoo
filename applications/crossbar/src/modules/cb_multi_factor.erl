@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2019, 2600Hz
+%%% @copyright (C) 2010-2020, 2600Hz
 %%% @doc Multi factor authentication configuration API endpoint
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -54,14 +54,14 @@ init() ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec authorize(cb_context:context()) ->
-                       boolean() |
-                       {'stop', cb_context:context()}.
+          boolean() |
+          {'stop', cb_context:context()}.
 authorize(Context) ->
     authorize_system_multi_factor(Context, cb_context:req_nouns(Context), cb_context:req_verb(Context)).
 
 -spec authorize(cb_context:context(), path_token()) ->
-                       boolean() |
-                       {'stop', cb_context:context()}.
+          boolean() |
+          {'stop', cb_context:context()}.
 authorize(Context, _) ->
     authorize_system_multi_factor(Context, cb_context:req_nouns(Context), cb_context:req_verb(Context)).
 
@@ -69,8 +69,8 @@ authorize(Context, _) ->
 authorize(_Context, _, _) -> 'true'.
 
 -spec authorize_system_multi_factor(cb_context:context(), req_nouns(), http_method()) ->
-                                           boolean() |
-                                           {'stop', cb_context:context()}.
+          boolean() |
+          {'stop', cb_context:context()}.
 authorize_system_multi_factor(_, [{<<"multi_factor">>, []}], ?HTTP_GET) -> 'true';
 authorize_system_multi_factor(C, [{<<"multi_factor">>, []}], ?HTTP_PUT) -> cb_context:is_superduper_admin(C);
 authorize_system_multi_factor(C, [{<<"multi_factor">>, _}], ?HTTP_GET) -> cb_context:is_superduper_admin(C);
@@ -133,14 +133,14 @@ validate(Context) ->
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ?ATTEMPTS) ->
-    Options = [{mapper, crossbar_view:map_value_fun()}
+    Options = [{'mapper', crossbar_view:map_value_fun()}
               ,{'range_keymap', <<"multi_factor">>}
               ],
     crossbar_view:load_modb(Context, ?CB_LIST_ATTEMPT_LOG, Options);
 validate(Context, ConfigId) ->
     case cb_context:req_nouns(Context) of
         [{<<"multi_factor">>, _}] ->
-            validate_multi_factor_config(cb_context:set_account_db(Context, ?KZ_AUTH_DB), ConfigId, cb_context:req_verb(Context));
+            validate_multi_factor_config(cb_context:set_db_name(Context, ?KZ_AUTH_DB), ConfigId, cb_context:req_verb(Context));
         _ ->
             validate_multi_factor_config(Context, ConfigId, cb_context:req_verb(Context))
     end.
@@ -153,7 +153,7 @@ validate(Context, ?ATTEMPTS, AttemptId) ->
 validate_multi_factor(Context, [{<<"multi_factor">>, _}], ?HTTP_GET) ->
     system_summary(Context);
 validate_multi_factor(Context, [{<<"multi_factor">>, _}], ?HTTP_PUT) ->
-    create(cb_context:set_account_db(Context, ?KZ_AUTH_DB));
+    create(cb_context:set_db_name(Context, ?KZ_AUTH_DB));
 validate_multi_factor(Context, _, ?HTTP_GET) ->
     summary(Context);
 validate_multi_factor(Context, _, ?HTTP_PUT) ->
@@ -238,7 +238,15 @@ update(Id, Context) ->
 read_attempt_log(?MATCH_MODB_PREFIX(YYYY, MM, _) = AttemptId, Context) ->
     Year  = kz_term:to_integer(YYYY),
     Month = kz_term:to_integer(MM),
-    crossbar_doc:load(AttemptId, cb_context:set_account_modb(Context, Year, Month), ?TYPE_CHECK_OPTION(?ATTEMPTS_TYPE)).
+    crossbar_doc:load(AttemptId
+                     ,cb_context:set_db_name(Context
+                                            ,kzs_util:format_account_id(cb_context:account_id(Context)
+                                                                       ,Year
+                                                                       ,Month
+                                                                       )
+                                            )
+                     ,?TYPE_CHECK_OPTION(?ATTEMPTS_TYPE)
+                     ).
 
 %%------------------------------------------------------------------------------
 %% @doc Update-merge an existing menu document with the data provided, if it is

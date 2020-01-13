@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
 %%% @author Karl Anderson
@@ -35,8 +35,6 @@
                   ,?WORKER('crossbar_bindings')
                   ]
        ).
-
--define(DISPATCH_FILE, [code:priv_dir(?APP), "/dispatch.conf"]).
 
 %%==============================================================================
 %% API functions

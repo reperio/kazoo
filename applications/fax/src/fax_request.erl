@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
 %%%
@@ -125,7 +125,7 @@ handle_channel_event(JObj, Props) ->
 %%------------------------------------------------------------------------------
 -spec init([kapps_call:call() | kz_json:object() | fax_storage()]) -> {'ok', state()}.
 init([Call, JObj, Storage]) ->
-    kapps_call:put_callid(Call),
+    _ = kapps_call:put_callid(Call),
     gen_listener:cast(self(), 'start_action'),
     {'ok', #state{call = Call
                  ,action = get_action(JObj)
@@ -296,7 +296,7 @@ start_receive_fax(#state{call=Call
     ResourceFlag = kapps_call:custom_channel_var(<<"Resource-Fax-Option">>, Call),
     LocalFile = get_fs_filename(NewState),
     send_status(NewState, list_to_binary(["New Fax from ", kapps_call:caller_id_number(Call)]), ?FAX_START, 'undefined'),
-    kapps_call_command:answer(Call),
+    _ = kapps_call_command:b_answer_now(Call),
     lager:debug("receive fax ~s - t.38 ~p / ~p", [FaxId, ResourceFlag, ReceiveFlag]),
     kapps_call_command:receive_fax(ResourceFlag, ReceiveFlag, LocalFile, Call),
     {'noreply', NewState}.
@@ -306,7 +306,7 @@ get_fax_storage(Call) ->
     AccountId = kapps_call:account_id(Call),
     {Year, Month, _} = erlang:date(),
     AccountMODb = kazoo_modb:get_modb(AccountId, Year, Month),
-    FaxDb = kz_util:format_account_modb(AccountMODb, 'encoded'),
+    FaxDb = kzs_util:format_account_modb(AccountMODb, 'encoded'),
     FaxId = list_to_binary([kz_term:to_binary(Year)
                            ,kz_date:pad_month(Month)
                            ,"-"
@@ -513,9 +513,9 @@ store_attachment(Pid, #state{call=Call
     end.
 
 -spec check_fax_attachment(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary())->
-                                  {'ok', kz_json:object()} |
-                                  {'missing', kz_json:object()} |
-                                  {'error', any()}.
+          {'ok', kz_json:object()} |
+          {'missing', kz_json:object()} |
+          {'error', any()}.
 check_fax_attachment(Modb, DocId, Name) ->
     case kz_datamgr:open_doc(Modb, DocId) of
         {'ok', JObj} ->
@@ -532,8 +532,8 @@ get_fs_filename(#state{storage=#fax_storage{attachment_id=AttachmentId}}) ->
     <<LocalPath/binary, AttachmentId/binary>>.
 
 -spec create_fax_doc(kz_json:object(), state()) ->
-                            {'ok', kz_json:object()} |
-                            {'error', any()}.
+          {'ok', kz_json:object()} |
+          {'error', any()}.
 create_fax_doc(JObj, #state{owner_id = OwnerId
                            ,faxbox_id = FaxBoxId
                            ,fax_notify = Notify

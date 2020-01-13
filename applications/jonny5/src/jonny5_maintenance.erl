@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc Handlers for various AMQP payloads
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -192,7 +192,7 @@ limit_summary_header() ->
 limits_details(Account) when not is_binary(Account) ->
     limits_details(kz_term:to_binary(Account));
 limits_details(Account) ->
-    AccountId = kz_util:format_account_id(Account, 'raw'),
+    AccountId = kzs_util:format_account_id(Account),
     Props = j5_limits:to_props(j5_limits:get(AccountId)),
     io:format("Account Info:~n", []),
     pretty_print_field("  Account ID", props:get_value('account_id', Props)),

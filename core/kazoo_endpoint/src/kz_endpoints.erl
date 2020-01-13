@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -19,7 +19,7 @@
 -include("kazoo_endpoint.hrl").
 
 -spec by_owner_id(kz_term:ne_binary(), kz_json:object(), kapps_call:call()) ->
-                         kz_json:objects().
+          kz_json:objects().
 by_owner_id(OwnerId, Data, Call) ->
     by_owner_id(OwnerId, Data, Call, ?MODNAME).
 

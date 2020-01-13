@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2019, 2600Hz
+%%% @copyright (C) 2010-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -94,8 +94,8 @@ new(Account) ->
     TStamp = kz_time:now_s(),
     kz_json:from_list(
       [{<<"_id">>, <<"limits">>}
-      ,{<<"pvt_account_db">>, kz_util:format_account_db(Account)}
-      ,{<<"pvt_account_id">>, kz_util:format_account_id(Account)}
+      ,{<<"pvt_account_db">>, kzs_util:format_account_db(Account)}
+      ,{<<"pvt_account_id">>, kzs_util:format_account_id(Account)}
       ,{<<"pvt_type">>, <<"limits">>}
       ,{<<"pvt_created">>, TStamp}
       ,{<<"pvt_modified">>, TStamp}
@@ -481,7 +481,7 @@ inbound_channels_per_did_rules(Doc, Default) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec get_limit(kz_term:ne_binary(), kz_json:object(), tristate_integer()) ->
-                       tristate_integer().
+          tristate_integer().
 get_limit(Key, Doc, Default) ->
     PrivateValue = get_private_limit(Key, Doc),
     PublicValue =  kz_json:get_integer_value(Key, Doc),
@@ -500,7 +500,7 @@ get_limit(Key, Doc, Default) ->
     end.
 
 -spec get_public_limit(kz_term:ne_binary(), kz_json:object(), tristate_integer()) ->
-                              non_neg_integer().
+          non_neg_integer().
 get_public_limit(Key, Doc, Default) ->
     case kz_json:get_integer_value(Key, Doc) of
         'undefined' -> get_default_limit(Key, Default);

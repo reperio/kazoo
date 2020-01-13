@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2017-2019, 2600Hz
+%%% @copyright (C) 2017-2020, 2600Hz
 %%% @doc Sends a notification for missed call.
 %%%
 %%% <h4>Data options:</h4>
@@ -125,7 +125,7 @@ send_missed_alert(Call, Notify, Emails) ->
 %%------------------------------------------------------------------------------
 -spec find_email_addresses(kapps_call:call(), kz_json:objects()) -> kz_term:ne_binaries().
 find_email_addresses(Call, Recipients) ->
-    AccountDb = kz_util:format_account_db(kapps_call:account_id(Call)),
+    AccountDb = kzs_util:format_account_db(kapps_call:account_id(Call)),
     lists:flatten(
       [Emails
        || JObj <- Recipients,

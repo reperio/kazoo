@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -298,7 +298,7 @@ maybe_get_account_default_number(Number, Name, Account, Call) ->
 
 -spec maybe_get_assigned_number(kz_term:api_ne_binary(), kz_term:api_ne_binary(), kz_term:api_ne_binary()|kapps_call:call()) -> cid().
 maybe_get_assigned_number(CandidateNumber, Name, ?MATCH_ACCOUNT_ENCODED(_)=AccountDb) ->
-    AccountId = kz_util:format_account_id(AccountDb),
+    AccountId = kzs_util:format_account_id(AccountDb),
     case knm_numbers:account_listing(AccountDb) of
         [_|_] = NumbersList ->
             Numbers = [Num
@@ -536,10 +536,10 @@ owned_by(OwnerId, Type, Call) ->
     owned_by_query([{'key', [OwnerId, Type]}], Call).
 
 -spec owned_by_docs(kz_term:api_binary(), kz_term:ne_binary() | kapps_call:call()) ->
-                           kz_term:api_objects().
+          kz_term:api_objects().
 owned_by_docs('undefined', _) -> [];
 owned_by_docs(OwnerId, ?NE_BINARY=Account) ->
-    AccountDb = kz_util:format_account_db(Account),
+    AccountDb = kzs_util:format_account_db(Account),
     ViewOptions = [{'startkey', [OwnerId]}
                   ,{'endkey', [OwnerId, kz_json:new()]}
                   ,'include_docs'
@@ -592,7 +592,7 @@ get_flags(ApplicationName, Call) ->
     sets:to_list(sets:from_list(Flags)).
 
 -spec maybe_get_endpoint_static_flags(kz_term:ne_binary(), kapps_call:call(), kz_term:ne_binaries()) ->
-                                             kz_term:ne_binaries().
+          kz_term:ne_binaries().
 maybe_get_endpoint_static_flags(_, Call, Flags) ->
     case kz_endpoint:get(Call) of
         {'error', _R} -> Flags;
@@ -601,12 +601,12 @@ maybe_get_endpoint_static_flags(_, Call, Flags) ->
     end.
 
 -spec get_endpoint_static_flags(kz_term:ne_binaries(), kz_json:object()) ->
-                                       kz_term:ne_binaries().
+          kz_term:ne_binaries().
 get_endpoint_static_flags(Flags, Endpoint) ->
     kzd_devices:outbound_static_flags(Endpoint) ++ Flags.
 
 -spec get_account_static_flags(kz_term:ne_binary(), kapps_call:call(), kz_term:ne_binaries()) ->
-                                      kz_term:ne_binaries().
+          kz_term:ne_binaries().
 get_account_static_flags(_, Call, Flags) ->
     AccountId = kapps_call:account_id(Call),
     case kzd_accounts:fetch(AccountId) of
@@ -617,7 +617,7 @@ get_account_static_flags(_, Call, Flags) ->
     end.
 
 -spec get_config_static_flags(kz_term:ne_binary(), kapps_call:call(), kz_term:ne_binaries()) ->
-                                     kz_term:ne_binaries().
+          kz_term:ne_binaries().
 get_config_static_flags(ApplicationName, Call, Flags) ->
     kapps_account_config:get_ne_binaries(kapps_call:account_id(Call)
                                         ,ApplicationName
@@ -627,7 +627,7 @@ get_config_static_flags(ApplicationName, Call, Flags) ->
         ++ Flags.
 
 -spec maybe_get_endpoint_dynamic_flags(kz_term:ne_binary(), kapps_call:call(), kz_term:ne_binaries()) ->
-                                              kz_term:ne_binaries().
+          kz_term:ne_binaries().
 maybe_get_endpoint_dynamic_flags(_, Call, Flags) ->
     case kz_endpoint:get(Call) of
         {'error', _} -> Flags;
@@ -635,7 +635,7 @@ maybe_get_endpoint_dynamic_flags(_, Call, Flags) ->
     end.
 
 -spec get_endpoint_dynamic_flags(kapps_call:call(), kz_term:ne_binaries(), kz_json:object()) ->
-                                        kz_term:ne_binaries().
+          kz_term:ne_binaries().
 get_endpoint_dynamic_flags(Call, Flags, Endpoint) ->
     case kzd_devices:outbound_dynamic_flags(Endpoint) of
         [] -> Flags;
@@ -643,7 +643,7 @@ get_endpoint_dynamic_flags(Call, Flags, Endpoint) ->
     end.
 
 -spec get_account_dynamic_flags(kz_term:ne_binary(), kapps_call:call(), kz_term:ne_binaries()) ->
-                                       kz_term:ne_binaries().
+          kz_term:ne_binaries().
 get_account_dynamic_flags(_, Call, Flags) ->
     AccountId = kapps_call:account_id(Call),
     case kzd_accounts:fetch(AccountId) of
@@ -655,7 +655,7 @@ get_account_dynamic_flags(_, Call, Flags) ->
     end.
 
 -spec get_config_dynamic_flags(kz_types:ne_binary(), kapps_call:call(), kz_term:ne_binaries()) ->
-                                      kz_term:ne_binaries().
+          kz_term:ne_binaries().
 get_config_dynamic_flags(ApplicationName, Call, Flags) ->
     DynamicFlags = kapps_account_config:get_ne_binaries(kapps_call:account_id(Call)
                                                        ,ApplicationName
@@ -673,7 +673,7 @@ process_dynamic_flags(DynamicFlags, Call) ->
     process_dynamic_flags(DynamicFlags, [], Call).
 
 -spec process_dynamic_flags(kz_term:ne_binaries(), kz_term:ne_binaries(), kapps_call:call()) ->
-                                   kz_term:ne_binaries().
+          kz_term:ne_binaries().
 process_dynamic_flags([], Flags, _) -> Flags;
 process_dynamic_flags([<<"zone">>|DynamicFlags], Flags, Call) ->
     Zone = kz_term:to_binary(kz_nodes:local_zone()),

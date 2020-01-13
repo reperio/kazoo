@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2019, 2600Hz
+%%% @copyright (C) 2013-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -49,7 +49,7 @@ outbound_child_name(OffnetReq) ->
                    ]).
 
 -spec bridge(stepswitch_resources:endpoints(), kapi_offnet_resource:req()) ->
-                    kz_types:sup_startchild_ret().
+          kz_types:sup_startchild_ret().
 bridge(Endpoints, OffnetReq) ->
     supervisor:start_child(?SERVER
                           ,?WORKER_NAME_ARGS_TYPE(child_name(OffnetReq)
@@ -60,7 +60,7 @@ bridge(Endpoints, OffnetReq) ->
                           ).
 
 -spec local_extension(knm_number_options:extra_options(), kapi_offnet_resource:req()) ->
-                             kz_types:sup_startchild_ret().
+          kz_types:sup_startchild_ret().
 local_extension(Props, OffnetReq) ->
     supervisor:start_child(?SERVER
                           ,?WORKER_NAME_ARGS_TYPE(child_name(OffnetReq)

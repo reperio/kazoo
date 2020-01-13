@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% @author Karl Anderson <karl@2600hz.org>
 %%%
@@ -183,8 +183,8 @@ get_default_template(Category, Key) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec render_template(kz_term:api_binary(), atom(), kz_term:proplist()) ->
-                             {'ok', string()} |
-                             {'error', any()}.
+          {'ok', string()} |
+          {'error', any()}.
 render_template(Template, DefaultTemplate, Props) ->
     case do_render_template(Template, DefaultTemplate, Props) of
         {'ok', R} -> {'ok', binary_to_list(iolist_to_binary(R))};
@@ -192,8 +192,8 @@ render_template(Template, DefaultTemplate, Props) ->
     end.
 
 -spec do_render_template(kz_term:api_binary(), atom(), kz_term:proplist()) ->
-                                {'ok', string()} |
-                                {'error', any()}.
+          {'ok', string()} |
+          {'error', any()}.
 do_render_template('undefined', DefaultTemplate, Props) ->
     lager:debug("rendering default ~s template", [DefaultTemplate]),
     kz_template:render(DefaultTemplate, Props);
@@ -324,13 +324,13 @@ find_rep_email(JObj) ->
 find_admin('undefined') -> kz_json:new();
 find_admin([]) -> kz_json:new();
 find_admin(Account) when is_binary(Account) ->
-    AccountId = kz_util:format_account_id(Account, 'raw'),
+    AccountId = kzs_util:format_account_id(Account),
     case kzd_accounts:fetch(Account) of
         {'error', _} -> find_admin([AccountId]);
         {'ok', JObj} -> find_admin([AccountId | lists:reverse(kzd_accounts:tree(JObj))])
     end;
 find_admin([AcctId|Tree]) ->
-    AccountDb = kz_util:format_account_id(AcctId, 'encoded'),
+    AccountDb = kzs_util:format_account_db(AcctId),
     ViewOptions = [{'key', <<"user">>}
                   ,'include_docs'
                   ],
@@ -360,9 +360,9 @@ find_admin(Account) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec get_account_doc(kz_json:object()) ->
-                             {'ok', kz_json:object()} |
-                             {'error', _} |
-                             'undefined'.
+          {'ok', kz_json:object()} |
+          {'error', _} |
+          'undefined'.
 get_account_doc(JObj) ->
     case kz_json:get_first_defined([<<"Account-DB">>
                                    ,<<"Account-ID">>

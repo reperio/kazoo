@@ -169,12 +169,6 @@
                             "log_successful_attempts": false,
                             "token_auth_expiry_s": 3600
                         },
-                        "cb_ubiquiti_auth": {
-                            "enabled": true,
-                            "log_failed_attempts": true,
-                            "log_successful_attempts": false,
-                            "token_auth_expiry_s": 3600
-                        },
                         "cb_user_auth": {
                             "enabled": true,
                             "log_failed_attempts": true,
@@ -191,9 +185,6 @@
                             "$ref": "#/definitions/auth_module_config"
                         },
                         "cb_ip_auth": {
-                            "$ref": "#/definitions/auth_module_config"
-                        },
-                        "cb_ubiquiti_auth": {
                             "$ref": "#/definitions/auth_module_config"
                         },
                         "cb_user_auth": {
@@ -298,6 +289,10 @@
                         {
                             "friendly_name": "Support",
                             "name": "support"
+                        },
+                        {
+                            "friendly_name": "ASR Transcriptions",
+                            "name": "asr-transcriptions"
                         }
                     ],
                     "description": "ledgers registered_ledgers",
@@ -3248,7 +3243,7 @@
                 },
                 "req_body_format": {
                     "default": "form",
-                    "description": "What format should the request body have",
+                    "description": "What format should the request body have when using POST",
                     "enum": [
                         "form",
                         "json"
@@ -3263,6 +3258,11 @@
                         "twiml"
                     ],
                     "type": "string"
+                },
+                "req_timeout_ms": {
+                    "description": "How long, in milliseconds, to wait for a Pivot response from the HTTP server",
+                    "maximum": 5000,
+                    "type": "integer"
                 },
                 "skip_module": {
                     "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
@@ -8998,6 +8998,157 @@
             ],
             "type": "object"
         },
+        "kapi.authn.authn_err": {
+            "description": "AMQP API for authn.authn_err",
+            "properties": {
+                "Event-Category": {
+                    "enum": [
+                        "directory"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "authn_err"
+                    ],
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "kapi.authn.authn_req": {
+            "description": "AMQP API for authn.authn_req",
+            "properties": {
+                "Auth-Nonce": {
+                    "type": "string"
+                },
+                "Auth-Realm": {
+                    "type": "string"
+                },
+                "Auth-Response": {
+                    "type": "string"
+                },
+                "Auth-User": {
+                    "type": "string"
+                },
+                "Call-ID": {
+                    "type": "string"
+                },
+                "Contact": {
+                    "type": "string"
+                },
+                "Custom-SIP-Headers": {
+                    "type": "object"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "directory"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "authn_req"
+                    ],
+                    "type": "string"
+                },
+                "Expires": {
+                    "type": "string"
+                },
+                "From": {
+                    "type": "string"
+                },
+                "Method": {
+                    "type": "string"
+                },
+                "Orig-IP": {
+                    "type": "string"
+                },
+                "Orig-Port": {
+                    "type": "string"
+                },
+                "Switch-Hostname": {
+                    "type": "string"
+                },
+                "To": {
+                    "type": "string"
+                },
+                "User-Agent": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Auth-Realm",
+                "Auth-User",
+                "From",
+                "To"
+            ],
+            "type": "object"
+        },
+        "kapi.authn.authn_resp": {
+            "description": "AMQP API for authn.authn_resp",
+            "properties": {
+                "Access-Group": {
+                    "type": "string"
+                },
+                "Auth-Method": {
+                    "enum": [
+                        "password",
+                        "ip",
+                        "a1-hash",
+                        "error",
+                        "gsm",
+                        "nonce",
+                        "a3a8"
+                    ],
+                    "type": "string"
+                },
+                "Auth-Nonce": {
+                    "type": "string"
+                },
+                "Auth-Password": {
+                    "type": "string"
+                },
+                "Auth-Username": {
+                    "type": "string"
+                },
+                "Custom-Channel-Vars": {
+                    "type": "object"
+                },
+                "Custom-SIP-Headers": {
+                    "type": "object"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "directory"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "authn_resp"
+                    ],
+                    "type": "string"
+                },
+                "Expires": {
+                    "type": "string"
+                },
+                "Register-Overwrite-Notify": {
+                    "type": "string"
+                },
+                "Suppress-Unregister-Notifications": {
+                    "type": "string"
+                },
+                "Tenant-ID": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Auth-Method",
+                "Auth-Password"
+            ],
+            "type": "object"
+        },
         "kapi.authn.error": {
             "description": "AMQP API for authn.error",
             "properties": {
@@ -9146,6 +9297,110 @@
             "required": [
                 "Auth-Method",
                 "Auth-Password"
+            ],
+            "type": "object"
+        },
+        "kapi.authn.token_req": {
+            "description": "AMQP API for authn.token_req",
+            "properties": {
+                "Auth-Token": {
+                    "type": "string"
+                },
+                "Call-ID": {
+                    "type": "string"
+                },
+                "Contact": {
+                    "type": "string"
+                },
+                "Custom-SIP-Headers": {
+                    "type": "object"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "directory"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "token_req"
+                    ],
+                    "type": "string"
+                },
+                "Expires": {
+                    "type": "string"
+                },
+                "From": {
+                    "type": "string"
+                },
+                "Orig-IP": {
+                    "type": "string"
+                },
+                "Orig-Port": {
+                    "type": "string"
+                },
+                "Switch-Hostname": {
+                    "type": "string"
+                },
+                "To": {
+                    "type": "string"
+                },
+                "User-Agent": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Auth-Token",
+                "From",
+                "To"
+            ],
+            "type": "object"
+        },
+        "kapi.authn.token_resp": {
+            "description": "AMQP API for authn.token_resp",
+            "properties": {
+                "Access-Group": {
+                    "type": "string"
+                },
+                "Auth-Nonce": {
+                    "type": "string"
+                },
+                "Custom-Channel-Vars": {
+                    "type": "object"
+                },
+                "Custom-SIP-Headers": {
+                    "type": "object"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "directory"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "token_resp"
+                    ],
+                    "type": "string"
+                },
+                "Expires": {
+                    "type": "string"
+                },
+                "Register-Overwrite-Notify": {
+                    "type": "string"
+                },
+                "Suppress-Unregister-Notifications": {
+                    "type": "string"
+                },
+                "Tenant-ID": {
+                    "type": "string"
+                },
+                "Token-Data": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Token-Data"
             ],
             "type": "object"
         },
@@ -9446,6 +9701,49 @@
             ],
             "type": "object"
         },
+        "kapi.bookkeepers.collect_recurring_req": {
+            "description": "AMQP API for bookkeepers.collect_recurring_req",
+            "properties": {
+                "Account-ID": {
+                    "type": "string"
+                },
+                "Audit-Log": {
+                    "type": "string"
+                },
+                "Bookkeeper-ID": {
+                    "type": "string"
+                },
+                "Bookkeeper-Type": {
+                    "type": "string"
+                },
+                "Due-Timestamp": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "bookkeepers"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "collect_recurring_req"
+                    ],
+                    "type": "string"
+                },
+                "Vendor-ID": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Account-ID",
+                "Bookkeeper-ID",
+                "Bookkeeper-Type",
+                "Due-Timestamp",
+                "Vendor-ID"
+            ],
+            "type": "object"
+        },
         "kapi.bookkeepers.collect_recurring_req_definition": {
             "description": "AMQP API for bookkeepers.collect_recurring_req_definition",
             "properties": {
@@ -9485,6 +9783,57 @@
                 "Bookkeeper-ID",
                 "Bookkeeper-Type",
                 "Vendor-ID"
+            ],
+            "type": "object"
+        },
+        "kapi.bookkeepers.collect_recurring_resp": {
+            "description": "AMQP API for bookkeepers.collect_recurring_resp",
+            "properties": {
+                "Account-ID": {
+                    "type": "string"
+                },
+                "Bookkeeper-ID": {
+                    "type": "string"
+                },
+                "Bookkeeper-Type": {
+                    "type": "string"
+                },
+                "Details": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "bookkeepers"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "collect_recurring_resp"
+                    ],
+                    "type": "string"
+                },
+                "Message": {
+                    "type": "string"
+                },
+                "Reason": {
+                    "type": "string"
+                },
+                "Status": {
+                    "type": "string"
+                },
+                "Transaction-DB": {
+                    "type": "string"
+                },
+                "Transaction-ID": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Account-ID",
+                "Bookkeeper-ID",
+                "Bookkeeper-Type",
+                "Status"
             ],
             "type": "object"
         },
@@ -9539,6 +9888,50 @@
             ],
             "type": "object"
         },
+        "kapi.bookkeepers.refund_req": {
+            "description": "AMQP API for bookkeepers.refund_req",
+            "properties": {
+                "Account-ID": {
+                    "type": "string"
+                },
+                "Amount": {
+                    "type": "string"
+                },
+                "Bookkeeper-Type": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "bookkeepers"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "refund_req"
+                    ],
+                    "type": "string"
+                },
+                "Transaction-DB": {
+                    "type": "string"
+                },
+                "Transaction-ID": {
+                    "type": "string"
+                },
+                "Vendor-ID": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Account-ID",
+                "Amount",
+                "Bookkeeper-Type",
+                "Transaction-DB",
+                "Transaction-ID",
+                "Vendor-ID"
+            ],
+            "type": "object"
+        },
         "kapi.bookkeepers.refund_req_definition": {
             "description": "AMQP API for bookkeepers.refund_req_definition",
             "properties": {
@@ -9583,6 +9976,47 @@
             ],
             "type": "object"
         },
+        "kapi.bookkeepers.refund_resp": {
+            "description": "AMQP API for bookkeepers.refund_resp",
+            "properties": {
+                "Details": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "bookkeepers"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "refund_resp"
+                    ],
+                    "type": "string"
+                },
+                "Message": {
+                    "type": "string"
+                },
+                "Reason": {
+                    "type": "string"
+                },
+                "Status": {
+                    "type": "string"
+                },
+                "Transaction-DB": {
+                    "type": "string"
+                },
+                "Transaction-ID": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Status",
+                "Transaction-DB",
+                "Transaction-ID"
+            ],
+            "type": "object"
+        },
         "kapi.bookkeepers.refund_resp_definition": {
             "description": "AMQP API for bookkeepers.refund_resp_definition",
             "properties": {
@@ -9621,6 +10055,50 @@
                 "Status",
                 "Transaction-DB",
                 "Transaction-ID"
+            ],
+            "type": "object"
+        },
+        "kapi.bookkeepers.sale_req": {
+            "description": "AMQP API for bookkeepers.sale_req",
+            "properties": {
+                "Account-ID": {
+                    "type": "string"
+                },
+                "Amount": {
+                    "type": "string"
+                },
+                "Bookkeeper-Type": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "bookkeepers"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "sale_req"
+                    ],
+                    "type": "string"
+                },
+                "Transaction-DB": {
+                    "type": "string"
+                },
+                "Transaction-ID": {
+                    "type": "string"
+                },
+                "Vendor-ID": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Account-ID",
+                "Amount",
+                "Bookkeeper-Type",
+                "Transaction-DB",
+                "Transaction-ID",
+                "Vendor-ID"
             ],
             "type": "object"
         },
@@ -9668,6 +10146,47 @@
             ],
             "type": "object"
         },
+        "kapi.bookkeepers.sale_resp": {
+            "description": "AMQP API for bookkeepers.sale_resp",
+            "properties": {
+                "Details": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "bookkeepers"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "sale_resp"
+                    ],
+                    "type": "string"
+                },
+                "Message": {
+                    "type": "string"
+                },
+                "Reason": {
+                    "type": "string"
+                },
+                "Status": {
+                    "type": "string"
+                },
+                "Transaction-DB": {
+                    "type": "string"
+                },
+                "Transaction-ID": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Status",
+                "Transaction-DB",
+                "Transaction-ID"
+            ],
+            "type": "object"
+        },
         "kapi.bookkeepers.sale_resp_definition": {
             "description": "AMQP API for bookkeepers.sale_resp_definition",
             "properties": {
@@ -9706,6 +10225,50 @@
                 "Status",
                 "Transaction-DB",
                 "Transaction-ID"
+            ],
+            "type": "object"
+        },
+        "kapi.bookkeepers.standing_req": {
+            "description": "AMQP API for bookkeepers.standing_req",
+            "properties": {
+                "Account-ID": {
+                    "type": "string"
+                },
+                "Bookkeeper-ID": {
+                    "type": "string"
+                },
+                "Bookkeeper-Type": {
+                    "type": "string"
+                },
+                "Estimated-Withdrawal": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "bookkeepers"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "standing_req"
+                    ],
+                    "type": "string"
+                },
+                "Items": {
+                    "type": "string"
+                },
+                "Vendor-ID": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Account-ID",
+                "Bookkeeper-ID",
+                "Bookkeeper-Type",
+                "Estimated-Withdrawal",
+                "Items",
+                "Vendor-ID"
             ],
             "type": "object"
         },
@@ -9753,6 +10316,39 @@
             ],
             "type": "object"
         },
+        "kapi.bookkeepers.standing_resp": {
+            "description": "AMQP API for bookkeepers.standing_resp",
+            "properties": {
+                "Details": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "bookkeepers"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "standing_resp"
+                    ],
+                    "type": "string"
+                },
+                "Message": {
+                    "type": "string"
+                },
+                "Reason": {
+                    "type": "string"
+                },
+                "Status": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Status"
+            ],
+            "type": "object"
+        },
         "kapi.bookkeepers.standing_resp_definition": {
             "description": "AMQP API for bookkeepers.standing_resp_definition",
             "properties": {
@@ -9783,6 +10379,52 @@
             },
             "required": [
                 "Status"
+            ],
+            "type": "object"
+        },
+        "kapi.bookkeepers.update_req": {
+            "description": "AMQP API for bookkeepers.update_req",
+            "properties": {
+                "Account-ID": {
+                    "type": "string"
+                },
+                "Audit-Log": {
+                    "type": "string"
+                },
+                "Bookkeeper-ID": {
+                    "type": "string"
+                },
+                "Bookkeeper-Type": {
+                    "type": "string"
+                },
+                "Dry-Run": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "bookkeepers"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "update_req"
+                    ],
+                    "type": "string"
+                },
+                "Invoice": {
+                    "type": "string"
+                },
+                "Vendor-ID": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Account-ID",
+                "Bookkeeper-ID",
+                "Bookkeeper-Type",
+                "Invoice",
+                "Vendor-ID"
             ],
             "type": "object"
         },
@@ -9832,6 +10474,39 @@
                 "Bookkeeper-Type",
                 "Invoice",
                 "Vendor-ID"
+            ],
+            "type": "object"
+        },
+        "kapi.bookkeepers.update_resp": {
+            "description": "AMQP API for bookkeepers.update_resp",
+            "properties": {
+                "Details": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "bookkeepers"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "update_resp"
+                    ],
+                    "type": "string"
+                },
+                "Message": {
+                    "type": "string"
+                },
+                "Reason": {
+                    "type": "string"
+                },
+                "Status": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Status"
             ],
             "type": "object"
         },
@@ -16311,6 +16986,37 @@
             },
             "type": "object"
         },
+        "kapi.fs.command": {
+            "description": "AMQP API for fs.command",
+            "properties": {
+                "Application-Name": {
+                    "type": "string"
+                },
+                "Args": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "fs"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "command"
+                    ],
+                    "type": "string"
+                },
+                "Insert-At": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Application-Name",
+                "Args"
+            ],
+            "type": "object"
+        },
         "kapi.globals.call": {
             "description": "AMQP API for globals.call",
             "properties": {
@@ -16622,6 +17328,155 @@
             },
             "type": "object"
         },
+        "kapi.im.inbound": {
+            "description": "AMQP API for im.inbound",
+            "properties": {
+                "Account-ID": {
+                    "type": "string"
+                },
+                "Body": {
+                    "type": "string"
+                },
+                "Custom-SIP-Headers": {
+                    "type": "object"
+                },
+                "Custom-Vars": {
+                    "type": "object"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "sms",
+                        "mms"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "inbound"
+                    ],
+                    "type": "string"
+                },
+                "From": {
+                    "type": "string"
+                },
+                "Message-ID": {
+                    "type": "string"
+                },
+                "Request": {
+                    "type": "string"
+                },
+                "Route-ID": {
+                    "type": "string"
+                },
+                "Route-Type": {
+                    "enum": [
+                        "onnet",
+                        "offnet"
+                    ],
+                    "type": "string"
+                },
+                "System-ID": {
+                    "type": "string"
+                },
+                "To": {
+                    "type": "string"
+                },
+                "Transaction-ID": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Body",
+                "From",
+                "Message-ID",
+                "To"
+            ],
+            "type": "object"
+        },
+        "kapi.im.outbound": {
+            "description": "AMQP API for im.outbound",
+            "properties": {
+                "Account-ID": {
+                    "type": "string"
+                },
+                "Application-ID": {
+                    "type": "string"
+                },
+                "Body": {
+                    "type": "string"
+                },
+                "Custom-Vars": {
+                    "type": "object"
+                },
+                "Endpoints": {
+                    "items": {
+                        "$ref": "#/definitions/kapi.dialplan.bridge_endpoint",
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "sms",
+                        "mms"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "outbound"
+                    ],
+                    "type": "string"
+                },
+                "From": {
+                    "type": "string"
+                },
+                "Message-ID": {
+                    "type": "string"
+                },
+                "Originator-Flags": {
+                    "type": "string"
+                },
+                "Originator-Properties": {
+                    "type": "string"
+                },
+                "Request": {
+                    "type": "string"
+                },
+                "Route-ID": {
+                    "type": "string"
+                },
+                "Route-Type": {
+                    "enum": [
+                        "onnet",
+                        "offnet"
+                    ],
+                    "type": "string"
+                },
+                "System-ID": {
+                    "type": "string"
+                },
+                "Target-Flags": {
+                    "type": "string"
+                },
+                "Target-Properties": {
+                    "type": "string"
+                },
+                "To": {
+                    "type": "string"
+                },
+                "Transaction-ID": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Body",
+                "From",
+                "Message-ID",
+                "To"
+            ],
+            "type": "object"
+        },
         "kapi.inspector.filter_req": {
             "description": "AMQP API for inspector.filter_req",
             "properties": {
@@ -16860,6 +17715,139 @@
             "required": [
                 "Error-Code",
                 "Media-Name"
+            ],
+            "type": "object"
+        },
+        "kapi.media.media_error": {
+            "description": "AMQP API for media.media_error",
+            "properties": {
+                "Error-Code": {
+                    "enum": [
+                        "not_found",
+                        "no_data",
+                        "other"
+                    ],
+                    "type": "string"
+                },
+                "Error-Msg": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "media"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "media_error"
+                    ],
+                    "type": "string"
+                },
+                "Media-Name": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Error-Code",
+                "Media-Name"
+            ],
+            "type": "object"
+        },
+        "kapi.media.media_req": {
+            "description": "AMQP API for media.media_req",
+            "properties": {
+                "Account-ID": {
+                    "type": "string"
+                },
+                "Call-ID": {
+                    "type": "string"
+                },
+                "Engine": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "media"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "media_req"
+                    ],
+                    "type": "string"
+                },
+                "Format": {
+                    "enum": [
+                        "mp3",
+                        "wav"
+                    ],
+                    "type": "string"
+                },
+                "Language": {
+                    "type": "string"
+                },
+                "Media-Name": {
+                    "type": "string"
+                },
+                "Protocol": {
+                    "enum": [
+                        "http",
+                        "https",
+                        "shout",
+                        "vlc"
+                    ],
+                    "type": "string"
+                },
+                "Stream-Type": {
+                    "enum": [
+                        "new",
+                        "extant"
+                    ],
+                    "type": "string"
+                },
+                "Text": {
+                    "type": "string"
+                },
+                "Voice": {
+                    "enum": [
+                        "male",
+                        "female"
+                    ],
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Media-Name"
+            ],
+            "type": "object"
+        },
+        "kapi.media.media_resp": {
+            "description": "AMQP API for media.media_resp",
+            "properties": {
+                "Event-Category": {
+                    "enum": [
+                        "media"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "media_resp"
+                    ],
+                    "type": "string"
+                },
+                "Media-Name": {
+                    "type": "string"
+                },
+                "Stream-URL": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Media-Name",
+                "Stream-URL"
             ],
             "type": "object"
         },
@@ -19891,6 +20879,9 @@
                 },
                 "To": {
                     "type": "string"
+                },
+                "kapi_definitionule": {
+                    "type": "string"
                 }
             },
             "required": [
@@ -20894,6 +21885,55 @@
             ],
             "type": "object"
         },
+        "kapi.pivot.pivot_req": {
+            "description": "AMQP API for pivot.pivot_req",
+            "properties": {
+                "CDR-URI": {
+                    "type": "string"
+                },
+                "Call": {
+                    "type": "object"
+                },
+                "Debug": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "dialplan"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "pivot_req"
+                    ],
+                    "type": "string"
+                },
+                "HTTP-Method": {
+                    "type": "string"
+                },
+                "Reqeust-Body-Format": {
+                    "type": "string"
+                },
+                "Request-Body-Format": {
+                    "type": "string"
+                },
+                "Request-Format": {
+                    "type": "string"
+                },
+                "Request-Timeout": {
+                    "type": "integer"
+                },
+                "Voice-URI": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Call",
+                "Voice-URI"
+            ],
+            "type": "object"
+        },
         "kapi.pivot.processing": {
             "description": "AMQP API for pivot.processing",
             "properties": {
@@ -20950,6 +21990,9 @@
                 },
                 "Request-Format": {
                     "type": "string"
+                },
+                "Request-Timeout": {
+                    "type": "integer"
                 },
                 "Voice-URI": {
                     "type": "string"
@@ -24218,6 +25261,9 @@
                 "Force-Fax": {
                     "type": "string"
                 },
+                "From": {
+                    "type": "string"
+                },
                 "From-Realm": {
                     "type": "string"
                 },
@@ -24306,6 +25352,9 @@
                     "type": "string"
                 },
                 "Timeout": {
+                    "type": "string"
+                },
+                "To": {
                     "type": "string"
                 },
                 "To-Realm": {
@@ -24534,6 +25583,9 @@
                 "Account-ID": {
                     "type": "string"
                 },
+                "Application-ID": {
+                    "type": "string"
+                },
                 "Body": {
                     "type": "string"
                 },
@@ -24606,6 +25658,12 @@
                 "Orig-Port": {
                     "type": "string"
                 },
+                "Originator-Flags": {
+                    "type": "string"
+                },
+                "Originator-Properties": {
+                    "type": "string"
+                },
                 "Request": {
                     "type": "string"
                 },
@@ -24629,6 +25687,12 @@
                     "type": "string"
                 },
                 "System-ID": {
+                    "type": "string"
+                },
+                "Target-Flags": {
+                    "type": "string"
+                },
+                "Target-Properties": {
                     "type": "string"
                 },
                 "To": {
@@ -25206,6 +26270,72 @@
             },
             "required": [
                 "Reply"
+            ],
+            "type": "object"
+        },
+        "kapi.trusted.query": {
+            "description": "AMQP API for trusted.query",
+            "properties": {
+                "Event-Category": {
+                    "enum": [
+                        "trusted"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "query"
+                    ],
+                    "type": "string"
+                },
+                "Server-ID": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Server-ID"
+            ],
+            "type": "object"
+        },
+        "kapi.trusted.reload": {
+            "description": "AMQP API for trusted.reload",
+            "properties": {
+                "Event-Category": {
+                    "enum": [
+                        "trusted"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "reload"
+                    ],
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "kapi.trusted.reply": {
+            "description": "AMQP API for trusted.reply",
+            "properties": {
+                "Event-Category": {
+                    "enum": [
+                        "trusted"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "reply"
+                    ],
+                    "type": "string"
+                },
+                "Trusted": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Trusted"
             ],
             "type": "object"
         },
@@ -26613,6 +27743,28 @@
                     "type": "string"
                 }
             },
+            "type": "object"
+        },
+        "mms": {
+            "description": "mms document",
+            "properties": {
+                "body": {
+                    "description": "mime encoded mms message",
+                    "minLength": 1,
+                    "type": "string"
+                },
+                "from": {
+                    "description": "caller-id-number, taken from user if absent",
+                    "type": "string"
+                },
+                "to": {
+                    "description": "callee-id-number",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "to"
+            ],
             "type": "object"
         },
         "multi_factor_provider": {
@@ -28661,21 +29813,6 @@
             },
             "type": "object"
         },
-        "shared_auth": {
-            "description": "Provides a local auth-token via a shared auth-token",
-            "properties": {
-                "shared_auth": {
-                    "description": "The shared token",
-                    "maxLength": 64,
-                    "minLength": 64,
-                    "type": "string"
-                }
-            },
-            "required": [
-                "shared_auth"
-            ],
-            "type": "object"
-        },
         "skels": {
             "description": "Skeleton JSON schema",
             "properties": {},
@@ -28693,10 +29830,6 @@
                 "from": {
                     "description": "caller-id-number, taken from user if absent",
                     "type": "string"
-                },
-                "scheduled": {
-                    "description": "The timestamp to start delivering the message",
-                    "type": "integer"
                 },
                 "to": {
                     "description": "callee-id-number",
@@ -30521,6 +31654,10 @@
                     },
                     "type": "array"
                 },
+                "request_memory_limit": {
+                    "description": "Limit the amount of memory an API request can consume (in bytes)",
+                    "type": "integer"
+                },
                 "request_timeout_ms": {
                     "default": 10000,
                     "description": "crossbar request timeout in milliseconds",
@@ -30683,6 +31820,47 @@
             },
             "type": "object"
         },
+        "system_config.crossbar.alerts": {
+            "description": "Schema for crossbar.alerts system_config",
+            "properties": {
+                "check_financials": {
+                    "default": true,
+                    "description": "crossbar alerts check_financials",
+                    "type": "boolean"
+                },
+                "check_low_balance": {
+                    "default": true,
+                    "description": "crossbar alerts check_low_balance",
+                    "type": "boolean"
+                },
+                "check_payment_token": {
+                    "default": true,
+                    "description": "crossbar alerts check_payment_token",
+                    "type": "boolean"
+                },
+                "check_port_action_required": {
+                    "default": true,
+                    "description": "crossbar alerts check_port_action_required",
+                    "type": "boolean"
+                },
+                "check_port_requests": {
+                    "default": true,
+                    "description": "crossbar alerts check_port_requests",
+                    "type": "boolean"
+                },
+                "check_port_suspended": {
+                    "default": true,
+                    "description": "crossbar alerts check_port_suspended",
+                    "type": "boolean"
+                },
+                "check_system_alerts": {
+                    "default": true,
+                    "description": "crossbar alerts check_system_alerts",
+                    "type": "boolean"
+                }
+            },
+            "type": "object"
+        },
         "system_config.crossbar.auth": {
             "description": "Schema for crossbar.auth system_config",
             "properties": {
@@ -30707,12 +31885,6 @@
                             "log_successful_attempts": false,
                             "token_auth_expiry_s": 3600
                         },
-                        "cb_ubiquiti_auth": {
-                            "enabled": true,
-                            "log_failed_attempts": true,
-                            "log_successful_attempts": false,
-                            "token_auth_expiry_s": 3600
-                        },
                         "cb_user_auth": {
                             "enabled": true,
                             "log_failed_attempts": true,
@@ -30731,9 +31903,6 @@
                         "cb_ip_auth": {
                             "$ref": "#/definitions/auth_module_config"
                         },
-                        "cb_ubiquiti_auth": {
-                            "$ref": "#/definitions/auth_module_config"
-                        },
                         "cb_user_auth": {
                             "$ref": "#/definitions/auth_module_config"
                         }
@@ -30745,8 +31914,7 @@
                         "cb_user_auth",
                         "cb_api_auth",
                         "cb_auth",
-                        "cb_ip_auth",
-                        "cb_ubiquiti_auth"
+                        "cb_ip_auth"
                     ],
                     "description": "List of crossbar auth configurable modules",
                     "items": {
@@ -30903,63 +32071,6 @@
             },
             "type": "object"
         },
-        "system_config.crossbar.freeswitch": {
-            "description": "Schema for crossbar.freeswitch system_config",
-            "properties": {
-                "files_to_include": {
-                    "default": [
-                        "freeswitch_dialplan",
-                        "freeswitch_chatplan"
-                    ],
-                    "description": "crossbar.freeswitch files to include",
-                    "items": {
-                        "type": "string"
-                    },
-                    "type": "array"
-                },
-                "offline_configuration_key": {
-                    "description": "crossbar.freeswitch offline configuration key",
-                    "type": "string"
-                },
-                "realm_templates_to_process": {
-                    "default": [
-                        "freeswitch_directory_realm"
-                    ],
-                    "description": "crossbar.freeswitch realm templates to process",
-                    "items": {
-                        "type": "string"
-                    },
-                    "type": "array"
-                },
-                "templates_to_process": {
-                    "default": [
-                        "freeswitch_directory"
-                    ],
-                    "description": "crossbar.freeswitch templates to process",
-                    "items": {
-                        "type": "string"
-                    },
-                    "type": "array"
-                },
-                "work_dir": {
-                    "default": "/tmp/",
-                    "description": "crossbar.freeswitch work dir",
-                    "type": "string"
-                }
-            },
-            "type": "object"
-        },
-        "system_config.crossbar.local_resources": {
-            "description": "Schema for crossbar.local_resources system_config",
-            "properties": {
-                "allow_peers": {
-                    "default": false,
-                    "description": "crossbar.local_resources allow peers",
-                    "type": "boolean"
-                }
-            },
-            "type": "object"
-        },
         "system_config.crossbar.media": {
             "description": "Schema for crossbar.media system_config",
             "properties": {
@@ -30987,37 +32098,6 @@
                 "notification_timeout_ms": {
                     "default": 5000,
                     "description": "crossbar.notifications notification timeout in milliseconds",
-                    "type": "integer"
-                }
-            },
-            "type": "object"
-        },
-        "system_config.crossbar.onboard": {
-            "description": "Schema for crossbar.onboard system_config",
-            "properties": {
-                "default_callflow_start_exten": {
-                    "default": 2000,
-                    "description": "crossbar.onboard default callflow start exten",
-                    "type": "integer"
-                },
-                "default_extension_callflow": {
-                    "default": "{\"data\": { \"id\": \"~s\" }, \"module\": \"user\", \"children\": { \"_\": { \"data\": { \"id\": \"~s\" }, \"module\": \"voicemail\", \"children\": {}}}}",
-                    "description": "crossbar.onboard default extension callflow",
-                    "type": "string"
-                },
-                "default_vm_start_exten": {
-                    "default": 3000,
-                    "description": "crossbar.onboard default vm start exten",
-                    "type": "integer"
-                },
-                "device_pwd_strength": {
-                    "default": 6,
-                    "description": "crossbar.onboard device pwd strength",
-                    "type": "integer"
-                },
-                "device_username_strength": {
-                    "default": 3,
-                    "description": "crossbar.onboard device username strength",
                     "type": "integer"
                 }
             },
@@ -31056,6 +32136,11 @@
         "system_config.crossbar.resources": {
             "description": "Schema for crossbar.resources system_config",
             "properties": {
+                "allow_peers": {
+                    "default": false,
+                    "description": "crossbar.resources allow peers",
+                    "type": "boolean"
+                },
                 "job_recovery_threshold_s": {
                     "default": 3600,
                     "description": "crossbar.resources job recovery threshold in seconds",
@@ -31065,16 +32150,6 @@
                     "default": 21600,
                     "description": "crossbar.resources job recovery timeout in seconds",
                     "type": "integer"
-                }
-            },
-            "type": "object"
-        },
-        "system_config.crossbar.shared_auth": {
-            "description": "Schema for crossbar.shared_auth system_config",
-            "properties": {
-                "authoritative_crossbar": {
-                    "description": "crossbar.shared_auth authoritative crossbar",
-                    "type": "string"
                 }
             },
             "type": "object"
@@ -31106,58 +32181,6 @@
                     "default": "admin",
                     "description": "crossbar.token_restrictions default priv level",
                     "type": "string"
-                }
-            },
-            "type": "object"
-        },
-        "system_config.crossbar.ubiquiti": {
-            "description": "Schema for crossbar.ubiquiti system_config",
-            "properties": {
-                "api_secret": {
-                    "description": "crossbar.ubiquiti api secret",
-                    "type": "string"
-                },
-                "api_token_expires_s": {
-                    "default": 1800,
-                    "description": "crossbar.ubiquiti api token expires in seconds",
-                    "type": "integer"
-                },
-                "production": {
-                    "properties": {
-                        "sso_url": {
-                            "default": "https://sso.ubnt.com/api/sso/v1/",
-                            "description": "crossbar.ubiquiti sso url",
-                            "type": "string"
-                        }
-                    }
-                },
-                "salt_length": {
-                    "default": 20,
-                    "description": "crossbar.ubiquiti salt length",
-                    "type": "integer"
-                },
-                "sso_environment": {
-                    "default": "staging",
-                    "description": "crossbar.ubiquiti sso environment",
-                    "type": "string"
-                },
-                "sso_provider_id": {
-                    "description": "crossbar.ubiquiti sso provider id",
-                    "type": "string"
-                },
-                "staging": {
-                    "properties": {
-                        "sso_url": {
-                            "default": "https://sso-stage.ubnt.com/api/sso/v1/",
-                            "description": "crossbar.ubiquiti sso url",
-                            "type": "string"
-                        }
-                    }
-                },
-                "tokens_per_request": {
-                    "default": 35,
-                    "description": "crossbar.ubiquiti tokens per request",
-                    "type": "integer"
                 }
             },
             "type": "object"
@@ -31319,6 +32342,11 @@
                 "inbound_queue_name": {
                     "description": "doodle inbound queue name",
                     "type": "string"
+                },
+                "listeners": {
+                    "default": 1,
+                    "description": "doodle listeners",
+                    "type": "integer"
                 },
                 "min_bucket_cost": {
                     "default": 1,
@@ -32885,6 +33913,60 @@
             },
             "type": "object"
         },
+        "system_config.kazoo_im": {
+            "description": "Schema for kazoo_im system_config",
+            "properties": {
+                "connector": {
+                    "properties": {
+                        "connections": {
+                            "description": "kazoo_im connector connections",
+                            "type": "object"
+                        }
+                    }
+                },
+                "onnet_listeners": {
+                    "default": 1,
+                    "description": "kazoo_im onnet_listeners",
+                    "type": "integer"
+                }
+            },
+            "type": "object"
+        },
+        "system_config.kazoo_web": {
+            "description": "Schema for kazoo_web system_config",
+            "properties": {
+                "client": {
+                    "properties": {
+                        "blacklist": {
+                            "properties": {
+                                "cidrs": {
+                                    "default": [
+                                        "127.0.0.1/32",
+                                        "0.0.0.0/32"
+                                    ],
+                                    "description": "kazoo_web client blacklist cidrs",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                "hosts": {
+                                    "default": [
+                                        "localhost"
+                                    ],
+                                    "description": "kazoo_web client blacklist hosts",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "type": "object"
+        },
         "system_config.keys": {
             "description": "Schema for DTMF keys system_config",
             "properties": {
@@ -32968,6 +34050,10 @@
                         {
                             "friendly_name": "Support",
                             "name": "support"
+                        },
+                        {
+                            "friendly_name": "ASR Transcriptions",
+                            "name": "asr-transcriptions"
                         }
                     ],
                     "description": "ledgers registered_ledgers",
@@ -34468,6 +35554,11 @@
         "system_config.pivot": {
             "description": "Schema for pivot system_config",
             "properties": {
+                "request_timeout_ms": {
+                    "default": 5000,
+                    "description": "pivot request_timeout_ms",
+                    "type": "integer"
+                },
                 "tts_texts_size": {
                     "default": 4000,
                     "description": "pivot tts texts size",
@@ -34719,30 +35810,6 @@
                         }
                     },
                     "type": "object"
-                },
-                "google": {
-                    "default": {},
-                    "description": "pusher google",
-                    "properties": {
-                        "api_key": {
-                            "description": "API Key for gcm",
-                            "type": "string"
-                        },
-                        "headers": {
-                            "default": {},
-                            "description": "pusher google headers",
-                            "type": "object"
-                        }
-                    },
-                    "type": "object"
-                },
-                "modules": {
-                    "default": [],
-                    "description": "pusher modules",
-                    "items": {
-                        "type": "string"
-                    },
-                    "type": "array"
                 }
             },
             "type": "object"
@@ -36373,28 +37440,6 @@
                 "type"
             ]
         },
-        "ubiquiti_auth": {
-            "description": "Provides an auth-token via Ubiquiti's SSO",
-            "properties": {
-                "password": {
-                    "description": "Ubiquiti SSO Password",
-                    "maxLength": 64,
-                    "minLength": 1,
-                    "type": "string"
-                },
-                "username": {
-                    "description": "Ubiquiti SSO Username",
-                    "maxLength": 64,
-                    "minLength": 1,
-                    "type": "string"
-                }
-            },
-            "required": [
-                "password",
-                "username"
-            ],
-            "type": "object"
-        },
         "user_auth": {
             "description": "Provides an auth-token via user credentials",
             "properties": {
@@ -36941,6 +37986,17 @@
                     "description": "Play older voicemail messages before new ones",
                     "type": "boolean"
                 },
+                "operator_number": {
+                    "description": "Alternate/override number to use when calling operator from voicemail",
+                    "oneOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ]
+                },
                 "owner_id": {
                     "description": "The ID of the user object that 'owns' the voicemail box",
                     "maxLength": 32,
@@ -36989,6 +38045,11 @@
                     "maxLength": 32,
                     "minLength": 5,
                     "type": "string"
+                },
+                "transcribe": {
+                    "default": false,
+                    "description": "Transcribe voicemail using ASR engine",
+                    "type": "boolean"
                 }
             },
             "required": [
@@ -37971,23 +39032,6 @@
             "minLength": 15,
             "name": "TASK_ID",
             "pattern": "^[0-9a-f]+$",
-            "required": true,
-            "type": "string"
-        },
-        "TEMPLATE_ID": {
-            "description": "request TEMPLATE_ID parameter",
-            "in": "path",
-            "maxLength": 32,
-            "minLength": 32,
-            "name": "TEMPLATE_ID",
-            "pattern": "^[0-9a-f]+$",
-            "required": true,
-            "type": "string"
-        },
-        "TEMPLATE_NAME": {
-            "description": "request TEMPLATE_NAME parameter",
-            "in": "path",
-            "name": "TEMPLATE_NAME",
             "required": true,
             "type": "string"
         },
@@ -39002,53 +40046,6 @@
                     },
                     {
                         "$ref": "#/parameters/BLACKLIST_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/accounts/{ACCOUNT_ID}/bulk": {
-            "delete": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "post": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
                     }
                 ],
                 "responses": {
@@ -41179,23 +42176,6 @@
                 }
             }
         },
-        "/accounts/{ACCOUNT_ID}/freeswitch": {
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
         "/accounts/{ACCOUNT_ID}/functions": {
             "get": {
                 "parameters": [
@@ -41326,150 +42306,6 @@
                     },
                     {
                         "$ref": "#/parameters/FUNCTION_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/accounts/{ACCOUNT_ID}/global_provisioner_templates": {
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "put": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/accounts/{ACCOUNT_ID}/global_provisioner_templates/{TEMPLATE_ID}": {
-            "delete": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/TEMPLATE_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/TEMPLATE_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "post": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/TEMPLATE_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/accounts/{ACCOUNT_ID}/global_provisioner_templates/{TEMPLATE_ID}/image": {
-            "delete": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/TEMPLATE_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/TEMPLATE_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "post": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/TEMPLATE_ID"
                     }
                 ],
                 "responses": {
@@ -42349,150 +43185,6 @@
                 }
             }
         },
-        "/accounts/{ACCOUNT_ID}/local_provisioner_templates": {
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "put": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/accounts/{ACCOUNT_ID}/local_provisioner_templates/{TEMPLATE_ID}": {
-            "delete": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/TEMPLATE_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/TEMPLATE_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "post": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/TEMPLATE_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/accounts/{ACCOUNT_ID}/local_provisioner_templates/{TEMPLATE_ID}/image": {
-            "delete": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/TEMPLATE_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/TEMPLATE_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "post": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/TEMPLATE_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
         "/accounts/{ACCOUNT_ID}/media": {
             "get": {
                 "parameters": [
@@ -42949,6 +43641,84 @@
                 }
             }
         },
+        "/accounts/{ACCOUNT_ID}/mms": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "mms",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mms"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/mms/{SMS_ID}": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/SMS_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/SMS_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
         "/accounts/{ACCOUNT_ID}/move": {
             "post": {
                 "parameters": [
@@ -43317,23 +44087,6 @@
                     },
                     {
                         "$ref": "#/parameters/NOTIFICATION_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/accounts/{ACCOUNT_ID}/onboard": {
-            "put": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
                     }
                 ],
                 "responses": {
@@ -48568,32 +49321,6 @@
                 }
             }
         },
-        "/shared_auth": {
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "put": {
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "shared_auth",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/shared_auth"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
         "/sup/{MODULE}": {
             "get": {
                 "parameters": [
@@ -48811,41 +49538,6 @@
                 }
             }
         },
-        "/templates": {
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/templates/{TEMPLATE_NAME}": {
-            "delete": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/TEMPLATE_NAME"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "put": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/TEMPLATE_NAME"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
         "/token_auth": {
             "delete": {
                 "responses": {
@@ -48855,25 +49547,6 @@
                 }
             },
             "get": {
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/ubiquiti_auth": {
-            "put": {
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "ubiquiti_auth",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/ubiquiti_auth"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "request succeeded"

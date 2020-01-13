@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -208,7 +208,7 @@ migrate(Pause) ->
 
 -spec migrate(integer(), kz_term:ne_binaries()) -> 'no_return'.
 migrate(Pause, Databases) ->
-    Accounts = [kz_util:format_account_id(Db, 'encoded')
+    Accounts = [kzs_util:format_account_db(Db)
                 || Db <- Databases,
                    kapps_util:is_account_db(Db)
                ],
@@ -533,8 +533,8 @@ get_databases() ->
     kzs_util:sort_by_priority(Databases ++ ?KZ_SYSTEM_DBS).
 
 -spec refresh(kz_term:ne_binary()) -> 'ok' |
-                                      boolean() |
-                                      {'error', 'invalid_db_name' | 'db_not_found'}.
+          boolean() |
+          {'error', 'invalid_db_name' | 'db_not_found'}.
 refresh(Database) ->
     case kz_datamgr:refresh_views(Database) of
         {'error', _} = Error ->
@@ -545,8 +545,8 @@ refresh(Database) ->
     end.
 
 refresh_by_classification(Database, 'account') ->
-    AccountDb = kz_util:format_account_id(Database, 'encoded'),
-    AccountId = kz_util:format_account_id(Database, 'raw'),
+    AccountDb = kzs_util:format_account_db(Database),
+    AccountId = kzs_util:format_account_id(Database),
     _ = kazoo_bindings:map(binding({'refresh_account', AccountDb}), AccountId),
     _ = ensure_aggregate(AccountId),
     'ok';
@@ -559,7 +559,7 @@ refresh_account(AccountId) ->
 
 -spec refresh_account_db(kz_term:ne_binary()) -> 'ok'.
 refresh_account_db(Database) ->
-    refresh(kz_util:format_account_db(Database)).
+    refresh(kzs_util:format_account_db(Database)).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -635,7 +635,7 @@ ensure_aggregate_faxboxes([Account|Accounts], Total) ->
 
 -spec ensure_aggregate_faxbox(kz_term:ne_binary()) -> 'ok'.
 ensure_aggregate_faxbox(Account) ->
-    AccountDb = kz_util:format_account_db(Account),
+    AccountDb = kzs_util:format_account_db(Account),
     case kz_datamgr:get_results(AccountDb, ?FAXBOX_VIEW, ['include_docs']) of
         {'ok', Faxboxes} ->
             update_or_add_to_faxes_db([kz_json:get_value(<<"doc">>, Faxbox) || Faxbox <- Faxboxes]);
@@ -688,8 +688,8 @@ ensure_aggregate_accounts([Account|Accounts], Total) ->
 
 -spec ensure_aggregate_account(kz_term:ne_binary()) -> 'ok'.
 ensure_aggregate_account(Account) ->
-    AccountDb = kz_util:format_account_db(Account),
-    AccountId = kz_util:format_account_id(Account),
+    AccountDb = kzs_util:format_account_db(Account),
+    AccountId = kzs_util:format_account_id(Account),
     case kz_datamgr:open_doc(AccountDb, AccountId) of
         {'error', _} -> 'ok';
         {'ok', JObj} ->
@@ -729,7 +729,7 @@ ensure_aggregate_devices([Account|Accounts], Total) ->
 
 -spec ensure_aggregate_device(kz_term:ne_binary()) -> 'ok'.
 ensure_aggregate_device(Account) ->
-    AccountDb = kz_util:format_account_id(Account, 'encoded'),
+    AccountDb = kzs_util:format_account_db(Account),
     case kz_datamgr:get_results(AccountDb, ?DEVICES_CB_LIST, ['include_docs']) of
         {'ok', Devices} ->
             AccountRealm = kzd_accounts:fetch_realm(Account),
@@ -788,8 +788,8 @@ cleanup_aggregated_accounts([JObj|JObjs]) ->
 
 -spec cleanup_aggregated_account(kz_term:ne_binary()) -> 'ok'.
 cleanup_aggregated_account(Account) ->
-    AccountDb = kz_util:format_account_db(Account),
-    AccountId = kz_util:format_account_id(Account),
+    AccountDb = kzs_util:format_account_db(Account),
+    AccountId = kzs_util:format_account_id(Account),
     case kz_datamgr:open_doc(AccountDb, AccountId) of
         {'error', 'not_found'} -> remove_aggregated_account(AccountDb);
         _Else -> 'ok'
@@ -797,7 +797,7 @@ cleanup_aggregated_account(Account) ->
 
 -spec remove_aggregated_account(kz_term:ne_binary()) -> 'ok'.
 remove_aggregated_account(Account) ->
-    AccountId = kz_util:format_account_id(Account, 'raw'),
+    AccountId = kzs_util:format_account_id(Account),
     {'ok', JObj} = kz_datamgr:open_doc(?KZ_ACCOUNTS_DB, AccountId),
     io:format("    removing invalid ~s doc ~s~n", [?KZ_ACCOUNTS_DB, AccountId]),
     _ = kz_datamgr:del_doc(?KZ_ACCOUNTS_DB, JObj),
@@ -834,8 +834,8 @@ cleanup_aggregated_device(DocId) ->
     of
         'undefined' -> 'ok';
         Account ->
-            AccountDb = kz_util:format_account_id(Account, 'encoded'),
-            AccountId = kz_util:format_account_id(Account, 'raw'),
+            AccountDb = kzs_util:format_account_db(Account),
+            AccountId = kzs_util:format_account_id(Account),
             verify_aggregated_device(AccountDb, AccountId, JObj)
     end.
 
@@ -859,7 +859,7 @@ find_invalid_acccount_dbs() ->
     lists:foldr(fun find_invalid_acccount_dbs_fold/2, [], kapps_util:get_all_accounts()).
 
 find_invalid_acccount_dbs_fold(AccountDb, Acc) ->
-    AccountId = kz_util:format_account_id(AccountDb),
+    AccountId = kzs_util:format_account_id(AccountDb),
     case kz_datamgr:open_doc(AccountDb, AccountId) of
         {'error', 'not_found'} -> [AccountDb|Acc];
         {'ok', _} -> Acc
@@ -897,7 +897,7 @@ get_accounts_tree() ->
 
 -spec get_accounts_tree(kz_term:ne_binaries()) -> kz_datamgr:get_results_return().
 get_accounts_tree(Accounts) ->
-    ViewOptions = [{'keys', [kz_util:format_account_id(A) || A <- Accounts]}
+    ViewOptions = [{'keys', [kzs_util:format_account_id(A) || A <- Accounts]}
                   ,'include_docs'
                   ],
     ViewName = <<"accounts/listing_by_simple_id">>,
@@ -1075,7 +1075,7 @@ fix_port_requests_tree(AccountId, Tree) ->
     end.
 
 -spec ensure_tree_is_tree(ensure_state(), map(), non_neg_integer()) ->
-                                 ensure_state().
+          ensure_state().
 ensure_tree_is_tree(State, Family, Depth) ->
     io:format("--> calculating tree for depth ~b~n", [Depth]),
     maps:fold(fun(AccountId, Tree, StateAcc) ->
@@ -1086,7 +1086,7 @@ ensure_tree_is_tree(State, Family, Depth) ->
              ).
 
 -spec ensure_tree_is_tree_fold(ensure_state(), kz_term:ne_binary(), kz_term:ne_binaries()) ->
-                                      ensure_state().
+          ensure_state().
 ensure_tree_is_tree_fold(#{fixed_trees := FixedTrees
                           }=State
                         ,AccountId, Tree) ->
@@ -1108,7 +1108,7 @@ ensure_tree_is_tree_fold(#{fixed_trees := FixedTrees
     end.
 
 -spec ensure_tree_is_tree_fold(ensure_state(), kz_term:ne_binary(), kz_term:ne_binaries(), kz_term:ne_binaries()) ->
-                                      kz_term:ne_binaries().
+          kz_term:ne_binaries().
 ensure_tree_is_tree_fold(#{master := MasterAccountId}, MasterAccountId, _, _) ->
     [];
 
@@ -1177,10 +1177,10 @@ add_to_family_domain(Depth, AccountId, AccountTree, Families) ->
 %%------------------------------------------------------------------------------
 -spec import_account(kz_term:ne_binary(), kz_term:ne_binary()) -> 'ok'.
 import_account(Account, Parent) ->
-    AccountId = kz_util:format_account_id(Account),
-    AccountDb = kz_util:format_account_db(Account),
-    ParentId = kz_util:format_account_id(Parent),
-    ParentDb = kz_util:format_account_db(Parent),
+    AccountId = kzs_util:format_account_id(Account),
+    AccountDb = kzs_util:format_account_db(Account),
+    ParentId = kzs_util:format_account_id(Parent),
+    ParentDb = kzs_util:format_account_db(Parent),
     import_account(AccountId
                   ,ParentId
                   ,kz_datamgr:open_doc(AccountDb, AccountId)
@@ -1210,12 +1210,12 @@ import_account(AccountId, ParentId, {'ok', AccountJObj}, {'ok', ParentJObj}) ->
               ,{fun kzd_accounts:set_reseller_id/2, ResellerId}
               ],
     NewAccountJObj = kz_doc:setters(AccountJObj, Setters),
-    case kz_datamgr:save_doc(kz_util:format_account_db(AccountId), NewAccountJObj) of
+    case kz_datamgr:save_doc(kzs_util:format_account_db(AccountId), NewAccountJObj) of
         {'ok', SavedJObj} ->
             io:format("account saved, updating services and import account's numbers to number dbs~n"),
             update_or_add_to_accounts_db(AccountId, SavedJObj),
             _ = remove_and_reconcile_services(AccountId),
-            _ = kazoo_number_manager_maintenance:copy_single_account_to_number_dbs(AccountId),
+            _ = kazoo_numbers_maintenance:copy_single_account_to_number_dbs(AccountId),
             'ok';
         {'error', _Reason} ->
             io:format("failed to update account '~s' definition in accountdb: ~p~n", [AccountId, _Reason])
@@ -1244,14 +1244,14 @@ ensure_reseller_id_accounts(Accounts) ->
 ensure_reseller_id_accounts([], _) -> 'ok';
 ensure_reseller_id_accounts([Account|Accounts], Total) ->
     io:format("(~p/~p) ensuring reseller id for account '~s'~n"
-             ,[length(Accounts) + 1, Total, kz_util:format_account_db(Account)]
+             ,[length(Accounts) + 1, Total, kzs_util:format_account_db(Account)]
              ),
     ensure_reseller_id_account(Account),
     ensure_reseller_id_accounts(Accounts, Total).
 
 -spec ensure_reseller_id_account(kz_term:ne_binary()) -> 'ok'.
 ensure_reseller_id_account(Account) ->
-    AccountId = kz_util:format_account_id(Account),
+    AccountId = kzs_util:format_account_id(Account),
     case kzd_accounts:fetch(AccountId, 'accounts') of
         {'ok', JObj} ->
             ResellerId = kz_services_reseller:find_id(lists:reverse(kzd_accounts:tree(JObj))),
@@ -1262,8 +1262,8 @@ ensure_reseller_id_account(Account) ->
 
 -spec ensure_reseller_id_account(kz_term:ne_binary(), kz_term:ne_binary()) -> 'ok'.
 ensure_reseller_id_account(Account, ResellerId) ->
-    AccountId = kz_util:format_account_id(Account),
-    Updates =[{kzd_accounts:path_reseller_id(), kz_util:format_account_id(ResellerId)}],
+    AccountId = kzs_util:format_account_id(Account),
+    Updates =[{kzd_accounts:path_reseller_id(), kzs_util:format_account_id(ResellerId)}],
     maybe_log_doc_update(kzd_accounts:update(AccountId, Updates)
                         ,<<"updated account definitions">>
                         ,<<"failed to update account definitions">>
@@ -1287,10 +1287,10 @@ ensure_reseller_id_services(AccountId, ResellerId) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec cleanup_voicemail_media(kz_term:ne_binary()) ->
-                                     {'ok', kz_json:objects()} |
-                                     {'error', any()}.
+          {'ok', kz_json:objects()} |
+          {'error', any()}.
 cleanup_voicemail_media(Account) ->
-    AccountDb = kz_util:format_account_id(Account, 'encoded'),
+    AccountDb = kzs_util:format_account_db(Account),
     Medias = get_medias(Account),
     Messages = get_messages(Account),
     ExtraMedia = Medias -- Messages,
@@ -1312,7 +1312,7 @@ cleanup_orphan_modbs() ->
 
 -spec get_messages(kz_term:ne_binary()) -> kz_term:ne_binaries().
 get_messages(Account) ->
-    AccountDb = kz_util:format_account_id(Account, 'encoded'),
+    AccountDb = kzs_util:format_account_db(Account),
     ViewOptions = ['include_docs'],
     case kz_datamgr:get_results(AccountDb, ?VMBOX_VIEW, ViewOptions) of
         {'ok', ViewRes} ->
@@ -1332,7 +1332,7 @@ extract_messages(JObj, CurMessages) ->
 
 -spec get_medias(kz_term:ne_binary()) -> kz_term:ne_binaries().
 get_medias(Account) ->
-    AccountDb = kz_util:format_account_id(Account, 'encoded'),
+    AccountDb = kzs_util:format_account_db(Account),
     ViewOptions = [],
     case kz_datamgr:get_results(AccountDb, ?PMEDIA_VIEW, ViewOptions) of
         {'ok', ViewRes} -> [kz_doc:id(JObj) || JObj<- ViewRes];
@@ -1375,7 +1375,7 @@ migrate_limits(Account) ->
 
     AccountDb = case kz_datamgr:db_exists(Account) of
                     'true' -> Account;
-                    'false' -> kz_util:format_account_id(Account, 'encoded')
+                    'false' -> kzs_util:format_account_db(Account)
                 end,
     {TT, IT} = clean_trunkstore_docs(AccountDb, TwowayTrunks, InboundTrunks),
     JObj = kz_json:from_list(
@@ -1383,7 +1383,7 @@ migrate_limits(Account) ->
              ,{<<"twoway_trunks">>, TT}
              ,{<<"inbound_trunks">>, IT}
              ,{<<"pvt_account_db">>, AccountDb}
-             ,{<<"pvt_account_id">>, kz_util:format_account_id(Account, 'raw')}
+             ,{<<"pvt_account_id">>, kzs_util:format_account_id(Account)}
              ,{<<"pvt_type">>, <<"limits">>}
              ,{<<"pvt_created">>, TStamp}
              ,{<<"pvt_modified">>, TStamp}
@@ -1393,7 +1393,7 @@ migrate_limits(Account) ->
     'ok'.
 
 -spec clean_trunkstore_docs(kz_term:ne_binary(), integer(), integer()) ->
-                                   {integer(), integer()}.
+          {integer(), integer()}.
 clean_trunkstore_docs(AccountDb, TwowayTrunks, InboundTrunks) ->
     ViewOptions = ['include_docs'
                   ,{'reduce', 'false'}
@@ -1404,7 +1404,7 @@ clean_trunkstore_docs(AccountDb, TwowayTrunks, InboundTrunks) ->
     end.
 
 -spec clean_trunkstore_docs(kz_term:ne_binary(), kz_json:objects(), integer(), integer()) ->
-                                   {integer(), integer()}.
+          {integer(), integer()}.
 
 clean_trunkstore_docs(_, [], Trunks, InboundTrunks) ->
     {Trunks, InboundTrunks};
@@ -1452,7 +1452,7 @@ migrate_media(Account) when not is_binary(Account) ->
 migrate_media(Account) ->
     AccountDb = case kz_datamgr:db_exists(Account) of
                     'true' -> Account;
-                    'false' -> kz_util:format_account_id(Account, 'encoded')
+                    'false' -> kzs_util:format_account_db(Account)
                 end,
     case kz_datamgr:get_results(AccountDb, <<"media/listing_by_name">>, []) of
         {'ok', []} -> io:format("no public media files in db ~s~n", [AccountDb]);
@@ -1592,7 +1592,7 @@ maybe_update_attachment(AccountDb, Id, {OrigAttach, _CT1}, {NewAttach, CT}) ->
     lists:foldl(fun(F, Acc) -> F(Acc) end, [], Updaters).
 
 -spec try_load_attachment(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) ->
-                                 binary().
+          binary().
 try_load_attachment(AccountDb, Id, OrigAttach) ->
     case kz_datamgr:fetch_attachment(AccountDb, Id, OrigAttach) of
         {'ok', Content} -> Content;
@@ -1602,7 +1602,7 @@ try_load_attachment(AccountDb, Id, OrigAttach) ->
     end.
 
 -spec maybe_resave_attachment(binary(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) ->
-                                     'ok'.
+          'ok'.
 maybe_resave_attachment(Content1, AccountDb, Id, OrigAttach, NewAttach, CT) ->
     {'ok', Rev} = kz_datamgr:lookup_doc_rev(AccountDb, Id),
     Options = [{'content_type', CT}
@@ -1691,9 +1691,9 @@ maybe_delete_db(Database) ->
 %%------------------------------------------------------------------------------
 
 -spec purge_doc_type(kz_term:ne_binaries() | kz_term:ne_binary(), kz_term:ne_binary()) ->
-                            {'ok', kz_json:objects()} |
-                            {'error', _} |
-                            'ok'.
+          {'ok', kz_json:objects()} |
+          {'error', _} |
+          'ok'.
 purge_doc_type(Type, Account)
   when is_binary(Type);
        is_binary(Account) ->
@@ -1720,11 +1720,11 @@ purge_doc_type(Type, Account) when not is_binary(Account) ->
                   ).
 
 -spec purge_doc_type(kz_term:ne_binaries() | kz_term:ne_binary(), kz_term:ne_binary(), integer()) ->
-                            {'ok', kz_json:objects()} |
-                            {'error', _} |
-                            'ok'.
+          {'ok', kz_json:objects()} |
+          {'error', _} |
+          'ok'.
 purge_doc_type(Type, Account, ChunkSize) ->
-    Db = kz_util:format_account_id(Account, 'encoded'),
+    Db = kzs_util:format_account_db(Account),
     Opts = [{'key', Type}
            ,{'limit', ChunkSize}
            ,'include_docs'
@@ -1887,7 +1887,7 @@ delete_system_media_references(DocId, CallResponsesDoc) ->
     end.
 
 -spec remove_system_media_refs(kz_json:path(), kz_json:objects()) ->
-                                      {kz_json:path(), kz_json:json_term()}.
+          {kz_json:path(), kz_json:json_term()}.
 remove_system_media_refs(HangupCause, Config) ->
     case kz_json:is_json_object(Config) of
         'false' -> {HangupCause, Config};
@@ -1898,7 +1898,7 @@ remove_system_media_refs(HangupCause, Config) ->
     end.
 
 -spec remove_system_media_ref(kz_json:path(), kz_json:json_term(), kz_json:object()) ->
-                                     kz_json:object().
+          kz_json:object().
 remove_system_media_ref(Key, <<"/system_media/", Value/binary>>, Acc) -> kz_json:set_value(Key, Value, Acc);
 remove_system_media_ref(Key, Value, Acc) -> kz_json:set_value(Key, Value, Acc).
 
@@ -1929,19 +1929,19 @@ accounts_config_deprecate_timezone_for_default_timezone(AccountsConfig) ->
     end.
 
 -spec deprecate_timezone_for_default_timezone(kz_json:keys(), kz_json:object()) ->
-                                                     kz_json:object().
+          kz_json:object().
 deprecate_timezone_for_default_timezone(Nodes, AccountsConfig) ->
     lists:foldl(fun deprecate_timezone_for_node/2, AccountsConfig, Nodes).
 
 -spec deprecate_timezone_for_node(kz_json:key(), kz_json:object()) ->
-                                         kz_json:object().
+          kz_json:object().
 deprecate_timezone_for_node(Node, AccountsConfig) ->
     Timezone = kz_json:get_value([Node, <<"timezone">>], AccountsConfig),
     DefaultTimezone = kz_json:get_value([Node, <<"default_timezone">>], AccountsConfig),
     deprecate_timezone_for_node(Node, AccountsConfig, Timezone, DefaultTimezone).
 
 -spec deprecate_timezone_for_node(kz_json:key(), kz_json:object(), kz_term:api_ne_binary(), kz_term:api_ne_binary()) ->
-                                         kz_json:object().
+          kz_json:object().
 deprecate_timezone_for_node(_Node, AccountsConfig, 'undefined', _Default) ->
     AccountsConfig;
 deprecate_timezone_for_node(Node, AccountsConfig, Timezone, 'undefined') ->
@@ -2205,6 +2205,11 @@ kapps_started(Timeout, 'false') ->
 
 -spec master_account_created() -> 'true'.
 master_account_created() ->
+    master_account_created(kapps_util:get_master_account_id()).
+
+master_account_created({'ok', MasterAccountId}) ->
+    validate_master_account(MasterAccountId);
+master_account_created({'error', _}) ->
     lager:info("trying to create the master account"),
     case rpc:call(node()
                  ,'crossbar_maintenance'
@@ -2219,11 +2224,14 @@ master_account_created() ->
         'ok' ->
             {'ok', MasterAccountId} = kapps_util:get_master_account_id(),
             lager:info("created master account ~s", [MasterAccountId]),
-            {'ok', MasterAccountDoc} = kzd_accounts:fetch(MasterAccountId),
-            lager:debug("account: ~s", [kz_json:encode(MasterAccountDoc)]),
-            'true' = kzd_accounts:is_superduper_admin(MasterAccountDoc);
+            validate_master_account(MasterAccountId);
         'failed' -> throw({'error', 'create_account'})
     end.
+
+validate_master_account(MasterAccountId) ->
+    {'ok', MasterAccountDoc} = kzd_accounts:fetch(MasterAccountId),
+    lager:debug("account: ~s", [kz_json:encode(MasterAccountDoc)]),
+    'true' = kzd_accounts:is_superduper_admin(MasterAccountDoc).
 
 -spec migration_4_0_ran() -> boolean().
 migration_4_0_ran() ->

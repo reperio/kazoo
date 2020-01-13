@@ -127,11 +127,6 @@
           'log_failed_attempts': true
           'log_successful_attempts': false
           'token_auth_expiry_s': 3600
-        'cb_ubiquiti_auth':
-          'enabled': true
-          'log_failed_attempts': true
-          'log_successful_attempts': false
-          'token_auth_expiry_s': 3600
         'cb_user_auth':
           'enabled': true
           'log_failed_attempts': true
@@ -144,8 +139,6 @@
         'cb_auth':
           '$ref': '#/auth_module_config'
         'cb_ip_auth':
-          '$ref': '#/auth_module_config'
-        'cb_ubiquiti_auth':
           '$ref': '#/auth_module_config'
         'cb_user_auth':
           '$ref': '#/auth_module_config'
@@ -219,6 +212,8 @@
           'name': mobile_data
         - 'friendly_name': Support
           'name': support
+        - 'friendly_name': ASR Transcriptions
+          'name': asr-transcriptions
       'description': ledgers registered_ledgers
       'items':
         'type': object
@@ -905,6 +900,7 @@
       'description': The URL to use when sending the recording for storage
       'format': uri
       'type': string
+      'x-kazoo-validation': true
   'type': object
 'call_recording.source':
   'additionalProperties': false
@@ -2579,7 +2575,7 @@
       'type': string
     'req_body_format':
       'default': form
-      'description': What format should the request body have
+      'description': What format should the request body have when using POST
       'enum':
         - form
         - json
@@ -2591,6 +2587,11 @@
         - kazoo
         - twiml
       'type': string
+    'req_timeout_ms':
+      'description': |-
+        How long, in milliseconds, to wait for a Pivot response from the HTTP server
+      'maximum': 5000
+      'type': integer
     'skip_module':
       'description': |-
         When set to true this callflow action is skipped, advancing to the wildcard branch (if any)
@@ -2599,6 +2600,7 @@
       'description': What URL to request the initial Pivot callflow
       'pattern': '^https?://'
       'type': string
+      'x-kazoo-validation': true
   'required':
     - voice_url
   'type': object
@@ -2788,6 +2790,7 @@
       'description': The URL to use when sending the recording for storage
       'format': uri
       'type': string
+      'x-kazoo-validation': true
   'required':
     - action
   'type': object
@@ -2821,6 +2824,7 @@
       'description': The URL to use when sending the recording for storage
       'format': uri
       'type': string
+      'x-kazoo-validation': true
   'type': object
 'callflows.resources':
   'description': Validator for the resources callflow data object
@@ -3418,6 +3422,7 @@
     'uri':
       'description': The HTTP URI to send the request
       'type': string
+      'x-kazoo-validation': true
   'type': object
 'cccps':
   'description': Calling cards callback platform user's info
@@ -5008,6 +5013,7 @@
                   'description': The URL to call back with the results
                   'pattern': '^https?://'
                   'type': string
+                  'x-kazoo-validation': true
               'type': object
               'x-support_level': beta
             'email':
@@ -5060,6 +5066,7 @@
                   'description': The URL to call back with the results
                   'pattern': '^https?://'
                   'type': string
+                  'x-kazoo-validation': true
               'type': object
               'x-support_level': beta
             'email':
@@ -6173,6 +6180,7 @@
       'description': What URL to request the initial Pivot callflow
       'pattern': '^https?://'
       'type': string
+      'x-kazoo-validation': true
   'required':
     - voice_url
   'type': object
@@ -6245,6 +6253,7 @@
     'url':
       'description': HTTP URL to send the finished recording
       'type': string
+      'x-kazoo-validation': true
   'type': object
 'metaflows.relate':
   'description': Relate two participants to each other in a conference
@@ -6450,6 +6459,22 @@
       'default': female
       'description': What voice to use when speaking
       'type': string
+  'type': object
+'mms':
+  'description': mms document
+  'properties':
+    'body':
+      'description': mime encoded mms message
+      'minLength': 1
+      'type': string
+    'from':
+      'description': 'caller-id-number, taken from user if absent'
+      'type': string
+    'to':
+      'description': callee-id-number
+      'type': string
+  'required':
+    - to
   'type': object
 'multi_factor_provider':
   'additionalProperties': true
@@ -8186,18 +8211,6 @@
         'type': object
       'type': array
   'type': object
-'shared_auth':
-  'additionalProperties': false
-  'description': Provides a local auth-token via a shared auth-token
-  'properties':
-    'shared_auth':
-      'description': The shared token
-      'maxLength': 64
-      'minLength': 64
-      'type': string
-  'required':
-    - shared_auth
-  'type': object
 'skels':
   'description': Skeleton JSON schema
   'properties': {}
@@ -8213,9 +8226,6 @@
     'from':
       'description': 'caller-id-number, taken from user if absent'
       'type': string
-    'scheduled':
-      'description': The timestamp to start delivering the message
-      'type': integer
     'to':
       'description': callee-id-number
       'type': string
@@ -8448,6 +8458,7 @@
         'url':
           'description': The base HTTP(s) URL to use when creating the request
           'type': string
+          'x-kazoo-validation': true
         'verb':
           'default': put
           'description': The HTTP verb to use when sending the data
@@ -9670,6 +9681,9 @@
       'items':
         'type': string
       'type': array
+    'request_memory_limit':
+      'description': Limit the amount of memory an API request can consume (in bytes)
+      'type': integer
     'request_timeout_ms':
       'default': 10000
       'description': crossbar request timeout in milliseconds
@@ -9796,6 +9810,38 @@
         The maximum number of seconds between the start and end time of a call stats request
       'type': integer
   'type': object
+'system_config.crossbar.alerts':
+  'description': Schema for crossbar.alerts system_config
+  'properties':
+    'check_financials':
+      'default': true
+      'description': crossbar alerts check_financials
+      'type': boolean
+    'check_low_balance':
+      'default': true
+      'description': crossbar alerts check_low_balance
+      'type': boolean
+    'check_payment_token':
+      'default': true
+      'description': crossbar alerts check_payment_token
+      'type': boolean
+    'check_port_action_required':
+      'default': true
+      'description': crossbar alerts check_port_action_required
+      'type': boolean
+    'check_port_requests':
+      'default': true
+      'description': crossbar alerts check_port_requests
+      'type': boolean
+    'check_port_suspended':
+      'default': true
+      'description': crossbar alerts check_port_suspended
+      'type': boolean
+    'check_system_alerts':
+      'default': true
+      'description': crossbar alerts check_system_alerts
+      'type': boolean
+  'type': object
 'system_config.crossbar.auth':
   'description': Schema for crossbar.auth system_config
   'properties':
@@ -9817,11 +9863,6 @@
           'log_failed_attempts': true
           'log_successful_attempts': false
           'token_auth_expiry_s': 3600
-        'cb_ubiquiti_auth':
-          'enabled': true
-          'log_failed_attempts': true
-          'log_successful_attempts': false
-          'token_auth_expiry_s': 3600
         'cb_user_auth':
           'enabled': true
           'log_failed_attempts': true
@@ -9835,8 +9876,6 @@
           '$ref': '#/auth_module_config'
         'cb_ip_auth':
           '$ref': '#/auth_module_config'
-        'cb_ubiquiti_auth':
-          '$ref': '#/auth_module_config'
         'cb_user_auth':
           '$ref': '#/auth_module_config'
       'type': object
@@ -9846,7 +9885,6 @@
         - cb_api_auth
         - cb_auth
         - cb_ip_auth
-        - cb_ubiquiti_auth
       'description': List of crossbar auth configurable modules
       'items':
         'type': string
@@ -9963,47 +10001,6 @@
       'description': crossbar.devices provisioning url
       'type': string
   'type': object
-'system_config.crossbar.freeswitch':
-  'description': Schema for crossbar.freeswitch system_config
-  'properties':
-    'files_to_include':
-      'default':
-        - freeswitch_dialplan
-        - freeswitch_chatplan
-      'description': crossbar.freeswitch files to include
-      'items':
-        'type': string
-      'type': array
-    'offline_configuration_key':
-      'description': crossbar.freeswitch offline configuration key
-      'type': string
-    'realm_templates_to_process':
-      'default':
-        - freeswitch_directory_realm
-      'description': crossbar.freeswitch realm templates to process
-      'items':
-        'type': string
-      'type': array
-    'templates_to_process':
-      'default':
-        - freeswitch_directory
-      'description': crossbar.freeswitch templates to process
-      'items':
-        'type': string
-      'type': array
-    'work_dir':
-      'default': /tmp/
-      'description': crossbar.freeswitch work dir
-      'type': string
-  'type': object
-'system_config.crossbar.local_resources':
-  'description': Schema for crossbar.local_resources system_config
-  'properties':
-    'allow_peers':
-      'default': false
-      'description': crossbar.local_resources allow peers
-      'type': boolean
-  'type': object
 'system_config.crossbar.media':
   'description': Schema for crossbar.media system_config
   'properties':
@@ -10027,31 +10024,6 @@
     'notification_timeout_ms':
       'default': 5000
       'description': crossbar.notifications notification timeout in milliseconds
-      'type': integer
-  'type': object
-'system_config.crossbar.onboard':
-  'description': Schema for crossbar.onboard system_config
-  'properties':
-    'default_callflow_start_exten':
-      'default': 2000
-      'description': crossbar.onboard default callflow start exten
-      'type': integer
-    'default_extension_callflow':
-      'default': |-
-        {"data": { "id": "~s" }, "module": "user", "children": { "_": { "data": { "id": "~s" }, "module": "voicemail", "children": {}}}}
-      'description': crossbar.onboard default extension callflow
-      'type': string
-    'default_vm_start_exten':
-      'default': 3000
-      'description': crossbar.onboard default vm start exten
-      'type': integer
-    'device_pwd_strength':
-      'default': 6
-      'description': crossbar.onboard device pwd strength
-      'type': integer
-    'device_username_strength':
-      'default': 3
-      'description': crossbar.onboard device username strength
       'type': integer
   'type': object
 'system_config.crossbar.phone_numbers':
@@ -10079,6 +10051,10 @@
 'system_config.crossbar.resources':
   'description': Schema for crossbar.resources system_config
   'properties':
+    'allow_peers':
+      'default': false
+      'description': crossbar.resources allow peers
+      'type': boolean
     'job_recovery_threshold_s':
       'default': 3600
       'description': crossbar.resources job recovery threshold in seconds
@@ -10087,13 +10063,6 @@
       'default': 21600
       'description': crossbar.resources job recovery timeout in seconds
       'type': integer
-  'type': object
-'system_config.crossbar.shared_auth':
-  'description': Schema for crossbar.shared_auth system_config
-  'properties':
-    'authoritative_crossbar':
-      'description': crossbar.shared_auth authoritative crossbar
-      'type': string
   'type': object
 'system_config.crossbar.sms':
   'description': Schema for crossbar.sms system_config
@@ -10117,44 +10086,6 @@
       'default': admin
       'description': crossbar.token_restrictions default priv level
       'type': string
-  'type': object
-'system_config.crossbar.ubiquiti':
-  'description': Schema for crossbar.ubiquiti system_config
-  'properties':
-    'api_secret':
-      'description': crossbar.ubiquiti api secret
-      'type': string
-    'api_token_expires_s':
-      'default': 1800
-      'description': crossbar.ubiquiti api token expires in seconds
-      'type': integer
-    'production':
-      'properties':
-        'sso_url':
-          'default': 'https://sso.ubnt.com/api/sso/v1/'
-          'description': crossbar.ubiquiti sso url
-          'type': string
-    'salt_length':
-      'default': 20
-      'description': crossbar.ubiquiti salt length
-      'type': integer
-    'sso_environment':
-      'default': staging
-      'description': crossbar.ubiquiti sso environment
-      'type': string
-    'sso_provider_id':
-      'description': crossbar.ubiquiti sso provider id
-      'type': string
-    'staging':
-      'properties':
-        'sso_url':
-          'default': 'https://sso-stage.ubnt.com/api/sso/v1/'
-          'description': crossbar.ubiquiti sso url
-          'type': string
-    'tokens_per_request':
-      'default': 35
-      'description': crossbar.ubiquiti tokens per request
-      'type': integer
   'type': object
 'system_config.crossbar.users':
   'description': Schema for crossbar.users system_config
@@ -10280,6 +10211,10 @@
     'inbound_queue_name':
       'description': doodle inbound queue name
       'type': string
+    'listeners':
+      'default': 1
+      'description': doodle listeners
+      'type': integer
     'min_bucket_cost':
       'default': 1
       'description': doodle minimum bucket cost
@@ -11478,6 +11413,42 @@
       'description': kazoo_events event_listeners
       'type': integer
   'type': object
+'system_config.kazoo_im':
+  'description': Schema for kazoo_im system_config
+  'properties':
+    'connector':
+      'properties':
+        'connections':
+          'description': kazoo_im connector connections
+          'type': object
+    'onnet_listeners':
+      'default': 1
+      'description': kazoo_im onnet_listeners
+      'type': integer
+  'type': object
+'system_config.kazoo_web':
+  'description': Schema for kazoo_web system_config
+  'properties':
+    'client':
+      'properties':
+        'blacklist':
+          'properties':
+            'cidrs':
+              'default':
+                - 127.0.0.1/32
+                - 0.0.0.0/32
+              'description': kazoo_web client blacklist cidrs
+              'items':
+                'type': string
+              'type': array
+            'hosts':
+              'default':
+                - localhost
+              'description': kazoo_web client blacklist hosts
+              'items':
+                'type': string
+              'type': array
+  'type': object
 'system_config.keys':
   'description': Schema for DTMF keys system_config
   'properties':
@@ -11538,6 +11509,8 @@
           'name': mobile_data
         - 'friendly_name': Support
           'name': support
+        - 'friendly_name': ASR Transcriptions
+          'name': asr-transcriptions
       'description': ledgers registered_ledgers
       'items':
         'type': object
@@ -12655,6 +12628,10 @@
 'system_config.pivot':
   'description': Schema for pivot system_config
   'properties':
+    'request_timeout_ms':
+      'default': 5000
+      'description': pivot request_timeout_ms
+      'type': integer
     'tts_texts_size':
       'default': 4000
       'description': pivot tts texts size
@@ -12846,24 +12823,6 @@
           'description': pusher firebase headers
           'type': object
       'type': object
-    'google':
-      'default': {}
-      'description': pusher google
-      'properties':
-        'api_key':
-          'description': API Key for gcm
-          'type': string
-        'headers':
-          'default': {}
-          'description': pusher google headers
-          'type': object
-      'type': object
-    'modules':
-      'default': []
-      'description': pusher modules
-      'items':
-        'type': string
-      'type': array
   'type': object
 'system_config.qubicle':
   'description': Schema for qubicle system_config
@@ -14230,23 +14189,6 @@
   'required':
     - account
     - type
-'ubiquiti_auth':
-  'description': Provides an auth-token via Ubiquiti's SSO
-  'properties':
-    'password':
-      'description': Ubiquiti SSO Password
-      'maxLength': 64
-      'minLength': 1
-      'type': string
-    'username':
-      'description': Ubiquiti SSO Username
-      'maxLength': 64
-      'minLength': 1
-      'type': string
-  'required':
-    - password
-    - username
-  'type': object
 'user_auth':
   'description': Provides an auth-token via user credentials
   'properties':
@@ -14705,6 +14647,11 @@
       'description': Play older voicemail messages before new ones
       'type': boolean
       'x-support_level': supported
+    'operator_number':
+      'description': Alternate/override number to use when calling operator from voicemail
+      'oneOf':
+        - 'type': integer
+        - 'type': string
     'owner_id':
       'description': The ID of the user object that 'owns' the voicemail box
       'maxLength': 32
@@ -14756,6 +14703,11 @@
       'minLength': 5
       'type': string
       'x-support_level': supported
+    'transcribe':
+      'default': false
+      'description': Transcribe voicemail using ASR engine
+      'type': boolean
+      'x-support_level': alpha
   'required':
     - mailbox
     - name
@@ -14948,6 +14900,7 @@
       'description': The 3rd party URI to call out to an event
       'format': uri
       'type': string
+      'x-kazoo-validation': true
       'x-support_level': supported
   'required':
     - hook

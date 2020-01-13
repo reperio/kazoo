@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2019, 2600Hz
+%%% @copyright (C) 2010-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -148,7 +148,7 @@ is_feature_code(Doc) ->
     featurecode(Doc, 'false') =/= 'false'.
 
 -spec validate(doc()) -> {'ok', doc()} |
-                         {'error', kz_json_schema:validation_errors()}.
+          {'error', kz_json_schema:validation_errors()}.
 validate(Doc) ->
     case kz_json_schema:validate(<<"callflows">>, Doc) of
         {'ok', _}= OK -> OK;
