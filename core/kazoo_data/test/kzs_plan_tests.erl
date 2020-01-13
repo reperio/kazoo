@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -155,7 +155,7 @@ match_modb_plan_type_split() ->
 
 handle_missing_connection() ->
     AccountId = <<"account0000000000000000000000005">>,
-    Plan = kzs_plan:plan(kz_util:format_account_mod_id(AccountId)),
+    Plan = kzs_plan:plan(kzs_util:format_account_mod_id(AccountId)),
     ?assertMatch(#{classification := ?MODB
                   ,tag := <<"local">>
                   ,others := []

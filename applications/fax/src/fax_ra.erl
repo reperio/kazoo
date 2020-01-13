@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% @author Luis Azedo
 %%%
@@ -56,8 +56,8 @@ init(#{name := Name}) ->
      }.
 
 -spec apply(ra_machine:command_meta_data(), term(), state()) ->
-                   {state(), Reply :: term(), ra_machine:effects()} |
-                   {state(), Reply :: term()}.
+          {state(), Reply :: term(), ra_machine:effects()} |
+          {state(), Reply :: term()}.
 
 apply(#{index := RaftIdx}, {down, Pid, normal}, #{pids := Pids, accounts := Accounts} = State0) ->
     case Pids of

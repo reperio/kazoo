@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc Given a rate_req, find appropriate rate for the call
 %%% @author James Aimonetti
 %%%
@@ -62,8 +62,8 @@ maybe_empty_mobile_log(RateReq) ->
     end.
 
 -spec get_rate_data(kapi_rate:req(), kz_term:api_ne_binary()) ->
-                           {'ok', kz_term:api_terms()} |
-                           {'error', 'no_rate_found'}.
+          {'ok', kz_term:api_terms()} |
+          {'error', 'no_rate_found'}.
 get_rate_data(RateReq, <<"mobile">>) ->
     ToDID = kapi_rate:to_did(RateReq),
     FromDID = kapi_rate:from_did(RateReq),
@@ -107,8 +107,8 @@ maybe_send_system_alert(RateReq, FromDID, ToDID) ->
     end.
 
 -spec get_rate_data(kapi_rate:req(), kz_term:ne_binary(), kz_term:api_binary(), kz_json:objects()) ->
-                           {'ok', kz_term:api_terms()} |
-                           {'error', 'no_rate_found'}.
+          {'ok', kz_term:api_terms()} |
+          {'error', 'no_rate_found'}.
 get_rate_data(RateReq, ToDID, FromDID, Rates) ->
     lager:debug("candidate rates found, filtering"),
     Matching = hon_util:matching_rates(Rates, RateReq),
@@ -139,7 +139,7 @@ maybe_get_rate_discount(RateReq) ->
 -spec maybe_get_rate_discount(kapi_rate:req(), kz_term:api_binary()) -> kz_term:api_binary().
 maybe_get_rate_discount(_RateReq, 'undefined') -> 'undefined';
 maybe_get_rate_discount(RateReq, AccountId) ->
-    AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
+    AccountDb = kzs_util:format_account_db(AccountId),
     case kz_datamgr:open_cache_doc(AccountDb, <<"limits">>) of
         {'error', _R} ->
             lager:debug("unable to open account ~s definition: ~p", [AccountId, _R]),

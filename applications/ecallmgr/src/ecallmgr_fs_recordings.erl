@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc Receives STOP RECORD event
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -28,10 +28,10 @@ handle_record_stop(#{node := Node, call_id := UUID, payload := JObj}) ->
     maybe_store_recording(IsLocal, MediaRecorder, JObj, UUID, Node).
 
 -spec maybe_store_recording(boolean(), kz_term:api_binary(), kz_json:object(), kz_term:ne_binary(), atom()) ->
-                                   'ok' |
-                                   'error' |
-                                   ecallmgr_util:send_cmd_ret() |
-                                   [ecallmgr_util:send_cmd_ret(),...].
+          'ok' |
+          'error' |
+          ecallmgr_util:send_cmd_ret() |
+          [ecallmgr_util:send_cmd_ret(),...].
 maybe_store_recording('false', _, _JObj, _CallId, _Node) -> 'ok';
 maybe_store_recording('true', ?KZ_RECORDER, _Props, _CallId, _Node) -> 'ok';
 maybe_store_recording('true', _, JObj, CallId, Node) ->

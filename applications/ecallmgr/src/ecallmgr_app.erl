@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -83,7 +83,6 @@ declare_exchanges() ->
     _ = kapi_resource:declare_exchanges(),
     _ = kapi_route:declare_exchanges(),
     _ = kapi_sysconf:declare_exchanges(),
-    _ = kapi_sms:declare_exchanges(),
     _ = kapi_switch:declare_exchanges(),
     _ = kapi_presence:declare_exchanges(),
     kapi_self:declare_exchanges().

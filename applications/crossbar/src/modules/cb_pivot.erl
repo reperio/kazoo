@@ -1,6 +1,6 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
-%%% @doc Listing of all expected v1 callbacks
+%%% @copyright (C) 2011-2020, 2600Hz
+%%% @doc Crossbar API for pivot.
 %%% @author James Aimonetti
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -129,7 +129,7 @@ debug_read(Context, ?MATCH_MODB_PREFIX(Year, Month, CallId)) ->
                                ,{'startkey', [CallId]}
                                ,'include_docs'
                                ]
-                              ,cb_context:set_account_db(Context, AccountModb)
+                              ,cb_context:set_db_name(Context, AccountModb)
                               ,fun normalize_debug_read/2
                               ),
     case cb_context:resp_status(Context1) of

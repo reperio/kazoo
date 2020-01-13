@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% @author Peter Defebvre
 %%%
@@ -42,10 +42,10 @@ migrate(Account) when is_binary(Account) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec save(kz_term:ne_binary(), kzd_apps_store:doc()) ->
-                  {'ok', kzd_accounts:doc()} |
-                  kz_datamgr:data_error().
+          {'ok', kzd_accounts:doc()} |
+          kz_datamgr:data_error().
 save(Account, AppsStoreDoc) ->
-    AccountDb = kz_util:format_account_id(Account, 'encoded'),
+    AccountDb = kzs_util:format_account_db(Account),
     case kz_datamgr:save_doc(AccountDb, AppsStoreDoc) of
         {'error', _R}=Error -> Error;
         {'ok', _SavedAppsStoreDoc}=Ok ->

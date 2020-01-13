@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2019, 2600Hz
+%%% @copyright (C) 2013-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -10,8 +10,8 @@
 -module('cb_presence').
 
 -export([init/0
-        ,authenticate/1
-        ,authorize/1
+        ,authenticate/1, authenticate/2
+        ,authorize/1, authorize/2
         ,allowed_methods/0, allowed_methods/1
         ,resource_exists/0, resource_exists/1
         ,content_types_provided/2
@@ -58,8 +58,8 @@
 -spec init() -> ok.
 init() ->
     Bindings = [{<<"*.allowed_methods.presence">>, 'allowed_methods'}
-               ,{<<"*.authenticate">>, 'authenticate'}
-               ,{<<"*.authorize">>, 'authorize'}
+               ,{<<"*.authenticate.presence">>, 'authenticate'}
+               ,{<<"*.authorize.presence">>, 'authorize'}
                ,{<<"*.resource_exists.presence">>, 'resource_exists'}
                ,{<<"*.content_types_provided.presence">>, 'content_types_provided'}
                ,{<<"*.validate.presence">>, 'validate'}
@@ -70,12 +70,16 @@ init() ->
 
 -spec authenticate(cb_context:context()) -> boolean().
 authenticate(Context) ->
-    authenticate(Context, cb_context:req_nouns(Context), cb_context:req_verb(Context)).
+    authenticate_nouns(Context, cb_context:req_nouns(Context), cb_context:req_verb(Context)).
 
--spec authenticate(cb_context:context(), req_nouns(), http_method()) -> boolean().
-authenticate(Context, [{<<"presence">>,[?MATCH_REPORT_PREFIX]}], ?HTTP_GET) ->
+-spec authenticate(cb_context:context(), path_token()) -> boolean().
+authenticate(Context, _) ->
+    authenticate_nouns(Context, cb_context:req_nouns(Context), cb_context:req_verb(Context)).
+
+-spec authenticate_nouns(cb_context:context(), req_nouns(), http_method()) -> boolean().
+authenticate_nouns(Context, [{<<"presence">>,[?MATCH_REPORT_PREFIX]}], ?HTTP_GET) ->
     cb_context:magic_pathed(Context);
-authenticate(_Context, _Nouns, _Verb) -> 'false'.
+authenticate_nouns(_Context, _Nouns, _Verb) -> 'false'.
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -83,12 +87,16 @@ authenticate(_Context, _Nouns, _Verb) -> 'false'.
 %%------------------------------------------------------------------------------
 -spec authorize(cb_context:context()) -> boolean().
 authorize(Context) ->
-    authorize(Context, cb_context:req_nouns(Context), cb_context:req_verb(Context)).
+    authorize_nouns(Context, cb_context:req_nouns(Context), cb_context:req_verb(Context)).
 
--spec authorize(cb_context:context(), req_nouns(), http_method()) -> boolean().
-authorize(Context, [{<<"presence">>,[?MATCH_REPORT_PREFIX]}], ?HTTP_GET) ->
+-spec authorize(cb_context:context(), path_token()) -> boolean().
+authorize(Context, _) ->
+    authorize_nouns(Context, cb_context:req_nouns(Context), cb_context:req_verb(Context)).
+
+-spec authorize_nouns(cb_context:context(), req_nouns(), http_method()) -> boolean().
+authorize_nouns(Context, [{<<"presence">>,[?MATCH_REPORT_PREFIX]}], ?HTTP_GET) ->
     cb_context:magic_pathed(Context);
-authorize(_Context, _Nouns, _Verb) -> 'false'.
+authorize_nouns(_Context, _Nouns, _Verb) -> 'false'.
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines the verbs that are appropriate for the
@@ -146,19 +154,19 @@ content_types_provided_for_report(Context, Report) ->
 %%------------------------------------------------------------------------------
 
 -spec validate(cb_context:context()) ->
-                      cb_context:context().
+          cb_context:context().
 validate(Context) ->
     validate_thing(Context, cb_context:req_verb(Context)).
 
 -spec validate(cb_context:context(), path_token()) ->
-                      cb_context:context().
+          cb_context:context().
 validate(Context, ?MATCH_REPORT_PREFIX(Report)) ->
     load_report(Context, Report);
 validate(Context, Extension) ->
     search_detail(Context, Extension).
 
 -spec validate_thing(cb_context:context(), http_method()) ->
-                            cb_context:context().
+          cb_context:context().
 validate_thing(Context, ?HTTP_GET) ->
     search_summary(Context);
 validate_thing(Context, ?HTTP_POST) ->
@@ -343,7 +351,7 @@ post(Context, Extension) ->
     crossbar_util:response_202(<<"reset command sent for extension ", Extension/binary>>, Context).
 
 -spec post_things(cb_context:context(), kz_json:object() | kz_json:objects(), kz_term:ne_binary()) ->
-                         cb_context:context().
+          cb_context:context().
 post_things(Context, Things, <<"reset">>) ->
     _ = collect_report(Context, Things),
     send_command(Context, fun publish_presence_reset/2, Things);
@@ -353,7 +361,7 @@ post_things(Context, Things, <<"set">>) ->
 
 -type presence_command_fun() :: fun((cb_context:context(), kz_term:api_binary()) -> any()).
 -spec send_command(cb_context:context(), presence_command_fun(), kz_json:object() | kz_json:objects()) ->
-                          cb_context:context().
+          cb_context:context().
 send_command(Context, _CommandFun, []) ->
     lager:debug("nothing to send command to"),
     crossbar_util:response(<<"nothing to send command to">>, Context);
@@ -379,7 +387,7 @@ publish_presence_reset(Context, PresenceId) ->
 publish_presence_update(_Context, 'undefined', _PresenceState) -> 'ok';
 publish_presence_update(Context, PresenceId, PresenceState) ->
     Realm = cb_context:account_realm(Context),
-    AccountDb = cb_context:account_db(Context),
+    AccountDb = cb_context:db_name(Context),
     lager:debug("updating presence for ~s@~s to state ~s", [PresenceId, Realm, PresenceState]),
     %% persist presence setting
     Update = [{PresenceId, PresenceState}],

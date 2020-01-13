@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -56,12 +56,12 @@ init() ->
     ok.
 
 -spec authorize(cb_context:context()) ->
-                       boolean() | {'stop', cb_context:context()}.
+          boolean() | {'stop', cb_context:context()}.
 authorize(Context) ->
     authorize(Context, cb_context:req_nouns(Context)).
 
 -spec authorize(cb_context:context(), req_nouns()) ->
-                       boolean() | {'stop', cb_context:context()}.
+          boolean() | {'stop', cb_context:context()}.
 authorize(Context, [{<<"resource_selectors">>, _} | _]) ->
     case cb_context:account_id(Context) of
         'undefined' -> maybe_authorize_admin(Context);
@@ -71,8 +71,8 @@ authorize(_Context, _Nouns) ->
     'false'.
 
 -spec maybe_authorize_admin(cb_context:context()) ->
-                                   'true' |
-                                   {'stop', cb_context:context()}.
+          'true' |
+          {'stop', cb_context:context()}.
 maybe_authorize_admin(Context) ->
     case cb_context:is_superduper_admin(Context) of
         'true' ->
@@ -207,12 +207,12 @@ set_selectors_db(Context) ->
     case is_global_request(Context) of
         'true' ->
             {'ok', MasterAccountId} = kapps_util:get_master_account_id(),
-            MasterSelectorsDb = kz_util:format_resource_selectors_db(MasterAccountId),
-            cb_context:set_account_db(Context, MasterSelectorsDb);
+            MasterSelectorsDb = kzs_util:format_resource_selectors_db(MasterAccountId),
+            cb_context:set_db_name(Context, MasterSelectorsDb);
         'false' ->
             AccountId = cb_context:account_id(Context),
-            SelectorsDb = kz_util:format_resource_selectors_db(AccountId),
-            cb_context:set_account_db(Context, SelectorsDb)
+            SelectorsDb = kzs_util:format_resource_selectors_db(AccountId),
+            cb_context:set_db_name(Context, SelectorsDb)
     end.
 
 -spec set_account_db(cb_context:context()) -> cb_context:context().
@@ -220,7 +220,7 @@ set_account_db(Context) ->
     case is_global_request(Context) of
         'true' ->
             {'ok', MasterAccountDb} = kapps_util:get_master_account_db(),
-            cb_context:set_account_db(Context, MasterAccountDb);
+            cb_context:set_db_name(Context, MasterAccountDb);
         'false' -> Context
     end.
 
@@ -337,12 +337,12 @@ is_global_request(Context) ->
     end.
 
 -spec maybe_handle_load_failure(cb_context:context()) ->
-                                       cb_context:context().
+          cb_context:context().
 maybe_handle_load_failure(Context) ->
     maybe_handle_load_failure(Context, cb_context:resp_error_code(Context)).
 
 -spec maybe_handle_load_failure(cb_context:context(), pos_integer()) ->
-                                       cb_context:context().
+          cb_context:context().
 maybe_handle_load_failure(Context, 404) ->
     JObj = kz_doc:set_type(kz_doc:set_id(cb_context:req_data(Context),?RULES_PVT_TYPE), ?RULES_PVT_TYPE),
     cb_context:setters(Context

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2019, 2600Hz
+%%% @copyright (C) 2010-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -18,7 +18,7 @@
 
 -include_lib("eunit/include/eunit.hrl").
 -include("kazoo_proper.hrl").
--include_lib("kazoo_number_manager/include/knm_port_request.hrl").
+-include_lib("kazoo_numbers/include/knm_port_request.hrl").
 
 -define(ACCOUNTS_SETTINGS
        ,#{<<"pqc_ports_normal">> => #{<<"numbers">> => [<<"+13335551234">>]
@@ -186,7 +186,7 @@ create_admin_user(API, AccountId, AccountName) ->
                            ).
 
 -spec create_whitelabel(pqc_cb_api:state(), kz_term:ne_binary(), kz_term:ne_binary(), boolean()) ->
-                               pqc_cb_api:response().
+          pqc_cb_api:response().
 create_whitelabel(_, _, _, 'false') ->
     <<"no whitelable for you">>;
 create_whitelabel(API, AccountId, AccountName, 'true') ->

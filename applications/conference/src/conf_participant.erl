@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2019, 2600Hz
+%%% @copyright (C) 2013-2020, 2600Hz
 %%% @doc Conference participant process
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -402,7 +402,7 @@ terminate(_Reason, #participant{name_pronounced = Name}) ->
 
 -spec maybe_clear(conf_pronounced_name:name_pronounced()) -> 'ok'.
 maybe_clear({'temp_doc_id', AccountId, MediaId}) ->
-    AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
+    AccountDb = kzs_util:format_account_db(AccountId),
     lager:debug("deleting doc: ~s/~s", [AccountDb, MediaId]),
     _ = kz_datamgr:del_doc(AccountDb, MediaId),
     'ok';
@@ -437,7 +437,7 @@ sync_participant(<<"conference-destroyed">>, _JObj, _Call, Participant) -> Parti
 sync_participant(_Event, _JObj, _Call, Participant) -> Participant.
 
 -spec sync_participant(kz_json:objects(), kapps_call:call(), participant()) ->
-                              participant().
+          participant().
 sync_participant(JObj, Call, #participant{in_conference='false'
                                          ,conference=Conference
                                          ,discovery_event=DiscoveryEvent

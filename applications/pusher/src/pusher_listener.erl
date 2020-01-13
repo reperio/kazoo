@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2019, 2600Hz
+%%% @copyright (C) 2013-2020, 2600Hz
 %%% @doc
 %%% @author Luis Azedo
 %%%
@@ -65,14 +65,28 @@
 -spec handle_push(kz_json:object(), kz_term:proplist()) -> 'ok'.
 handle_push(JObj, _Props) ->
     Token = kz_json:get_value(<<"Token-ID">>, JObj),
-    TokenType = kz_json:get_value(<<"Token-Type">>, JObj),
+    TokenType = pm_module(kz_json:get_value(<<"Token-Type">>, JObj)),
     Module = kz_term:to_atom(<<"pm_",TokenType/binary>> , 'true'),
-    lager:debug("pushing for token ~s(~s) to module ~s", [Token, TokenType, Module]),
-    JObj1 = kz_json:insert_value([<<"Payload">>, <<"utc_unix_timestamp_ms">>]
-                                ,kz_term:to_binary(os:system_time(millisecond))
-                                ,JObj
-                                ),
-    gen_server:cast(Module, {'push', JObj1}).
+    case lists:member(Module, ?MODULES)
+        andalso whereis(Module)
+    of
+        'false' ->
+            lager:error("module ~s not available for token ~s(~s)", [Module, Token, TokenType]);
+        'undefined' ->
+            lager:error("module ~s not available for token ~s(~s)", [Module, Token, TokenType]);
+        Pid ->
+            lager:debug("pushing for token ~s(~s) to module ~s", [Token, TokenType, Module]),
+            gen_server:cast(Pid, {'push', add_timestamp_to_payload(JObj)})
+    end.
+
+pm_module(<<"google">>) -> <<"firebase">>;
+pm_module(<<"android">>) -> <<"firebase">>;
+pm_module(Any) -> Any.
+
+add_timestamp_to_payload(JObj) ->
+    kz_json:insert_value([<<"Payload">>, <<"utc_unix_timestamp_ms">>]
+                        ,kz_term:to_binary(os:system_time(millisecond))
+                        ,JObj).
 
 -spec handle_reg_success(kz_json:object(), kz_term:proplist()) -> 'ok'.
 handle_reg_success(JObj, _Props) ->
@@ -109,7 +123,7 @@ maybe_update_push_token(UA, JObj, Params) ->
 maybe_update_push_token('undefined', _AuthorizingId, _UA, _JObj, _Params) -> 'ok';
 maybe_update_push_token(_AccountId, 'undefined', _UA, _JObj, _Params) -> 'ok';
 maybe_update_push_token(AccountId, AuthorizingId, UA, JObj, Params) ->
-    AccountDb = kz_util:format_account_db(AccountId),
+    AccountDb = kzs_util:format_account_db(AccountId),
     case kz_datamgr:open_cache_doc(AccountDb, AuthorizingId) of
         {'ok', Doc} ->
             Push = kz_json:get_value(<<"push">>, Doc),
@@ -123,7 +137,7 @@ maybe_update_push_token(AccountId, AuthorizingId, UA, JObj, Params) ->
     end.
 
 -spec build_push(kz_json:object(), kz_json:object(), kz_term:proplist(), kz_json:object()) ->
-                        kz_json:object().
+          kz_json:object().
 build_push(UA, JObj, Params, InitialAcc) ->
     kz_json:foldl(
       fun(K, V, Acc) ->
@@ -136,9 +150,9 @@ build_push_fold(K, V, Acc, JObj, Params) ->
         'undefined' ->
             case kz_json:get_value(V, JObj) of
                 'undefined' -> Acc;
-                V1 -> kz_json:set_value(K, V1, Acc)
+                V1 -> kz_json:set_value(K, kz_http_util:urldecode(V1), Acc)
             end;
-        V2 -> kz_json:set_value(K, V2, Acc)
+        V2 -> kz_json:set_value(K, kz_http_util:urldecode(V2), Acc)
     end.
 
 %%------------------------------------------------------------------------------

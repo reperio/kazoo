@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -170,7 +170,7 @@ remove_event_bindings(Context, BindingResults) ->
     end.
 
 -spec remove_event_bindings_fold(map(), {bh_context:context(), list()}) ->
-                                        {bh_context:context(), list()}.
+          {bh_context:context(), list()}.
 remove_event_bindings_fold(#{requested := Requested
                             ,subscribed := Subscribed
                             ,listeners := Listeners

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2015-2019, 2600Hz
+%%% @copyright (C) 2015-2020, 2600Hz
 %%% @doc Provide some utilities to work with AST.
 %%% @author James Aimonetti
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -103,6 +103,10 @@ add_module_ast_fold(_Other, _Module, Acc) ->
 ast_to_list_of_binaries(ASTList) ->
     ast_to_list_of_binaries(ASTList, []).
 
+ast_to_list_of_binaries(List, Binaries) when is_list(List) ->
+    lists:foldl(fun ast_to_list_of_binaries/2, Binaries, List);
+ast_to_list_of_binaries(<<Bin/binary>>, Binaries) ->
+    [Bin | Binaries];
 ast_to_list_of_binaries(?APPEND(First, Second), Binaries) ->
     ast_to_list_of_binaries(Second, ast_to_list_of_binaries(First, Binaries));
 ast_to_list_of_binaries(?SUBTRACT(First, Second), Binaries) ->
@@ -123,6 +127,7 @@ ast_to_list_of_binaries(?VAR(_), Binaries) ->
     Binaries.
 
 -spec binary_match_to_binary(erl_parse:abstract_expr()) -> binary().
+binary_match_to_binary(<<Bin/binary>>) -> Bin;
 binary_match_to_binary(?ATOM(A)) -> kz_term:to_binary(A);
 binary_match_to_binary(?BINARY_STRING(V)) ->
     kz_term:to_binary(V);
@@ -366,7 +371,7 @@ any_of_to_row(Option, Refs) ->
     maybe_add_ref(Refs, Option).
 
 -spec property_to_row(kz_json:object(), kz_term:ne_binary() | kz_term:ne_binaries(), kz_json:object(), {iodata(), kz_term:ne_binaries()}) ->
-                             {iodata(), kz_term:ne_binaries()}.
+          {iodata(), kz_term:ne_binaries()}.
 property_to_row(SchemaJObj, Name=?NE_BINARY, Settings, {_, _}=Acc) ->
     property_to_row(SchemaJObj, [Name], Settings, Acc);
 property_to_row(SchemaJObj, Names, Settings, {Table, Refs}) ->

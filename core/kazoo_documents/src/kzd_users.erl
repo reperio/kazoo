@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2019, 2600Hz
+%%% @copyright (C) 2010-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -749,14 +749,14 @@ set_voicemail_notify_callback(Doc, VoicemailNotifyCallback) ->
     kz_json:set_value([<<"voicemail">>, <<"notify">>, <<"callback">>], VoicemailNotifyCallback, Doc).
 
 -spec fetch(kz_term:api_ne_binary(), kz_term:api_ne_binary()) ->
-                   {'ok', doc()} |
-                   kz_datamgr:data_error().
+          {'ok', doc()} |
+          kz_datamgr:data_error().
 fetch('undefined', _UserId) ->
     {'error', 'invalid_db_name'};
 fetch(_Account, 'undefined') ->
     {'error', 'not_found'};
 fetch(Account, UserId=?NE_BINARY) ->
-    AccountDb = kz_util:format_account_db(Account),
+    AccountDb = kzs_util:format_account_db(Account),
     kz_datamgr:open_cache_doc(AccountDb, UserId).
 
 -spec to_vcard(doc()) -> binary().

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2018-2019, 2600Hz
+%%% @copyright (C) 2018-2020, 2600Hz
 %%% @doc API for retrieving attachment handlers errors.
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -34,7 +34,6 @@ init() ->
     Bindings = [{<<"*.allowed_methods">>, 'allowed_methods'}
                ,{<<"*.resource_exists">>, 'resource_exists'}
                ,{<<"*.validate">>, 'validate'}
-               ,{<<"*.execute.get">>, 'get'}
                ],
     _ = [crossbar_bindings:bind(<<Binding/binary, ".att_handlers_errors">>, ?MODULE, Fun)
          || {Binding, Fun} <- Bindings
@@ -111,7 +110,7 @@ validate_request(Context, Resource, Id, ?HTTP_GET) ->
 -spec read(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 read(<<Year:4/binary, Month:2/binary, _/binary>> = Id, Context) ->
     MODB = kazoo_modb:get_modb(cb_context:account_id(Context), Year, Month),
-    Context1 = cb_context:set_account_db(Context, MODB),
+    Context1 = cb_context:set_db_name(Context, MODB),
     crossbar_doc:load(Id, Context1, ?TYPE_CHECK_OPTION(<<"attachment_handler_error">>)).
 
 -spec read(kz_term:ne_binary(), kz_term:ne_binary(), cb_context:context()) -> cb_context:context().

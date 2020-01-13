@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2015-2019, 2600Hz
+%%% @copyright (C) 2015-2020, 2600Hz
 %%% @doc Call Event JSON Object
 %%% @author James Aimonetti
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -122,12 +122,12 @@ custom_channel_vars(JObj, Default) ->
     kz_json:get_json_value(<<"Custom-Channel-Vars">>, JObj, Default).
 
 -spec custom_channel_var(doc(), kz_json:key()) ->
-                                kz_term:api_ne_binary().
+          kz_term:api_ne_binary().
 custom_channel_var(JObj, Key) ->
     custom_channel_var(JObj, Key, 'undefined').
 
 -spec custom_channel_var(doc(), kz_json:key(), Default) ->
-                                kz_term:ne_binary() | Default.
+          kz_term:ne_binary() | Default.
 custom_channel_var(JObj, Key, Default) ->
     kz_json:get_ne_binary_value([<<"Custom-Channel-Vars">>, Key], JObj, Default).
 
@@ -140,12 +140,12 @@ custom_application_vars(JObj, Default) ->
     kz_json:get_json_value(<<"Custom-Application-Vars">>, JObj, Default).
 
 -spec custom_application_var(doc(), kz_json:key()) ->
-                                    kz_term:api_ne_binary().
+          kz_term:api_ne_binary().
 custom_application_var(JObj, Key) ->
     custom_application_var(JObj, Key, 'undefined').
 
 -spec custom_application_var(doc(), kz_json:key(), Default) ->
-                                    kz_term:ne_binary() | Default.
+          kz_term:ne_binary() | Default.
 custom_application_var(JObj, Key, Default) ->
     kz_json:get_ne_binary_value([<<"Custom-Application-Vars">>, Key], JObj, Default).
 

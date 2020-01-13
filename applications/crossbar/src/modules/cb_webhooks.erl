@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc Handle CRUD operations for Webhooks
 %%% @author James Aimonetti
 %%%
@@ -13,7 +13,7 @@
 
 -export([init/0
         ,authorize/1, authorize/2, authorize/3
-        ,authenticate/1
+        ,authenticate/1, authenticate/2, authenticate/3
         ,allowed_methods/0, allowed_methods/1, allowed_methods/2
         ,resource_exists/0, resource_exists/1, resource_exists/2
         ,validate/1, validate/2, validate/3
@@ -56,8 +56,8 @@ init() ->
     _ = kz_datamgr:revise_doc_from_file(?KZ_SCHEMA_DB, ?APP, <<"schemas/webhooks.json">>),
     init_master_account_db(),
     _ = crossbar_bindings:bind(<<"*.allowed_methods.webhooks">>, ?MODULE, 'allowed_methods'),
-    _ = crossbar_bindings:bind(<<"*.authorize">>, ?MODULE, 'authorize'),
-    _ = crossbar_bindings:bind(<<"*.authenticate">>, ?MODULE, 'authenticate'),
+    _ = crossbar_bindings:bind(<<"*.authorize.webhooks">>, ?MODULE, 'authorize'),
+    _ = crossbar_bindings:bind(<<"*.authenticate.webhooks">>, ?MODULE, 'authenticate'),
     _ = crossbar_bindings:bind(<<"*.resource_exists.webhooks">>, ?MODULE, 'resource_exists'),
     _ = crossbar_bindings:bind(<<"*.validate.webhooks">>, ?MODULE, 'validate'),
     _ = crossbar_bindings:bind(<<"*.execute.put.webhooks">>, ?MODULE, 'put'),
@@ -130,53 +130,64 @@ get_available_hook_ids(MasterDb) ->
     end.
 
 -spec authorize(cb_context:context()) ->
-                       boolean() |
-                       {'stop', cb_context:context()}.
+          boolean() |
+          {'stop', cb_context:context()}.
 authorize(Context) ->
-    is_authorize(Context, cb_context:req_verb(Context), cb_context:req_nouns(Context)).
+    authorize_webhook(Context, cb_context:req_verb(Context), cb_context:req_nouns(Context)).
 
 -spec authorize(cb_context:context(), path_token()) ->
-                       boolean() |
-                       {'stop', cb_context:context()}.
+          boolean() |
+          {'stop', cb_context:context()}.
 authorize(Context, _) ->
-    is_authorize(Context, cb_context:req_verb(Context), cb_context:req_nouns(Context)).
+    authorize_webhook(Context, cb_context:req_verb(Context), cb_context:req_nouns(Context)).
 
 -spec authorize(cb_context:context(), path_token(), path_token()) ->
-                       boolean() |
-                       {'stop', cb_context:context()}.
+          boolean() |
+          {'stop', cb_context:context()}.
 authorize(Context, _, _) ->
-    is_authorize(Context, cb_context:req_verb(Context), cb_context:req_nouns(Context)).
+    authorize_webhook(Context, cb_context:req_verb(Context), cb_context:req_nouns(Context)).
 
--spec is_authorize(cb_context:context(), http_method(), req_nouns()) ->
-                          boolean() |
-                          {'stop', cb_context:context()}.
-is_authorize(_, ?HTTP_GET, [{<<"webhooks">>, []}]) ->
+-spec authorize_webhook(cb_context:context(), http_method(), req_nouns()) ->
+          boolean() |
+          {'stop', cb_context:context()}.
+authorize_webhook(_, ?HTTP_GET, [{<<"webhooks">>, []}]) ->
     lager:debug("authorizing request"),
     'true';
-is_authorize(_, ?HTTP_GET, [{<<"webhooks">>, [?PATH_TOKEN_SAMPLES | _]}]) ->
+authorize_webhook(_, ?HTTP_GET, [{<<"webhooks">>, [?PATH_TOKEN_SAMPLES | _]}]) ->
     lager:debug("authorizing fetching webhook samples"),
     'true';
-is_authorize(Context, _, [{<<"webhooks">>, _}]) ->
+authorize_webhook(Context, _, [{<<"webhooks">>, _}]) ->
     {'stop', cb_context:add_system_error('forbidden', Context)};
-is_authorize(_, _Verb, _Nouns) ->
+authorize_webhook(_, _Verb, _Nouns) ->
     'false'.
 
 -spec authenticate(cb_context:context()) ->
-                          {'true', cb_context:context()} |
-                          'false'.
+          {'true', cb_context:context()} |
+          'false'.
 authenticate(Context) ->
-    authenticate(Context, cb_context:req_verb(Context), cb_context:req_nouns(Context)).
+    authenticate_webhook(Context, cb_context:req_verb(Context), cb_context:req_nouns(Context)).
 
--spec authenticate(cb_context:context(), http_method(), req_nouns()) ->
-                          {'true', cb_context:context()} |
-                          'false'.
-authenticate(Context, ?HTTP_GET, [{<<"webhooks">>, []}]) ->
+-spec authenticate(cb_context:context(), path_token()) ->
+          {'true', cb_context:context()} |
+          'false'.
+authenticate(Context, _) ->
+    authenticate_webhook(Context, cb_context:req_verb(Context), cb_context:req_nouns(Context)).
+
+-spec authenticate(cb_context:context(), path_token(), path_token()) ->
+          {'true', cb_context:context()} |
+          'false'.
+authenticate(Context, _, _) ->
+    authenticate_webhook(Context, cb_context:req_verb(Context), cb_context:req_nouns(Context)).
+
+-spec authenticate_webhook(cb_context:context(), http_method(), req_nouns()) ->
+          {'true', cb_context:context()} |
+          'false'.
+authenticate_webhook(Context, ?HTTP_GET, [{<<"webhooks">>, []}]) ->
     lager:debug("authenticating request"),
     {'true', Context};
-authenticate(Context, ?HTTP_GET, [{<<"webhooks">>, [?PATH_TOKEN_SAMPLES | _]}]) ->
+authenticate_webhook(Context, ?HTTP_GET, [{<<"webhooks">>, [?PATH_TOKEN_SAMPLES | _]}]) ->
     lager:debug("authenticating request for fetching webhook samples"),
-    {'true', Context};
-authenticate(_Context, _Verb, _Nouns) -> 'false'.
+    {'true', Context}.
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines the verbs that are appropriate for the
@@ -230,7 +241,7 @@ resource_exists(_WebhookId, ?PATH_TOKEN_ATTEMPTS) -> 'true'.
 
 -spec validate(cb_context:context()) -> cb_context:context().
 validate(Context) ->
-    validate_webhooks(cb_context:set_account_db(Context, ?KZ_WEBHOOKS_DB), cb_context:req_verb(Context)).
+    validate_webhooks(cb_context:set_db_name(Context, ?KZ_WEBHOOKS_DB), cb_context:req_verb(Context)).
 
 -spec validate_webhooks(cb_context:context(), http_method()) -> cb_context:context().
 validate_webhooks(Context, ?HTTP_GET) ->
@@ -256,7 +267,7 @@ validate(Context, ?PATH_TOKEN_SAMPLES) ->
             cb_context:setters(Context, Setters)
     end;
 validate(Context, Id) ->
-    validate_webhook(cb_context:set_account_db(Context, ?KZ_WEBHOOKS_DB), Id, cb_context:req_verb(Context)).
+    validate_webhook(cb_context:set_db_name(Context, ?KZ_WEBHOOKS_DB), Id, cb_context:req_verb(Context)).
 
 -spec validate_webhook(cb_context:context(), path_token(), http_method()) -> cb_context:context().
 validate_webhook(Context, WebhookId, ?HTTP_GET) ->
@@ -288,11 +299,11 @@ validate_patch(Context, WebhookId) ->
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
 post(Context, _Id) ->
     Context1 = maybe_update_hook(Context),
-    crossbar_doc:save(cb_context:set_account_db(Context1, ?KZ_WEBHOOKS_DB)).
+    crossbar_doc:save(cb_context:set_db_name(Context1, ?KZ_WEBHOOKS_DB)).
 
 -spec put(cb_context:context()) -> cb_context:context().
 put(Context) ->
-    crossbar_doc:save(cb_context:set_account_db(Context, ?KZ_WEBHOOKS_DB)).
+    crossbar_doc:save(cb_context:set_db_name(Context, ?KZ_WEBHOOKS_DB)).
 
 -spec patch(cb_context:context()) -> cb_context:context().
 patch(Context) ->
@@ -304,7 +315,7 @@ patch(Context, WebhookId) ->
 
 -spec delete(cb_context:context(), path_token()) -> cb_context:context().
 delete(Context, _) ->
-    crossbar_doc:delete(cb_context:set_account_db(Context, ?KZ_WEBHOOKS_DB)).
+    crossbar_doc:delete(cb_context:set_db_name(Context, ?KZ_WEBHOOKS_DB)).
 
 -spec delete_account(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 delete_account(Context, AccountId) ->
@@ -350,7 +361,7 @@ validate_collection_patch(Context) ->
     validate_collection_patch(Context, cb_context:req_value(Context, ?REENABLE)).
 
 -spec validate_collection_patch(cb_context:context(), kz_term:api_boolean()) ->
-                                       cb_context:context().
+          cb_context:context().
 validate_collection_patch(Context, 'undefined') ->
     Msg = kz_json:from_list([{<<"message">>, <<"re-enable is required to patch collections">>}]),
     cb_context:add_validation_error(?REENABLE, <<"required">>, Msg, Context);
@@ -410,7 +421,7 @@ summary(Context) ->
     crossbar_view:load(Context, ?CB_LIST, Options).
 
 -spec summary_available(cb_context:context()) ->
-                               cb_context:context().
+          cb_context:context().
 summary_available(Context) ->
     {'ok', MasterAccountDb} = kapps_util:get_master_account_db(),
     IsSuperAdmin = cb_context:is_superduper_admin(Context),
@@ -418,7 +429,7 @@ summary_available(Context) ->
     Options = [{'mapper', fun normalize_available/3}
               ,'include_docs'
               ],
-    crossbar_view:load(cb_context:set_account_db(C1, MasterAccountDb), ?AVAILABLE_HOOKS, Options).
+    crossbar_view:load(cb_context:set_db_name(C1, MasterAccountDb), ?AVAILABLE_HOOKS, Options).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -448,7 +459,7 @@ get_available_hook_samples() ->
     ].
 
 -spec normalize_available(cb_context:context(), kz_json:object(), kz_json:objects()) ->
-                                 kz_json:objects().
+          kz_json:objects().
 normalize_available(Context, JObj, Acc) ->
     maybe_filter_non_admin_hooks(Context, kz_doc:id(JObj), kz_json:get_value(<<"doc">>, JObj), Acc).
 
@@ -500,7 +511,7 @@ normalize_attempt_results(JObj, Acc) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec on_successful_validation(kz_term:api_binary(), cb_context:context()) ->
-                                      cb_context:context().
+          cb_context:context().
 on_successful_validation('undefined', Context) ->
     Props = [{<<"pvt_type">>, kzd_webhooks:type()}
             ,{<<"pvt_account_id">>, cb_context:account_id(Context)}
@@ -512,6 +523,7 @@ on_successful_validation(Id, Context) ->
 -spec maybe_check_modifiers(cb_context:context()) -> cb_context:context().
 maybe_check_modifiers(Context) ->
     WebhookDoc = cb_context:doc(Context),
+    lager:info("checking modifiers for ~s", [kzd_webhooks:hook(WebhookDoc)]),
     maybe_check_modifiers(Context, WebhookDoc, kzd_webhooks:hook(WebhookDoc)).
 
 -spec maybe_check_modifiers(cb_context:context(), kzd_webhooks:doc(), kz_term:api_ne_binary()) -> cb_context:context().
@@ -534,7 +546,7 @@ check_modifiers(Context, WebhookDoc, Modifiers) ->
 check_modifiers(WebhookDoc, ModifierKey, ModifierValue, Context) ->
     case kz_json:get_value([ModifierKey], kzd_webhooks:custom_data(WebhookDoc, kz_json:new())) of
         'undefined' ->
-            lager:debug("failed to find ~s in webhook's custom data", [ModifierKey]),
+            lager:info("failed to find ~s in webhook's custom data", [ModifierKey]),
             Msg = kz_json:from_list([{<<"message">>, <<"missing required modifier">>}]),
             cb_context:add_validation_error([<<"custom_data">>, ModifierKey], <<"required">>, Msg, Context);
         CustomValue ->
@@ -547,14 +559,16 @@ check_modifiers(WebhookDoc, ModifierKey, ModifierValue, Context) ->
 check_modifier_values(CustomValue, ModifierKey, ModifierValue, <<"array">>, Context) ->
     Items = kz_json:get_value(<<"items">>, ModifierValue, []),
     case lists:member(CustomValue, Items) of
+        'true' -> Context;
+        'false' when CustomValue =:= <<"all">> ->
+            lager:info("modifier ~s is for all items in ~p", [ModifierKey, Items]),
+            Context;
         'false' ->
             Msg = kz_json:from_list([{<<"message">>, <<"value not found in enumerated list of values">>}
                                     ,{<<"cause">>, CustomValue}
                                     ,{<<"target">>, Items}
                                     ]),
-            cb_context:add_validation_error([<<"custom_data">>, ModifierKey], <<"enum">>, Msg, Context);
-        'true' ->
-            Context
+            cb_context:add_validation_error([<<"custom_data">>, ModifierKey], <<"enum">>, Msg, Context)
     end;
 check_modifier_values(CustomValue, ModifierKey, ModifierValue, <<"object">>, Context) ->
     case kz_json:get_value([<<"items">>, CustomValue], ModifierValue) of
@@ -609,19 +623,19 @@ maybe_update_hook(Context) ->
     end.
 
 -spec reenable_hooks(cb_context:context()) ->
-                            cb_context:context().
+          cb_context:context().
 reenable_hooks(Context) ->
     reenable_hooks(Context, props:get_value(<<"accounts">>, cb_context:req_nouns(Context))).
 
 -spec reenable_hooks(cb_context:context(), kz_term:ne_binaries()) ->
-                            cb_context:context().
+          cb_context:context().
 reenable_hooks(Context, [AccountId]) ->
     handle_resp(Context, send_reenable_req(Context, AccountId, <<"account">>));
 reenable_hooks(Context, [AccountId, ?DESCENDANTS]) ->
     handle_resp(Context, send_reenable_req(Context, AccountId, ?DESCENDANTS)).
 
 -spec send_reenable_req(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) ->
-                               kz_amqp_worker:request_return().
+          kz_amqp_worker:request_return().
 send_reenable_req(Context, AccountId, Action) ->
     Req = [{<<"Type">>, kzd_webhooks:type()}
           ,{<<"Action">>, Action}
@@ -635,7 +649,7 @@ send_reenable_req(Context, AccountId, Action) ->
                        ).
 
 -spec handle_resp(cb_context:context(), kz_amqp_worker:request_return()) ->
-                         cb_context:context().
+          cb_context:context().
 handle_resp(Context, {'ok', _Resp}) ->
     lager:debug("received resp from update"),
     crossbar_util:response(<<"hooks updated">>, Context);

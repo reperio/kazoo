@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc Handlers for various AMQP payloads
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -181,9 +181,7 @@ ccv_reseller_billing(CCVs) ->
 -spec reseller_id(kz_term:ne_binary(), kz_json:object()) -> kz_term:api_ne_binary().
 reseller_id(<<AccountId/binary>>, CCVs) ->
     case kz_json:get_ne_binary_value(<<"Reseller-ID">>, CCVs) of
-        'undefined' ->
-            lager:debug("failed to find reseller on CCVs, checking account doc"),
-            kzd_accounts:reseller_id(AccountId);
+        'undefined' -> kz_services_reseller:get_id(AccountId);
         ResellerId -> ResellerId
     end.
 
@@ -207,6 +205,7 @@ request_number(Number, CCVs) ->
                                   )
     of
         'undefined' -> Number;
+        Number -> Number;
         Original ->
             lager:debug("using original number ~s instead of ~s", [Original, Number]),
             Original

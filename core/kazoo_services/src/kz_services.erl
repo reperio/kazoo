@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -151,7 +151,7 @@
              ]).
 
 %%------------------------------------------------------------------------------
-%% @doc Returns the account id of the kz_services:services()
+%% @doc Returns the account id of the {@link services()}.
 %% @end
 %%------------------------------------------------------------------------------
 -spec account_id(services()) -> kz_term:api_ne_binary().
@@ -409,7 +409,7 @@ has_updates(Services) ->
 
 -spec set_updates(services(), kz_term:ne_binary(), kz_services_quantities:billables(), kz_services_quantities:billables()) -> services().
 set_updates(Services, Account, Current, Proposed) ->
-    AccountId = kz_util:format_account_id(Account),
+    AccountId = kzs_util:format_account_id(Account),
     case account_id(Services) =:= AccountId of
         'true' -> set_account_updates(Services, Current, Proposed);
         'false' -> set_cascade_updates(Services, Current, Proposed)
@@ -669,7 +669,7 @@ maybe_set_change_type({Type, 'true'}, AuditLog) ->
     kz_json:set_value([<<"changes">>, <<"type">>], [Type | Types], AuditLog).
 
 -spec add_audit_log_changes_account(kz_term:ne_binary() | services(), kz_json:object()) -> kz_json:object().
-add_audit_log_changes_account(?NE_BINARY=AccountId, AuditLog) ->
+add_audit_log_changes_account(<<AccountId/binary>>, AuditLog) ->
     case kz_json:get_ne_binary_value([<<"changes">>, <<"account_id">>], AuditLog) =:= 'undefined' of
         'false' -> AuditLog;
         'true' ->
@@ -752,9 +752,13 @@ summary(?NE_BINARY=Account) ->
                    ],
     summary(fetch(Account, FetchOptions));
 summary(Services) ->
+    ServicesJObj = services_jobj(Services),
     kz_json:from_list(
       [{<<"plans">>
        ,kz_services_plans:assigned(Services)
+       }
+      ,{<<"overrides">>
+       ,kzd_services:overrides(ServicesJObj)
        }
       ,{<<"invoices">>
        ,kz_services_invoices:public_json(invoices(Services))
@@ -767,6 +771,17 @@ summary(Services) ->
        }
       ,{<<"ratedeck">>
        ,kz_services_ratedecks:fetch(Services)
+       }
+      ,{<<"applications">>
+       ,kz_services_applications:fetch(Services)
+       }
+      ,{<<"limits">>
+       ,kz_doc:public_fields(
+          kz_services_limits:fetch(Services)
+         )
+       }
+      ,{<<"payment_tokens">>
+       ,kz_services_payment_tokens:fetch(Services)
        }
       ,{<<"billing_cycle">>
        ,summary_billing_cycle(Services)
@@ -845,7 +860,7 @@ fetch(Account) ->
 fetch('undefined', Options) ->
     handle_fetch_options(empty(), Options);
 fetch(Account=?NE_BINARY, Options) ->
-    AccountId = kz_util:format_account_id(Account),
+    AccountId = kzs_util:format_account_id(Account),
     OpenDocFun = choose_open_doc_fun(Options, AccountId),
 
     handle_fetched_doc(AccountId, Options, OpenDocFun(?KZ_SERVICES_DB, AccountId)).
@@ -898,7 +913,7 @@ create(_AccountId, {'error', 'not_found'}) ->
 create(AccountId, {'ok', AccountJObj}) ->
     ResellerId = kz_services_reseller:find_id(AccountId),
     BaseJObj = kz_doc:update_pvt_parameters(kz_json:new()
-                                           ,kz_util:format_account_db(AccountId)
+                                           ,kzs_util:format_account_db(AccountId)
                                            ,[{'account_id', AccountId}
                                             ,{'crossbar_doc_vsn', 2}
                                             ,{'id', AccountId}
@@ -936,24 +951,18 @@ handle_fetch_options(#kz_services{}=Services, ['skip_cache'|Options]) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec commit_updates(kz_term:ne_binary()
-                    ,kz_services_quantities:billables() | kz_services_quantities:billable()
-                    ,kz_services_quantities:billables() | kz_services_quantities:billable()
-                    ) -> services().
+-type billable_updates() :: 'undefined' | kz_services_quantities:billables() | kz_services_quantities:billable().
+
+-spec commit_updates(kz_term:ne_binary(), billable_updates(), billable_updates()) ->
+          services().
 commit_updates(Account, Current, Proposed) ->
     commit_updates(Account, Current, Proposed, kz_json:new()).
 
--spec commit_updates(kz_term:ne_binary()
-                    ,kz_services_quantities:billables() | kz_services_quantities:billable()
-                    ,kz_services_quantities:billables() | kz_services_quantities:billable()
-                    ,kz_json:object()
-                    ) -> services().
+-spec commit_updates(kz_term:ne_binary(), billable_updates(), billable_updates(), kz_json:object()) ->
+          services().
 commit_updates(Account, Current, Proposed, AuditLog) ->
-    AccountId = kz_util:format_account_id(Account),
-    FetchOptions = [{'updates', AccountId, to_billables(Current), to_billables(Proposed)}
-                   ,{'audit_log', add_audit_log_changes_account(AccountId, AuditLog)}
-                   ],
-    Services = fetch(AccountId, FetchOptions),
+    FetchOptions = fetch_options(Account, Current, Proposed, AuditLog),
+    Services = fetch(Account, FetchOptions),
 
     case should_skip_updates(Services) of
         'true' ->
@@ -963,7 +972,14 @@ commit_updates(Account, Current, Proposed, AuditLog) ->
             commit_updates(Services, FetchOptions)
     end.
 
--spec to_billables(kz_services_quantities:billables() | kz_services_quantities:billable()) -> kz_services_quantities:billables().
+-spec fetch_options(kz_term:ne_binary(), billable_updates(), billable_updates(), kz_json:object()) ->
+          fetch_options().
+fetch_options(Account, Current, Proposed, AuditLog) ->
+    [{'updates', Account, to_billables(Current), to_billables(Proposed)}
+    ,{'audit_log', add_audit_log_changes_account(Account, AuditLog)}
+    ].
+
+-spec to_billables(billable_updates()) -> kz_services_quantities:billables().
 to_billables('undefined') -> [];
 to_billables(Bs) when is_list(Bs) -> Bs;
 to_billables(B) -> [B].
@@ -1190,7 +1206,7 @@ reconcile(Account) ->
 
 -spec reconcile(kz_term:ne_binary(), kz_json:object()) -> services().
 reconcile(Account, AuditLog) ->
-    AccountId = kz_util:format_account_id(Account),
+    AccountId = kzs_util:format_account_id(Account),
     lager:debug("reconcile ~s", [AccountId]),
     FetchOptions = ['hydrate_account_quantities'
                    ,'hydrate_cascade_quantities'

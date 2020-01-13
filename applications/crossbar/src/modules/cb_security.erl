@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2019, 2600Hz
+%%% @copyright (C) 2010-2020, 2600Hz
 %%% @doc Kazoo authentication configuration API endpoint
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -25,7 +25,6 @@
 -define(DEFAULT_AUTH_METHODS, [<<"cb_api_auth">>
                               ,<<"cb_auth">>
                               ,<<"cb_ip_auth">>
-                              ,<<"cb_ubiquiti_auth">>
                               ,<<"cb_user_auth">>
                               ]).
 
@@ -68,8 +67,8 @@ init() ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec authorize(cb_context:context()) ->
-                       boolean() |
-                       {'stop', cb_context:context()}.
+          boolean() |
+          {'stop', cb_context:context()}.
 authorize(Context) ->
     authorize_list_available_module(Context, cb_context:req_nouns(Context), cb_context:req_verb(Context)).
 
@@ -80,8 +79,8 @@ authorize(_Context, _) -> 'true'.
 authorize(_Context, _, _) -> 'true'.
 
 -spec authorize_list_available_module(cb_context:context(), req_nouns(), http_method()) ->
-                                             boolean() |
-                                             {'stop', cb_context:context()}.
+          boolean() |
+          {'stop', cb_context:context()}.
 authorize_list_available_module(_Context, [{<<"security">>, []}], ?HTTP_GET) ->
     'true';
 authorize_list_available_module(Context, [{<<"security">>, []}], _) ->
@@ -216,7 +215,7 @@ maybe_flush_config(Context) ->
     case cb_context:fetch(Context, 'flush', 'false') of
         'true' ->
             kapps_account_config:flush(cb_context:account_id(Context), ?AUTH_CONFIG_CAT, <<"hierarchy_merge">>);
-        'false' -> Context
+        'false' -> 'ok'
     end.
 
 %%------------------------------------------------------------------------------
@@ -285,7 +284,7 @@ add_multi_factor_metadata(AuthModule, JObj, AuthConfig) ->
 
 -spec get_metadata(kz_term:ne_binary(), kz_term:ne_binary()) -> kz_term:api_object().
 get_metadata(AccountId, ConfigId) ->
-    case kz_datamgr:open_cache_doc(kz_util:format_account_db(AccountId), ConfigId) of
+    case kz_datamgr:open_cache_doc(kzs_util:format_account_db(AccountId), ConfigId) of
         {'ok', JObj} ->
             kz_json:from_list(
               [{<<"name">>, kz_json:get_value(<<"name">>, JObj)}
@@ -409,4 +408,9 @@ failed_multi_factor_validation(AuthModule, ErrMsg, Context) ->
 %%------------------------------------------------------------------------------
 -spec read_attempt_log(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 read_attempt_log(?MATCH_MODB_PREFIX(Year, Month, _)=AttemptId, Context) ->
-    crossbar_doc:load(AttemptId, cb_context:set_account_modb(Context, Year, Month), ?TYPE_CHECK_OPTION(?AUTH_ATTEMPT_TYPE)).
+    crossbar_doc:load(AttemptId
+                     ,cb_context:set_db_name(Context
+                                            ,kzs_util:format_account_id(cb_context:account_id(Context), Year, Month)
+                                            )
+                     ,?TYPE_CHECK_OPTION(?AUTH_ATTEMPT_TYPE)
+                     ).

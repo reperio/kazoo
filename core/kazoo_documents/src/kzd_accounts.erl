@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2019, 2600Hz
+%%% @copyright (C) 2010-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -761,28 +761,27 @@ set_zones_home(Doc, ZonesHome) ->
 type() -> <<"account">>.
 
 -spec fetch(kz_term:api_ne_binary()) ->
-                   {'ok', doc()} |
-                   kz_datamgr:data_error().
+          {'ok', doc()} |
+          kz_datamgr:data_error().
 fetch('undefined') ->
     {'error', 'invalid_db_name'};
 fetch(Account=?NE_BINARY) ->
     fetch(Account, 'account').
 
 -spec fetch(kz_term:api_ne_binary(), 'account' | 'accounts') ->
-                   {'ok', doc()} |
-                   kz_datamgr:data_error().
+          {'ok', doc()} |
+          kz_datamgr:data_error().
 fetch('undefined', _) ->
     {'error', 'invalid_db_name'};
 fetch(Account, 'account') ->
-    AccountId = kz_util:format_account_id(Account, 'raw'),
-    AccountDb = kz_util:format_account_id(Account, 'encoded'),
-    open_cache_doc(AccountDb, AccountId);
+    AccountId = kzs_util:format_account_id(Account),
+    open_cache_doc(AccountId, AccountId);
 fetch(AccountId, 'accounts') ->
     open_cache_doc(?KZ_ACCOUNTS_DB, AccountId).
 
 -spec open_cache_doc(kz_term:ne_binary(), kz_term:ne_binary()) ->
-                            {'ok', doc()} |
-                            kz_datamgr:data_error().
+          {'ok', doc()} |
+          kz_datamgr:data_error().
 open_cache_doc(Db, AccountId) ->
     Options = [{'cache_failures', 'false'}
               ,{'deleted', 'true'}
@@ -798,7 +797,7 @@ fetch_realm(Account) ->
     fetch_value(Account, fun realm/1).
 
 -spec fetch_value(kz_term:api_ne_binary(), fun((doc()) -> kz_json:json_term())) ->
-                         kz_json:api_json_term().
+          kz_json:api_json_term().
 fetch_value('undefined', _Getter) -> 'undefined';
 fetch_value(Account, Getter) ->
     case fetch(Account) of
@@ -1081,7 +1080,7 @@ get_authoritative_parent_id(AccountId) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec get_authoritative_parent_id(kz_term:api_ne_binary(), {'ok', kz_term:ne_binary()} | {'error', any()} | kz_term:ne_binary()) ->
-                                         kz_term:api_ne_binary().
+          kz_term:api_ne_binary().
 get_authoritative_parent_id(AccountId, {'ok', MasterAccountId}) ->
     get_authoritative_parent_id(AccountId, MasterAccountId);
 get_authoritative_parent_id(_AccountId, {'error', _}) ->
@@ -1259,8 +1258,8 @@ path_initial_call_sent() ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec save(doc()) ->
-                  {'ok', doc()} |
-                  kz_datamgr:data_error().
+          {'ok', doc()} |
+          kz_datamgr:data_error().
 save(AccountJObj) ->
     AccountDb = kz_doc:account_db(AccountJObj),
     case kz_datamgr:save_doc(AccountDb, AccountJObj) of
@@ -1273,8 +1272,8 @@ save(AccountJObj) ->
     end.
 
 -spec save_accounts_doc(doc()) ->
-                               {'ok', doc()} |
-                               kz_datamgr:data_error().
+          {'ok', doc()} |
+          kz_datamgr:data_error().
 save_accounts_doc(AccountDoc) ->
     case kz_datamgr:open_doc(?KZ_ACCOUNTS_DB, kz_doc:id(AccountDoc)) of
         {'error', 'not_found'} ->
@@ -1293,7 +1292,7 @@ save_accounts_doc(AccountDoc) ->
     end.
 
 -spec handle_saved_accounts_doc(doc(), kz_datamgr:data_error() | {'ok', doc()}) ->
-                                       kz_datamgr:data_error() | {'ok', doc()}.
+          kz_datamgr:data_error() | {'ok', doc()}.
 handle_saved_accounts_doc(AccountDoc, {'ok', _AccountsDoc}) ->
     lager:info("saved accounts doc ~s(~s)", [kz_doc:id(_AccountsDoc), kz_doc:revision(_AccountsDoc)]),
     {'ok', AccountDoc};
@@ -1302,11 +1301,11 @@ handle_saved_accounts_doc(_AccountDoc, Error) ->
     Error.
 
 -spec update(kz_term:ne_binary(), kz_json:flat_proplist()) ->
-                    {'ok', doc()} |
-                    kz_datamgr:data_error().
+          {'ok', doc()} |
+          kz_datamgr:data_error().
 update(?NE_BINARY = Account, UpdateProps) ->
-    AccountId = kz_util:format_account_id(Account, 'raw'),
-    AccountDb = kz_util:format_account_db(AccountId),
+    AccountId = kzs_util:format_account_id(Account),
+    AccountDb = kzs_util:format_account_db(AccountId),
 
     UpdateOptions = [{'update', UpdateProps}
                     ,{'ensure_saved', 'true'}
@@ -1337,8 +1336,8 @@ is_in_account_hierarchy(CheckFor, InAccount) ->
 is_in_account_hierarchy('undefined', _, _) -> 'false';
 is_in_account_hierarchy(_, 'undefined', _) -> 'false';
 is_in_account_hierarchy(CheckFor, InAccount, IncludeSelf) ->
-    CheckId = kz_util:format_account_id(CheckFor),
-    AccountId = kz_util:format_account_id(InAccount),
+    CheckId = kzs_util:format_account_id(CheckFor),
+    AccountId = kzs_util:format_account_id(InAccount),
     case (IncludeSelf
           andalso AccountId =:= CheckId
          )
@@ -1398,9 +1397,9 @@ is_alphanumeric(_) ->
 -type validation_error() :: {kz_json:path(), kz_term:ne_binary(), kz_json:object()}.
 -type validation_errors() :: [validation_error()].
 -spec validate(kz_term:api_ne_binary(), kz_term:api_ne_binary(), doc()) ->
-                      {'true', doc()} |
-                      {'validation_errors', validation_errors()} |
-                      {'system_error', atom()}.
+          {'true', doc()} |
+          {'validation_errors', validation_errors()} |
+          {'system_error', atom()}.
 validate(ParentId, AccountId, ReqJObj) ->
     ValidateFuns = [fun ensure_account_has_realm/2
                    ,fun ensure_account_has_timezone/2
@@ -1422,8 +1421,8 @@ validate(ParentId, AccountId, ReqJObj) ->
 -type validate_fun() :: fun((kz_term:api_ne_binary(), validate_acc()) -> validate_acc()).
 
 -spec do_validation(kz_term:api_ne_binary(), doc(), [validate_fun()]) ->
-                           {'true', doc()} |
-                           {'validation_errors', validation_errors()}.
+          {'true', doc()} |
+          {'validation_errors', validation_errors()}.
 do_validation(AccountId, ReqJObj, ValidateFuns) ->
     lists:foldl(fun(F, Acc) -> F(AccountId, Acc) end
                ,{ReqJObj, []}
@@ -1570,7 +1569,7 @@ validate_passed(_ParentId, _AccountId, {Doc, Errors}) ->
     {Doc, Errors}.
 
 -spec validate_account_schema(kz_term:api_ne_binary(), kz_term:api_ne_binary(), doc(), validation_errors(), kz_json:object()) ->
-                                     validate_acc().
+          validate_acc().
 validate_account_schema(ParentId, AccountId, Doc, ValidationErrors, SchemaJObj) ->
     Strict = ?SHOULD_FAIL_ON_INVALID_DATA,
     SystemSL = kapps_config:get_binary(<<"crossbar">>, <<"stability_level">>),
@@ -1594,7 +1593,7 @@ validate_account_schema(ParentId, AccountId, Doc, ValidationErrors, SchemaJObj) 
         end.
 
 -spec maybe_fix_js_types(kz_term:api_ne_binary(), kz_term:api_ne_binary(), doc(), validation_errors(), [jesse_error:error_reason()], kz_json:object()) ->
-                                validate_acc().
+          validate_acc().
 maybe_fix_js_types(ParentId, AccountId, Doc, ValidationErrors, SchemaErrors, SchemaJObj) ->
     case kz_json_schema:fix_js_types(Doc, SchemaErrors) of
         'false' -> validate_failed(Doc, ValidationErrors, SchemaErrors);

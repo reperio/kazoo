@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -119,7 +119,6 @@ verify_signature(Token) ->
     lager:info("unexpected/invalid jwt signature"),
     Token#{verify_result => 'false', verify_error => 'invalid_jwt'}.
 
-
 -spec verify_expiration(map()) -> map().
 verify_expiration(#{payload := #{<<"exp">> := Expiration}}=Token) ->
     case Expiration - epoch() > 0 of
@@ -152,8 +151,8 @@ alg_2_digest_type(_)           -> 'undefined'.
 epoch() -> erlang:system_time('seconds').
 
 -spec encode(kz_term:proplist() | map()) ->
-                    {'ok', kz_term:ne_binary()} |
-                    {'error', any()}.
+          {'ok', kz_term:ne_binary()} |
+          {'error', any()}.
 encode(Claims) when is_list(Claims) ->
     case props:get_value(<<"iss">>, Claims) of
         'undefined' -> {'error', 'no_issuer'};

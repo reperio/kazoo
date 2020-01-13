@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% @author Peter Defebvre
 %%% @author Roman Galeev
@@ -71,7 +71,7 @@ validate(Context, #{keys := Keys}) ->
 bindings(_Context, #{account_id := AccountId
                     ,keys := [Action, Type]
                     }=Map) ->
-    AccountDb = kz_util:format_account_db(AccountId),
+    AccountDb = kzs_util:format_account_db(AccountId),
     AccountMODB = kazoo_modb:get_modb(AccountId),
     Requested = ?OBJECT(Action, Type),
     Map#{requested => Requested

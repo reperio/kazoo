@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2019, 2600Hz
+%%% @copyright (C) 2010-2020, 2600Hz
 %%% @doc Mailbox message document manipulation
 %%% @author Hesaam Farhang
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -25,6 +25,7 @@
 
         ,change_message_name/2, change_to_sip_field/3
 
+        ,length/1
         ,media_id/1, set_media_id/2, update_media_id/2
         ,metadata/1, metadata/2, set_metadata/2
         ,source_id/1, set_source_id/2
@@ -176,7 +177,7 @@ message_name(BoxNum, {{Y,M,D},{H,I,S}}, TZ) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec build_metadata_object(pos_integer(), kapps_call:call(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), kz_time:gregorian_seconds()) ->
-                                   doc().
+          doc().
 build_metadata_object(Length, Call, MediaId, CIDNumber, CIDName, Timestamp) ->
     kz_json:from_list(
       [{?KEY_MEDIA_ID, MediaId}
@@ -266,6 +267,10 @@ message_history(JObj) ->
 -spec add_message_history(kz_term:ne_binary(), doc()) -> doc().
 add_message_history(History, JObj) ->
     kz_json:set_value(?KEY_HISTORY, message_history(JObj) ++ [History], JObj).
+
+-spec length(doc()) -> integer().
+length(JObj) ->
+    kz_json:get_value(?KEY_META_LENGTH, JObj).
 
 -spec message_name(doc()) -> kz_term:api_binary().
 message_name(JObj) ->

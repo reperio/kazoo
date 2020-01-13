@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2019, 2600Hz
+%%% @copyright (C) 2013-2020, 2600Hz
 %%% @doc
 %%% @author Peter Defebvre
 %%%
@@ -14,7 +14,9 @@
 -export([from_json/1
         ,to_json/1
         ]).
--export([find_webhooks/2]).
+-export([find_webhooks/2
+        ,delete_account_webhooks/1
+        ]).
 -export([fire_hooks/2]).
 -export([init_webhooks/0
         ,init_webhook_db/0
@@ -113,6 +115,7 @@ find_webhooks(HookEvent, AccountId) ->
     end.
 
 find_webhooks(HookEvent, AccountId, Accounts) ->
+    lager:debug("finding ~s in ~s(~p)", [HookEvent, AccountId, Accounts]),
     match_account_webhooks(HookEvent, AccountId) ++
         lists:foldl(fun(ParentId, Acc) ->
                             Acc ++ match_subaccount_webhooks(HookEvent, ParentId)
@@ -120,6 +123,15 @@ find_webhooks(HookEvent, AccountId, Accounts) ->
                    ,[]
                    ,Accounts
                    ).
+
+%% must be called from webhooks_listener
+-spec delete_account_webhooks(kz_term:ne_binary()) -> non_neg_integer().
+delete_account_webhooks(AccountId) ->
+    MatchSpec = [{#webhook{account_id = '$1', _='_'}
+                 ,[{'=:=', '$1', {'const', AccountId}}]
+                 ,['true']
+                 }],
+    ets:select_delete(table_id(), MatchSpec).
 
 match_account_webhooks(HookEvent, AccountId) ->
     MatchSpec = [{#webhook{account_id = '$1'
@@ -220,7 +232,7 @@ do_fire(#webhook{uri = ?NE_BINARY = URI
     Fired = kz_http:get(Url, Headers, ?HTTP_OPTS),
     handle_resp(Hook, EventId, JObj, Debug, Fired);
 do_fire(#webhook{uri = ?NE_BINARY = URI
-                ,http_verb = 'post'
+                ,http_verb = Verb
                 ,retries = Retries
                 ,hook_event = _HookEvent
                 ,hook_id = _HookId
@@ -228,19 +240,22 @@ do_fire(#webhook{uri = ?NE_BINARY = URI
                 } = Hook
        ,EventId
        ,JObj
-       ) ->
-    lager:debug("sending hook ~s(~s) with interaction id ~s via 'post' (retries ~b): ~s", [_HookEvent, _HookId, EventId, Retries, URI]),
+       ) when Verb =:= 'put'
+              orelse Verb =:= 'post' ->
+    lager:debug("sending hook ~s(~s) with interaction id ~s via '~s' (retries ~b): ~s"
+               ,[_HookEvent, _HookId, EventId, Verb, Retries, URI]
+               ),
 
     Body = kz_http_util:json_to_querystring(JObj),
     Headers = [{"Content-Type", "application/x-www-form-urlencoded"}
                | ?HTTP_REQ_HEADERS(Hook)
               ],
     Debug = debug_req(Hook, EventId, URI, Headers, Body),
-    Fired = kz_http:post(URI, Headers, Body, ?HTTP_OPTS),
+    Fired = kz_http:req(Verb, URI, Headers, Body, ?HTTP_OPTS),
 
     handle_resp(Hook, EventId, JObj, Debug, Fired);
 do_fire(#webhook{uri = ?NE_BINARY = URI
-                ,http_verb = 'post'
+                ,http_verb = Verb
                 ,retries = Retries
                 ,hook_event = _HookEvent
                 ,hook_id = _HookId
@@ -248,34 +263,63 @@ do_fire(#webhook{uri = ?NE_BINARY = URI
                 } = Hook
        ,EventId
        ,JObj
-       ) ->
-    lager:debug("sending hook ~s(~s) with interaction id ~s via 'post' (retries ~b): ~s", [_HookEvent, _HookId, EventId, Retries, URI]),
+       ) when Verb =:= 'put'
+              orelse Verb =:= 'post' ->
+    lager:debug("sending hook ~s(~s) with interaction id ~s via '~s' (retries ~b): ~s"
+               ,[_HookEvent, _HookId, EventId, Verb, Retries, URI]
+               ),
 
     Body = kz_json:encode(JObj, ['pretty']),
     Headers = [{"Content-Type", "application/json"}
                | ?HTTP_REQ_HEADERS(Hook)
               ],
     Debug = debug_req(Hook, EventId, URI, Headers, Body),
-    Fired = kz_http:post(URI, Headers, Body, ?HTTP_OPTS),
+    Fired = kz_http:req(Verb, URI, Headers, Body, ?HTTP_OPTS),
 
     handle_resp(Hook, EventId, JObj, Debug, Fired).
 
 -spec handle_resp(webhook(), kz_term:ne_binary(), kz_json:object(), kz_term:proplist(), kz_http:ret()) -> 'ok'.
 handle_resp(#webhook{hook_event = _HookEvent
                     ,hook_id = _HookId
-                    } = Hook, _EventId, _JObj, Debug, {'ok', 200, _, _} = Resp) ->
+                    } = Hook
+           ,_EventId
+           ,_JObj
+           ,Debug
+           ,{'ok', 200, _, _} = Resp
+           ) ->
     lager:debug("sent hook call event ~s(~s) with interaction id ~s successfully", [_HookEvent, _HookId, _EventId]),
     successful_hook(Hook, Debug, Resp);
 handle_resp(#webhook{hook_event = _HookEvent
                     ,hook_id = _HookId
-                    } = Hook, _EventId, _JObj, Debug, {'ok', RespCode, _, _} = Resp) ->
+                    ,http_verb = 'put'
+                    } = Hook
+           ,_EventId
+           ,_JObj
+           ,Debug
+           ,{'ok', 201, _, _} = Resp
+           ) ->
+    lager:debug("sent hook call event ~s(~s) with interaction id ~s successfully", [_HookEvent, _HookId, _EventId]),
+    successful_hook(Hook, Debug, Resp);
+handle_resp(#webhook{hook_event = _HookEvent
+                    ,hook_id = _HookId
+                    } = Hook
+           ,_EventId
+           ,_JObj
+           ,Debug
+           ,{'ok', RespCode, _, _} = Resp
+           ) ->
     _ = failed_hook(Hook, Debug, Resp),
     lager:debug("non-200 response code: ~p on account ~s for event ~s(~s) with interaction id ~s"
                ,[RespCode, Hook#webhook.account_id, _HookEvent, _HookId, _EventId]
                );
 handle_resp(#webhook{hook_event = _HookEvent
                     ,hook_id = _HookId
-                    } = Hook, EventId, JObj, Debug, {'error', _E} = Resp) ->
+                    } = Hook
+           ,EventId
+           ,JObj
+           ,Debug
+           ,{'error', _E} = Resp
+           ) ->
     lager:debug("failed to fire hook event ~s(~s) interaction id: ~p error: ~p", [_HookEvent, _HookId, EventId, _E]),
     _ = failed_hook(Hook, Debug, Resp),
     retry_hook(Hook, EventId, JObj).
@@ -285,7 +329,10 @@ retry_hook(#webhook{uri = _URI
                    ,retries = 1
                    ,hook_id = _HookId
                    ,hook_event = _HookEvent
-                   }, _EventId, _JObj) ->
+                   }
+          ,_EventId
+          ,_JObj
+          ) ->
     lager:debug("retries exhausted for event ~s(~s) with interaction id ~s for uri (~s)", [_HookEvent, _HookId, _EventId, _URI]);
 retry_hook(#webhook{retries = Retries} = Hook, EventId, JObj) ->
     timer:sleep(2000),
@@ -305,7 +352,10 @@ successful_hook(#webhook{account_id = AccountId}, Debug, Resp, 'true') ->
 failed_hook(#webhook{hook_id = HookId
                     ,account_id = AccountId
                     ,retries = Retries
-                    }, Debug, Resp) ->
+                    }
+           ,Debug
+           ,Resp
+           ) ->
     note_failed_attempt(AccountId, HookId),
     DebugJObj = debug_resp(Resp, Debug, Retries),
     save_attempt(AccountId, DebugJObj).
@@ -321,7 +371,7 @@ failed_hook(#webhook{hook_id = HookId
 -spec save_attempt(kz_term:api_binary(), kz_json:object()) -> 'ok'.
 save_attempt(AccountId, Attempt) ->
     Now = kz_time:now_s(),
-    ModDb = kz_util:format_account_mod_id(AccountId, Now),
+    ModDb = kzs_util:format_account_mod_id(AccountId, Now),
 
     Doc = kz_json:set_values(
             props:filter_undefined(
@@ -335,7 +385,7 @@ save_attempt(AccountId, Attempt) ->
     'ok'.
 
 -spec debug_req(webhook(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:proplist(), iodata()) ->
-                       kz_term:proplist().
+          kz_term:proplist().
 debug_req(#webhook{hook_id=HookId
                   ,hook_event = HookEvent
                   ,http_verb = Method
@@ -356,7 +406,7 @@ debug_req(#webhook{hook_id=HookId
     ].
 
 -spec debug_resp(kz_http:ret(), kz_term:proplist(), hook_retries() | 'undefined') ->
-                        kz_json:object().
+          kz_json:object().
 debug_resp({'ok', RespCode, RespHeaders, RespBody}, Debug, Retries) ->
     Headers = kz_json:from_list(
                 [{fix_value(K), fix_value(V)}
@@ -641,7 +691,7 @@ init_webhooks(WebHooks, Year, Month) ->
 
 -spec init_webhook(kz_json:object(), kz_time:year(), kz_time:month()) -> 'ok'.
 init_webhook(WebHook, Year, Month) ->
-    Db = kz_util:format_account_id(kz_json:get_value(<<"key">>, WebHook), Year, Month),
+    Db = kzs_util:format_account_id(kz_json:get_value(<<"key">>, WebHook), Year, Month),
     kazoo_modb:maybe_create(Db),
     lager:debug("updated account_modb ~s", [Db]).
 
@@ -689,7 +739,7 @@ reenable(AccountId, <<"descendants">>) ->
 
 -spec enable_account_hooks(kz_term:ne_binary()) -> 'ok'.
 enable_account_hooks(Account) ->
-    AccountId = kz_util:format_account_id(Account, 'raw'),
+    AccountId = kzs_util:format_account_id(Account),
 
     case kz_datamgr:get_results(?KZ_WEBHOOKS_DB
                                ,<<"webhooks/accounts_listing">>
@@ -725,7 +775,7 @@ hooks_to_reenable(Hooks) ->
 
 -spec enable_descendant_hooks(kz_term:ne_binary()) -> 'ok'.
 enable_descendant_hooks(Account) ->
-    AccountId = kz_util:format_account_id(Account, 'raw'),
+    AccountId = kzs_util:format_account_id(Account),
     case kz_datamgr:get_results(?KZ_ACCOUNTS_DB
                                ,<<"accounts/listing_by_descendants">>
                                ,[{'startkey', [AccountId]}

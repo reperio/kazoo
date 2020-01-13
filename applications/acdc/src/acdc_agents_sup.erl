@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
 %%% @author Daniel Finke
@@ -67,7 +67,7 @@ new(JObj) ->
 
 -spec new(kz_term:ne_binary(), kz_term:ne_binary()) -> kz_types:sup_startchild_ret().
 new(AcctId, AgentId) ->
-    {'ok', JObj} = kz_datamgr:open_doc(kz_util:format_account_id(AcctId, 'encoded'), AgentId),
+    {'ok', JObj} = kz_datamgr:open_doc(kzs_util:format_account_db(AcctId), AgentId),
     start_agent(AcctId, AgentId, JObj).
 
 -spec new(kz_term:ne_binary(), kz_term:ne_binary(), kz_json:object(), kz_term:ne_binaries()) -> kz_types:sup_startchild_ret().

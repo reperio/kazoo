@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -41,15 +41,15 @@ get_json_from_url(Url, ReqHeaders) ->
     end.
 
 -spec fetch_access_code(kz_term:ne_binary() | map(), kz_term:ne_binary() ) ->
-                               {'ok', kz_json:object()} |
-                               {'error', any()}.
+          {'ok', kz_json:object()} |
+          {'error', any()}.
 fetch_access_code(AppId, AuthorizationCode) ->
     fetch_access_code(AppId, AuthorizationCode, <<"postmessage">>).
 
 
 -spec fetch_access_code(kz_term:ne_binary() | map(), kz_term:ne_binary(), kz_term:ne_binary()) ->
-                               {'ok', kz_json:object()} |
-                               {'error', any()}.
+          {'ok', kz_json:object()} |
+          {'error', any()}.
 fetch_access_code(AppId, AuthorizationCode, RedirectUri)
   when is_binary(AppId) ->
     lager:debug("getting auth-app ~p",[AppId]),

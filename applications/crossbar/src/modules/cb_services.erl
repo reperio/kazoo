@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc
 %%% @author Peter Defebvre
 %%% @author Karl Anderson
@@ -172,7 +172,7 @@ to_csv({Req, Context}) ->
     {Req, to_response(Context, <<"csv">>, cb_context:req_nouns(Context))}.
 
 -spec to_response(cb_context:context(), kz_term:ne_binary(), req_nouns()) ->
-                         cb_context:context().
+          cb_context:context().
 to_response(Context, _, [{<<"services">>, [?SUMMARY]}, {?KZ_ACCOUNTS_DB, _}|_]) ->
     JObj = cb_context:resp_data(Context),
     case kz_json:get_list_value(<<"invoices">>, JObj, []) of
@@ -214,7 +214,7 @@ validate(Context, ?AVAILABLE) ->
     %% NOTE: list service plans available to this account for selection
     AccountId = cb_context:account_id(Context),
     ResellerId = kz_services_reseller:get_id(AccountId),
-    ResellerDb = kz_util:format_account_id(ResellerId, 'encoded'),
+    ResellerDb = kzs_util:format_account_db(ResellerId),
     Options =
         case kz_term:is_true(cb_context:req_value(Context, <<"details">>, 'false')) of
             'false' -> [];
@@ -222,7 +222,7 @@ validate(Context, ?AVAILABLE) ->
         end,
     crossbar_doc:load_view(?CB_LIST
                           ,Options
-                          ,cb_context:set_account_db(Context, ResellerDb)
+                          ,cb_context:set_db_name(Context, ResellerDb)
                           ,fun normalize_available_view_results/2
                           );
 validate(Context, ?SUMMARY) ->
@@ -264,7 +264,7 @@ validate(Context, ?AUDIT, ?MATCH_MODB_PREFIX(Year, Month, _)=AuditId) ->
     %% NOTE: show a billing audit log
     AccountId = cb_context:account_id(Context),
     AccountDb = kazoo_modb:get_modb(AccountId, kz_term:to_integer(Year), kz_term:to_integer(Month)),
-    Context1 = cb_context:set_account_db(Context, AccountDb),
+    Context1 = cb_context:set_db_name(Context, AccountDb),
     crossbar_doc:load(AuditId, Context1, ?TYPE_CHECK_OPTION(<<"audit_log">>));
 validate(Context, ?AUDIT, AuditId) ->
     ErrorCause = kz_json:from_list([{<<"cause">>, AuditId}]),
@@ -675,7 +675,7 @@ pipe_services(Context, Routines, RespFunction) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec normalize_available_view_results(kz_json:object(), kz_json:objects()) ->
-                                              kz_json:objects().
+          kz_json:objects().
 normalize_available_view_results(JObj, Acc) ->
     case kz_json:get_ne_json_value(<<"doc">>, JObj) of
         'undefined' -> [kz_json:get_json_value(<<"value">>, JObj)|Acc];
@@ -687,7 +687,7 @@ normalize_available_view_results(JObj, Acc) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec normalize_audit_view_results(kz_json:object(), kz_json:objects()) ->
-                                          kz_json:objects().
+          kz_json:objects().
 normalize_audit_view_results(JObj, Acc) ->
     [kz_json:get_json_value(<<"value">>, JObj)|Acc].
 
@@ -777,10 +777,10 @@ check_plan_ids(Context, ResellerId, PlanIds) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec check_plan_id(cb_context:context(), path_token(), kz_term:ne_binary()) ->
-                           cb_context:context().
+          cb_context:context().
 check_plan_id(Context, PlanId, ResellerId) ->
-    ResellerDb = kz_util:format_account_id(ResellerId, 'encoded'),
-    crossbar_doc:load(PlanId, cb_context:set_account_db(Context, ResellerDb), ?TYPE_CHECK_OPTION(kzd_service_plan:type())).
+    ResellerDb = kzs_util:format_account_db(ResellerId),
+    crossbar_doc:load(PlanId, cb_context:set_db_name(Context, ResellerDb), ?TYPE_CHECK_OPTION(kzd_service_plan:type())).
 
 -spec maybe_forbid_delete(cb_context:context()) -> cb_context:context().
 maybe_forbid_delete(Context) ->

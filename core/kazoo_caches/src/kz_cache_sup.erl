@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2019, 2600Hz
+%%% @copyright (C) 2010-2020, 2600Hz
 %%% @doc Supervisor for started caches
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -80,7 +80,7 @@ init([Name, ExpirePeriod, Props]) ->
 
 
 -spec maybe_add_child_spec(atom(), atom(), kz_cache:start_options(), kz_types:sup_child_specs()) ->
-                                  kz_types:sup_child_specs().
+          kz_types:sup_child_specs().
 maybe_add_child_spec('kz_cache_conf_change', Name, Props, Children) ->
     case props:get_value('origin_bindings', Props) of
         'undefined' -> Children;

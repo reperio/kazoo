@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2019, 2600Hz
+%%% @copyright (C) 2010-2020, 2600Hz
 %%% @doc stepswitch routing WhApp entry module
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -46,5 +46,4 @@ declare_exchanges() ->
     _ = kapi_offnet_resource:declare_exchanges(),
     _ = kapi_resource:declare_exchanges(),
     _ = kapi_route:declare_exchanges(),
-    _ = kapi_sms:declare_exchanges(),
     kapi_self:declare_exchanges().

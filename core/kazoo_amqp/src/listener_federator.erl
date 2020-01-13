@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2019, 2600Hz
+%%% @copyright (C) 2013-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -47,7 +47,8 @@
 %%------------------------------------------------------------------------------
 -spec start_link(pid(), kz_term:ne_binary(), kz_term:proplist()) -> kz_types:startlink_ret().
 start_link(Parent, Broker, Params) ->
-    gen_listener:start_link(?SERVER, Params, [Parent, Broker]).
+    ParentCallId = kz_log:get_callid(),
+    gen_listener:start_link(?SERVER, Params, [Parent, ParentCallId, Broker]).
 
 -spec broker(kz_types:server_ref()) -> kz_term:ne_binary().
 broker(Pid) ->
@@ -66,10 +67,14 @@ stop(Pid) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec init([pid() | kz_term:ne_binary()]) -> {'ok', state()}.
-init([Parent, Broker]=L) ->
-    lager:debug("federating listener ~p on broker ~s", L),
+init([Parent, ParentCallId, Broker]=L) ->
+    lager:debug("federating listener ~p(~s) on broker ~s", L),
     _ = kz_amqp_channel:consumer_broker(Broker),
     Zone = kz_term:to_binary(kz_amqp_connections:broker_zone(Broker)),
+
+    CallId = kz_binary:join([ParentCallId, Zone], <<"-">>),
+    kz_log:put_callid(CallId),
+
     {'ok', #state{parent=Parent
                  ,broker=Broker
                  ,zone=Zone

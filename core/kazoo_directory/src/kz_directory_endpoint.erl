@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -136,9 +136,10 @@ set_invite_uri(URIUser, Realm, CCVs) ->
 
 -type invite_uri_fun() :: fun((kz_term:ne_binary()) -> kz_term:ne_binary()).
 
--spec set_invite_uri(invite_uri_fun(), kz_term:api_ne_binary(), kz_term:ne_binary(), kz_json:object()) -> kz_json:object().
-set_invite_uri(_Fun, 'undefined', _Realm, CCVs) -> CCVs;
-set_invite_uri(Fun, URIUser, Realm, CCVs) ->
+-spec set_invite_uri(invite_uri_fun(), kz_term:api_ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), kz_json:object()) -> kz_json:object().
+set_invite_uri(_Fun, 'undefined', RuntimeContextField, Realm, CCVs) ->
+    set_invite_uri(<<"${kz_ctx_request_", RuntimeContextField/binary, "}">>, Realm, CCVs);
+set_invite_uri(Fun, URIUser, _RuntimeContextField, Realm, CCVs) ->
     set_invite_uri(Fun(URIUser), Realm, CCVs).
 
 -spec invite_uri(kz_json:object(), kz_json:object()) -> kz_json:object().
@@ -146,9 +147,9 @@ invite_uri(Endpoint, CCVs) ->
     Realm = get_realm(Endpoint),
     case kzd_devices:sip_invite_format(Endpoint) of
         <<"route">> -> set_invite_uri(kzd_devices:sip_route(Endpoint), CCVs);
-        <<"e164">> -> set_invite_uri(fun knm_converters:normalize/1, kzd_devices:sip_number(Endpoint), Realm, CCVs);
-        <<"1npan">> -> set_invite_uri(fun knm_converters:to_1npan/1, kzd_devices:sip_number(Endpoint), Realm, CCVs);
-        <<"npan">> -> set_invite_uri(fun knm_converters:to_npan/1, kzd_devices:sip_number(Endpoint), Realm, CCVs);
+        <<"e164">> -> set_invite_uri(fun knm_converters:normalize/1, kzd_devices:sip_number(Endpoint), <<"e164">>, Realm, CCVs);
+        <<"1npan">> -> set_invite_uri(fun knm_converters:to_1npan/1, kzd_devices:sip_number(Endpoint), <<"1npan">>, Realm, CCVs);
+        <<"npan">> -> set_invite_uri(fun knm_converters:to_npan/1, kzd_devices:sip_number(Endpoint), <<"npan">>, Realm, CCVs);
         <<"contact">> -> set_invite_uri(kzd_devices:sip_username(Endpoint), Realm, CCVs);
         <<"username">> -> set_invite_uri(kzd_devices:sip_username(Endpoint), Realm, CCVs)
     end.
@@ -263,7 +264,7 @@ profile(EndpointId, AccountId, Options) ->
 generate_ccvs(_EndpointId, AccountId, Endpoint) ->
     Realm = kzd_devices:sip_realm(Endpoint,  kz_json:get_value(<<"realm">>, Endpoint)),
     Props = [{<<"Account-ID">>, AccountId}
-            ,{<<"Reseller-ID">>, kzd_accounts:reseller_id(AccountId)}
+            ,{<<"Reseller-ID">>, kz_services_reseller:get_id(AccountId)}
             ,{<<"Realm">>, Realm}
             ,{<<"Username">>, kzd_devices:sip_username(Endpoint)}
             ,{<<"SIP-Invite-Domain">>, Realm}

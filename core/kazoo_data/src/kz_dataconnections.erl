@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -110,11 +110,11 @@ get_server(Tag) ->
     end.
 
 -spec test_conn() -> {'ok', kz_json:object()} |
-                     {'error', any()}.
+          {'error', any()}.
 test_conn() -> test_conn(<<"local">>).
 
 -spec test_conn(kz_term:ne_binary()) -> {'ok', kz_json:object()} |
-                                        {'error', any()}.
+          {'error', any()}.
 test_conn(Tag) ->
     case get_server(Tag) of
         'undefined' -> {'error', 'server_not_available'};

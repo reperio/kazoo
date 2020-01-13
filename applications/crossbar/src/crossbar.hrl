@@ -117,7 +117,6 @@
                          ,'cb_sms'
                          ,'cb_system_configs'
                          ,'cb_tasks'
-                         ,'cb_templates'
                          ,'cb_temporal_rules'
                          ,'cb_temporal_rules_sets'
                          ,'cb_token_auth'
@@ -131,9 +130,17 @@
                          ,'cb_whitelabel'
                          ]).
 
--define(DEPRECATED_MODULES, ['cb_local_resources'
+-define(DEPRECATED_MODULES, ['cb_bulk'
+                            ,'cb_freeswitch'
+                            ,'cb_global_provisioner_templates'
                             ,'cb_global_resources'
+                            ,'cb_local_provisioner_templates'
+                            ,'cb_local_resources'
+                            ,'cb_onboard'
+                            ,'cb_shared_auth'
                             ,'cb_signup'
+                            ,'cb_templates'
+                            ,'cb_ubiquiti_auth'
                             ]).
 
 -record(cb_context, {content_types_provided = [] :: crossbar_content_handlers()
@@ -160,7 +167,7 @@
                     ,device_id :: kz_term:api_ne_binary()   % Will be loaded in validate stage for endpoints such as /accounts/{acct-id}/devices/{device-id}/*
                     ,reseller_id :: kz_term:api_ne_binary()
                     ,db_name :: kz_term:api_binary() | kz_term:ne_binaries()
-                    ,doc :: kz_term:api_object() | kz_json:objects()
+                    ,doc :: kz_json:api_json_term()
                     ,pretty_print = 'false' :: boolean()
                     ,resp_expires = {{1999,1,1},{0,0,0}} :: kz_time:datetime()
                     ,resp_etag :: 'automatic' | string() | kz_term:api_binary()
@@ -183,7 +190,7 @@
                     ,client_ip = <<"127.0.0.1">> :: kz_term:api_ne_binary()
                     ,load_merge_bypass :: kz_term:api_object()
                     ,profile_id :: kz_term:api_ne_binary()
-                    ,api_version = ?VERSION_1 :: kz_term:ne_binary()
+                    ,api_version = ?VERSION_2 :: kz_term:ne_binary()
                     ,magic_pathed = 'false' :: boolean()
                     ,should_paginate :: kz_term:api_boolean()
                     ,host_url = <<>> :: binary()
@@ -206,10 +213,6 @@
                                ,{<<"connectivity">>, <<"sys_info">>}
                                ,{<<"directories">>, <<"directory">>}
                                ,{<<"faxes">>, <<"fax">>}
-                               ,{<<"global_provisioner_templates">>, <<"provisioner_template">>}
-                               ,{<<"global_resources">>, <<"resource">>}
-                               ,{<<"local_provisioner_templates">>, <<"provisioner_template">>}
-                               ,{<<"local_resources">>, <<"resource">>}
                                ,{<<"rate_limit">>, <<"resource">>}
                                ,{<<"sms">>, <<"sms">>}
                                ,{<<"phone_numbers">>, <<"phone_numbers">>} %% weird...

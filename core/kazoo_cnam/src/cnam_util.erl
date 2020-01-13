@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -33,7 +33,7 @@ normalize_proplist(Props) ->
     [normalize_proplist_element(Elem) || Elem <- Props].
 
 -spec normalize_proplist_element({kz_term:proplist_key(), kz_term:proplist_value()}) ->
-                                        {kz_term:proplist_key(), kz_term:proplist_value()}.
+          {kz_term:proplist_key(), kz_term:proplist_value()}.
 normalize_proplist_element({K, V}) when is_list(V) ->
     {normalize_value(K), normalize_proplist(V)};
 normalize_proplist_element({K, V}) when is_binary(V) ->

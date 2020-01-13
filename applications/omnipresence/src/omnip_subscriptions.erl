@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2019, 2600Hz
+%%% @copyright (C) 2013-2020, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
 %%%
@@ -294,8 +294,8 @@ expire_old_subscriptions() ->
                                    }]).
 
 -spec find_subscription(kz_term:ne_binary()) ->
-                               {'ok', subscription()} |
-                               {'error', 'not_found'}.
+          {'ok', subscription()} |
+          {'error', 'not_found'}.
 find_subscription(CallId) ->
     case ets:lookup(table_id(), CallId) of
         [] -> {'error', 'not_found'};
@@ -303,8 +303,8 @@ find_subscription(CallId) ->
     end.
 
 -spec find_user_subscriptions(kz_term:ne_binary(), kz_term:ne_binary()) ->
-                                     {'ok', subscriptions()} |
-                                     {'error', 'not_found'}.
+          {'ok', subscriptions()} |
+          {'error', 'not_found'}.
 find_user_subscriptions(?OMNIPRESENCE_EVENT_ALL, User) ->
     U = kz_term:to_lower_binary(User),
     MatchSpec = [{#omnip_subscription{normalized_from='$1'
@@ -326,7 +326,7 @@ find_user_subscriptions(Event, User) ->
     find_subscriptions(MatchSpec).
 
 -spec find_subscriptions(ets:match_spec()) -> {'ok', subscriptions()} |
-                                              {'error', 'not_found'}.
+          {'error', 'not_found'}.
 find_subscriptions(MatchSpec) ->
     try ets:select(table_id(), MatchSpec) of
         [] -> {'error', 'not_found'};
@@ -469,7 +469,7 @@ maybe_probe(_, {<<"message-summary">> = Package, Username, Realm, _}) ->
 maybe_probe(_, {<<"dialog">>, <<"*", _/binary>> = Username, Realm, _}) ->
     case kapps_util:get_account_by_realm(Realm) of
         {'ok', Account} ->
-            VM = ?VM_NUMBER(kz_util:format_account_id(Account)),
+            VM = ?VM_NUMBER(kzs_util:format_account_id(Account)),
             S = size(VM),
             case Username of
                 <<VM:S/binary, New/binary>> -> omnip_util:request_probe(<<"message-summary">>, New, Realm);

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2016-2019, 2600Hz
+%%% @copyright (C) 2016-2020, 2600Hz
 %%% @doc data adapter behaviour
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -171,8 +171,8 @@ doc_acct_id(Db, Doc) ->
 
 -spec maybe_account_id_from_db(atom(), kz_term:ne_binary()) -> kz_term:api_binary().
 maybe_account_id_from_db('account', Db) ->
-    kz_util:format_account_id(Db);
+    kzs_util:format_account_id(Db);
 maybe_account_id_from_db('modb', Db) ->
-    kz_util:format_account_id(Db);
+    kzs_util:format_account_id(Db);
 maybe_account_id_from_db(_, _) ->
     'undefined'.

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2019, 2600Hz
+%%% @copyright (C) 2010-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -114,7 +114,7 @@ maybe_load_fcm(App, _, 'undefined', _) ->
     lager:debug("firebase pusher api_key for app ~s not found", [App]),
     'undefined';
 maybe_load_fcm(App, ETS, APIKey, Envelope) ->
-    case fcm:start(kz_term:to_atom(App, 'true'), APIKey) of
+    case fcm:start(kz_term:to_atom(<<"fcm_", App/binary>>, 'true'), kz_term:to_list(APIKey)) of
         {'ok', Pid} ->
             ets:insert(ETS, {App, {Pid, Envelope}}),
             {Pid, Envelope};

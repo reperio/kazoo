@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2019, 2600Hz
+%%% @copyright (C) 2010-2020, 2600Hz
 %%% @doc Account document
 %%% @author Peter Defebvre
 %%% @author Karl Anderson
@@ -295,4 +295,4 @@ fetch('undefined', _) ->
 fetch(_, 'undefined') ->
     {'error', 'app_id_undefined'};
 fetch(Account, Id) ->
-    kz_datamgr:open_cache_doc(kz_util:format_account_db(Account), Id).
+    kz_datamgr:open_cache_doc(kzs_util:format_account_db(Account), Id).

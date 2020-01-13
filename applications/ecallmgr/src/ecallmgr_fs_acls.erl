@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2019, 2600Hz
+%%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -104,7 +104,7 @@ system(Node) ->
     kapps_config:fetch_current(?APP_NAME, <<"acls">>, kz_json:new(), Node).
 
 -spec collect(kz_json:object(), kz_term:pid_refs()) ->
-                     kz_json:object().
+          kz_json:object().
 collect(ACLs, PidRefs) ->
     collect(ACLs, PidRefs, request_timeout()).
 
@@ -113,7 +113,7 @@ request_timeout() ->
     ?REQUEST_TIMEOUT + ?REQUEST_TIMEOUT_FUDGE.
 
 -spec collect(kz_json:object(), kz_term:pid_refs(), timeout()) ->
-                     kz_json:object().
+          kz_json:object().
 collect(ACLs, [], _Timeout) ->
     lager:debug("acls built with ~p ms to spare", [_Timeout]),
     ACLs;

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2019, 2600Hz
+%%% @copyright (C) 2010-2020, 2600Hz
 %%%
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -197,6 +197,6 @@ find_account_id(ConfChange) ->
 find_account_id(Classification, DB, _Id)
   when Classification =:= 'account';
        Classification =:= 'modb' ->
-    kz_util:format_account_id(DB, 'raw');
+    kzs_util:format_account_id(DB);
 find_account_id('aggregate', ?KZ_ACCOUNTS_DB, Id) -> Id;
 find_account_id(_, _, _) -> 'undefined'.

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2015-2019, 2600Hz
+%%% @copyright (C) 2015-2020, 2600Hz
 %%% @doc
 %%% @author SIPLABS, LLC (Ilya Ashchepkov)
 %%%
@@ -40,7 +40,7 @@ check(AccountId, VMBoxId) ->
         'false' -> lager:info("no unread messages");
         'true' ->
             lager:info("found unread messages"),
-            AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
+            AccountDb = kzs_util:format_account_db(AccountId),
             handle_req(kz_json:from_list([{<<"Account-ID">>, AccountId}
                                          ,{<<"Account-DB">>, AccountDb}
                                          ,{<<"Voicemail-Box">>, VMBoxId}

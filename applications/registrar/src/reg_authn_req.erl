@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2019, 2600Hz
+%%% @copyright (C) 2011-2020, 2600Hz
 %%% @doc Handle authn_req messages
 %%% @author James Aimonetti
 %%% @author Luis Azedo
@@ -199,8 +199,8 @@ get_tel_uri(Number) -> <<"<tel:", Number/binary,">">>.
 %% @end
 %%------------------------------------------------------------------------------
 -spec lookup_auth_user(kz_term:ne_binary(), kz_term:ne_binary(), kz_json:object()) ->
-                              {'ok', auth_user()} |
-                              {'error', any()}.
+          {'ok', auth_user()} |
+          {'error', any()}.
 lookup_auth_user(Username, Realm, Req) ->
     case get_auth_user(Username, Realm) of
         {'error', _}=E -> E;
@@ -208,8 +208,8 @@ lookup_auth_user(Username, Realm, Req) ->
     end.
 
 -spec get_auth_user(kz_term:ne_binary(), kz_term:ne_binary()) ->
-                           {'ok', kz_json:object()} |
-                           {'error', 'not_found'}.
+          {'ok', kz_json:object()} |
+          {'error', 'not_found'}.
 get_auth_user(Username, Realm) ->
     case kapps_util:get_account_by_realm(Realm) of
         {'error', E} ->
@@ -226,8 +226,8 @@ get_auth_user(Username, Realm) ->
     end.
 
 -spec get_auth_user_in_agg(kz_term:ne_binary(), kz_term:ne_binary()) ->
-                                  {'ok', kz_json:object()} |
-                                  {'error', 'not_found'}.
+          {'ok', kz_json:object()} |
+          {'error', 'not_found'}.
 get_auth_user_in_agg(Username, Realm) ->
     ViewOptions = [{'key', [Realm, Username]}
                   ,'include_docs'
@@ -250,8 +250,8 @@ get_auth_user_in_agg(Username, Realm) ->
     end.
 
 -spec get_auth_user_in_account(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) ->
-                                      {'ok', kz_json:object()} |
-                                      {'error', 'not_found'}.
+          {'ok', kz_json:object()} |
+          {'error', 'not_found'}.
 get_auth_user_in_account(Username, Realm, AccountDB) ->
     ViewOptions = [{'key', Username}
                   ,'include_docs'
@@ -273,8 +273,8 @@ get_auth_user_in_account(Username, Realm, AccountDB) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec check_auth_user(kz_json:object(), kz_term:ne_binary(), kz_term:ne_binary(), kz_json:object()) ->
-                             {'ok', auth_user()} |
-                             {'error', 'disabled'}.
+          {'ok', auth_user()} |
+          {'error', 'disabled'}.
 check_auth_user(JObj, Username, Realm, Req) ->
     Things = [{<<"account">>, get_account_id(JObj)}
              ,{kz_json:get_value([<<"doc">>, <<"pvt_type">>], JObj), kz_doc:id(JObj)}
@@ -288,8 +288,8 @@ check_auth_user(JObj, Username, Realm, Req) ->
     end.
 
 -spec jobj_to_auth_user(kz_json:object(), kz_term:ne_binary(), kz_term:ne_binary(), kz_json:object()) ->
-                               {'ok', auth_user()} |
-                               {'error', any()}.
+          {'ok', auth_user()} |
+          {'error', any()}.
 jobj_to_auth_user(JObj, Username, Realm, Req) ->
     AuthValue = get_auth_value(JObj),
     AuthDoc = kz_json:get_value(<<"doc">>, JObj),
@@ -349,8 +349,8 @@ get_auth_method(JObj) ->
                              ).
 
 -spec maybe_auth_method(auth_user(), kz_json:object(), kz_json:object(), kz_term:ne_binary()) ->
-                               {'ok', auth_user()} |
-                               {'error', any()}.
+          {'ok', auth_user()} |
+          {'error', any()}.
 maybe_auth_method(AuthUser, JObj, Req, ?GSM_ANY_METHOD)->
     GsmDoc = kz_json:get_value(<<"gsm">>, JObj),
     CachedNonce = kz_json:get_value(<<"nonce">>, GsmDoc, kz_binary:rand_hex(16)),
@@ -446,7 +446,7 @@ gsm_auth(AuthUser) -> {'ok', AuthUser}.
 get_account_id(JObj) ->
     case get_account_db(JObj) of
         'undefined' -> 'undefined';
-        AccountDb -> kz_util:format_account_id(AccountDb, 'raw')
+        AccountDb -> kzs_util:format_account_id(AccountDb)
     end.
 
 %%------------------------------------------------------------------------------
@@ -462,7 +462,7 @@ get_account_db(JObj) ->
                                    ], JObj)
     of
         'undefined' -> 'undefined';
-        AccountDb -> kz_util:format_account_id(AccountDb, 'encoded')
+        AccountDb -> kzs_util:format_account_db(AccountDb)
     end.
 
 -spec remove_dashes(kz_term:ne_binary()) -> kz_term:ne_binary().

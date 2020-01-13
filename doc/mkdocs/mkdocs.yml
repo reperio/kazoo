@@ -18,9 +18,7 @@ pages:
     - 'applications/crossbar/doc/ip_auth.md'
     - 'Adding Multi-factor': 'applications/crossbar/doc/multi_factor.md'
     - 'applications/crossbar/doc/security.md'
-    - 'applications/crossbar/doc/shared_auth.md'
     - 'applications/crossbar/doc/token_auth.md'
-    - 'applications/crossbar/doc/ubiquiti_auth.md'
     - 'applications/crossbar/doc/user_authentication.md'
   - 'Account Management':
     - 'applications/crossbar/doc/accounts.md'
@@ -49,7 +47,6 @@ pages:
     - 'applications/crossbar/doc/media.md'
   - 'Misc':
     - 'applications/crossbar/doc/comments.md'
-    - 'applications/crossbar/doc/freeswitch.md'
     - 'applications/crossbar/doc/lists.md'
   - 'PBX Features':
     - 'applications/crossbar/doc/blacklists.md'
@@ -66,6 +63,7 @@ pages:
     - 'applications/crossbar/doc/hotdesks.md'
     - 'applications/crossbar/doc/menus.md'
     - 'applications/crossbar/doc/metaflows.md'
+    - 'applications/crossbar/doc/mms.md'
     - 'applications/crossbar/doc/phone_numbers.md'
     - 'applications/crossbar/doc/quickcall.md'
     - 'applications/crossbar/doc/recordings.md'
@@ -109,14 +107,6 @@ pages:
     - 'applications/crossbar/doc/system_status.md'
     - 'applications/crossbar/doc/tasks.md'
     - 'applications/crossbar/doc/token_restrictions.md'
-  - 'Deprecated':
-    - 'applications/crossbar/doc/bulk.md'
-    - 'applications/crossbar/doc/global_provisioner_templates.md'
-    - 'applications/crossbar/doc/local_provisioner_templates.md'
-    - 'applications/crossbar/doc/onboard.md'
-    - 'applications/crossbar/doc/onboarding.md'
-    - 'applications/crossbar/doc/signup.md'
-    - 'applications/crossbar/doc/templates.md'
 - 'Integrations':
   - 'Pivot':
     - 'Intro': 'applications/pivot/doc/README.md'
@@ -429,20 +419,20 @@ pages:
     - 'core/kazoo_apps/doc/kapps_config.md'
     - 'core/kazoo_apps/doc/maintenance.md'
     - 'core/kazoo_apps/doc/kapps_maintenance.md'
-  - 'GCM':
-    - 'core/gcm/README.md'
+    - 'core/kazoo_apps/doc/kazoo_maintenance.md'
   - 'Kazoo Translator':
     - 'core/kazoo_translator/doc/README.md'
   - 'Kazoo Number Manager':
-    - 'core/kazoo_number_manager/doc/README.md'
-    - 'core/kazoo_number_manager/doc/knm_voip_innovations.md'
-    - 'core/kazoo_number_manager/doc/number_states.md'
-    - 'core/kazoo_number_manager/doc/carriers.md'
-    - 'core/kazoo_number_manager/doc/knm_bandwidth2.md'
-    - 'core/kazoo_number_manager/doc/maintenance.md'
-    - 'core/kazoo_number_manager/doc/knm_rename_carrier.md'
-    - 'core/kazoo_number_manager/doc/carrier_types.md'
-    - 'core/kazoo_number_manager/doc/knm_voxbone.md'
+    - 'core/kazoo_numbers/doc/README.md'
+    - 'core/kazoo_numbers/doc/carrier_types.md'
+    - 'core/kazoo_numbers/doc/carriers.md'
+    - 'core/kazoo_numbers/doc/knm_bandwidth2.md'
+    - 'core/kazoo_numbers/doc/knm_rename_carrier.md'
+    - 'core/kazoo_numbers/doc/knm_telnyx.md'
+    - 'core/kazoo_numbers/doc/knm_voip_innovations.md'
+    - 'core/kazoo_numbers/doc/knm_voxbone.md'
+    - 'core/kazoo_numbers/doc/maintenance.md'
+    - 'core/kazoo_numbers/doc/number_states.md'
   - 'Kazoo CNAM':
     - 'core/kazoo_cnam/doc/cnam_maintenance.md'
   - 'Kazoo AMQP':
@@ -471,7 +461,8 @@ pages:
     - 'core/kazoo_bindings/doc/README.md'
   - 'Kazoo Core':
     - 'core/kazoo/doc/README.md'
-    - 'core/kazoo/doc/maintenance.md'
+  - 'Kazoo IM':
+    - 'core/kazoo_im/doc/README.md'
   - 'Kazoo Speech':
     - 'core/kazoo_speech/doc/README.md'
     - 'core/kazoo_speech/doc/ispeech.md'
@@ -487,6 +478,7 @@ pages:
     - 'core/kazoo_schemas/doc/maintenance.md'
   - 'Kazoo Web':
     - 'core/kazoo_web/doc/README.md'
+    - 'core/kazoo_web/doc/maintenance.md'
   - 'Kazoo XML':
     - 'core/kazoo_xml/doc/README.md'
   - 'Kazoo Token Buckets':
@@ -518,6 +510,7 @@ pages:
   - 'Kazoo Test FixtureDB':
     - 'core/kazoo_fixturedb/doc/README.md'
     - 'core/kazoo_fixturedb/doc/kz_fixturedb_maintenance.md'
+    - 'Persist Database to disk': 'core/kazoo_fixturedb/doc/db-to-disk.md'
 - 'Articles':
   - 'Introduction to Storage Plans - S3': 'doc/blog/storage.md'
   - 'Bypass Media Mode': 'doc/blog/bypass_media.md'

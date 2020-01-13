@@ -549,6 +549,39 @@ kz_util_processes() {
     replace 'kz_util' 'spawn_monitor' 'kz_process' 'spawn_monitor'
 }
 
+kz_util_format_ids() {
+    replace 'kz_util' 'format_account_id' 'kzs_util' 'format_account_id'
+    replace 'kz_util' 'format_account_mod_id' 'kzs_util' 'format_account_mod_id'
+    replace 'kz_util' 'format_account_db' 'kzs_util' 'format_account_db'
+    replace 'kz_util' 'format_account_modb' 'kzs_util' 'format_account_modb'
+    replace 'kz_util' 'format_resource_selectors_id' 'kzs_util' 'format_resource_selectors_id'
+    replace 'kz_util' 'format_resource_selectors_db' 'kzs_util' 'format_resource_selectors_db'
+
+    for FILE in $(grep -rPl "kzs_util:format_account_id(.*, \'encoded\')" "$ROOT"/{core,applications}); do
+        sed -ri "s#kzs_util:format_account_id[(](.+), 'encoded'[)]#kzs_util:format_account_db(\1)#g" "$FILE"
+    done
+
+    for FILE in $(grep -rPl "kzs_util:format_account_id(.*, \'raw\')" "$ROOT"/{core,applications}); do
+        sed -ri "s#kzs_util:format_account_id[(](.+), 'raw'[)]#kzs_util:format_account_id(\1)#g" "$FILE"
+    done
+}
+
+rename_knm_to_knums() {
+    for FILE in $(grep -Irl --exclude-dir='.git' kazoo_number_manager "$ROOT"/{core,applications}); do
+        sed -i "s/kazoo_number_manager/kazoo_numbers/g" "$FILE"
+    done
+}
+
+cb_context_rename() {
+    for FILE in $(grep -Irl --exclude-dir='.git' "cb_context:account_db" "$ROOT"/{core,applications}); do
+        sed -i 's/cb_context:account_db(/cb_context:db_name(/g' "$FILE"
+    done
+}
+
+kz_services_reseller_id() {
+    replace "kzd_accounts" "reseller_id" "kz_services_reseller" "get_id"
+}
+
 echo "ensuring kz_term is used"
 kz_util_to_term
 echo "ensuring kz_binary is used"
@@ -589,5 +622,13 @@ echo "ensuring kz_log is used"
 kz_util_to_log
 echo "ensuring spawning is in kz_process"
 kz_util_processes
+echo "ensuring kazoo_number_manager is renamed to kazoo_numbers"
+rename_knm_to_knums
+echo "formatting account/resource ids to dbs moved to kzs_util"
+kz_util_format_ids
+echo "cb_context account_db to db_name"
+cb_context_rename
+echo "use kz_services_reseller to find reseller_id"
+kz_services_reseller_id
 
 popd >/dev/null
