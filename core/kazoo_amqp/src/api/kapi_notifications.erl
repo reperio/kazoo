@@ -1431,7 +1431,7 @@ voicemail_deleted_definition() ->
     Setters = [{fun kapi_definition:set_name/2, EventName}
               ,{fun kapi_definition:set_friendly_name/2, <<"Voicemail Message Deleted">>}
               ,{fun kapi_definition:set_description/2
-                ,<<"This event is triggered any time a voicemail message is deleted in the voicemail box">>
+               ,<<"This event is triggered any time a voicemail message is deleted in the voicemail box">>
                }
               ,{fun kapi_definition:set_category/2, Category}
               ,{fun kapi_definition:set_build_fun/2, fun voicemail_deleted/1}
