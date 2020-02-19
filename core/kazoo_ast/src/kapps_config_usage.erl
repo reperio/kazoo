@@ -309,7 +309,8 @@ key_to_key_path(?LIST(Head, Tail)) ->
 key_to_key_path(?BINARY_MATCH(K)) ->
     try [kz_ast_util:binary_match_to_binary(K)]
     catch 'error':'function_clause' -> 'undefined'
-    end.
+    end;
+key_to_key_path(_) -> undefined.
 
 guess_type('get_list', Default) -> guess_type_by_default(Default);
 guess_type('is_true', _) -> <<"boolean">>;
@@ -337,9 +338,12 @@ guess_type('get_hierarchy', Default) -> guess_type_by_default(Default);
 guess_type('get_with_strategy', Default) -> guess_type_by_default(Default);
 guess_type('set_default', _) -> 'undefined';
 guess_type('set', Default) -> guess_type_by_default(Default);
-guess_type('set_string', _) -> <<"string">>;
+guess_type('set_boolean', _) -> <<"boolean">>;
+guess_type('set_float', _) -> <<"float">>;
+guess_type('set_integer', _) -> <<"integer">>;
 guess_type('set_json', _) -> <<"object">>;
 guess_type('set_node', Default) -> guess_type_by_default(Default);
+guess_type('set_string', _) -> <<"string">>;
 guess_type('update_default', Default) -> guess_type_by_default(Default).
 
 guess_type_by_default('undefined') -> 'undefined';
