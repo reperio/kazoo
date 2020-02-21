@@ -1,7 +1,11 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2014-2019, 2600Hz
+%%% @copyright (C) 2014-2020, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(teletype_voicemail_deleted).
@@ -65,7 +69,7 @@ reply_to() -> teletype_util:default_reply_to().
 
 -spec init() -> 'ok'.
 init() ->
-    kz_util:put_callid(?MODULE),
+    kz_log:put_callid(?MODULE),
     teletype_templates:init(?MODULE),
     teletype_bindings:bind(<<"voicemail_deleted">>, ?MODULE, 'handle_req').
 
@@ -84,9 +88,17 @@ handle_req(JObj, 'true') ->
     DataJObj = kz_json:normalize(JObj),
     AccountId = kz_json:get_value(<<"account_id">>, DataJObj),
 
-    case teletype_util:is_notice_enabled(AccountId, JObj, id()) of
+    case is_notice_enabled(AccountId, JObj) of
         'false' -> teletype_util:notification_disabled(DataJObj, id());
         'true' -> process_req(DataJObj)
+    end.
+
+-spec is_notice_enabled(kz_term:ne_binary(), kz_json:object()) -> boolean().
+is_notice_enabled(AccountId, JObj) ->
+    case teletype_util:is_notice_enabled(AccountId, JObj, id()) of
+        'false' -> 'false';
+        'true' ->
+            teletype_util:template_system_value(id(), <<"is_enabled">>, 'false')
     end.
 
 -spec process_req(kz_json:object()) -> template_response().
@@ -94,7 +106,7 @@ process_req(DataJObj) ->
     VMBoxJObj = get_vmbox(DataJObj),
     UserJObj = get_owner(VMBoxJObj, DataJObj),
     BoxEmails = kzd_voicemail_box:notification_emails(VMBoxJObj),
-    Emails = maybe_add_user_email(BoxEmails, kzd_user:email(UserJObj), kzd_user:voicemail_notification_enabled(UserJObj)),
+    Emails = maybe_add_user_email(BoxEmails, kzd_users:email(UserJObj), kzd_users:vm_to_email_enabled(UserJObj)),
     Values = [{<<"vmbox_doc">>, VMBoxJObj}
              ,{<<"user">>, UserJObj}
              ,{<<"to">>, Emails}
@@ -171,7 +183,6 @@ do_process_req(DataJObj) ->
 -spec macros(kz_json:object()) -> kz_term:proplist().
 macros(DataJObj) ->
     TemplateData = template_data(DataJObj),
-    lager:debug("TemplateData: ~p", [TemplateData]),
     EmailAttachements = email_attachments(DataJObj, TemplateData),
     Macros = maybe_add_file_data(TemplateData, EmailAttachements),
     props:set_value(<<"attachments">>, EmailAttachements, Macros).
@@ -276,7 +287,7 @@ build_voicemail_data(DataJObj) ->
       ]).
 
 -spec render_vm_delete_reason(kz_json:object()) -> kz_term:api_ne_binary().
-render_vm_delete_reason(DataJObj) -> 
+render_vm_delete_reason(DataJObj) ->
     case kz_json:get_atom_value(<<"reason">>, DataJObj) of
         'dtmf' -> <<"user pressed DTMF key">>;
         'delete_after_notify' -> <<"due to 'Deleted after notify'">>;
