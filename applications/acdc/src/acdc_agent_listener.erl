@@ -75,6 +75,9 @@
                ,acdc_queue_id :: kz_term:api_ne_binary() % the ACDc Queue ID
                ,msg_queue_id :: kz_term:api_ne_binary() % the AMQP Queue ID of the ACDc Queue process
                ,agent_id :: kz_term:api_ne_binary()
+               ,agent_priority :: agent_priority()
+               ,skills :: kz_tterm:ne_binaries() % skills this agent has
+
                ,acct_db :: kz_term:api_ne_binary()
                ,acct_id :: kz_term:api_ne_binary()
                ,fsm_pid :: kz_term:api_pid()
@@ -275,10 +278,10 @@ send_sync_resp(Srv, Status, ReqJObj, Options) ->
 -spec config(pid()) -> config().
 config(Srv) -> gen_listener:call(Srv, 'config').
 
--spec refresh_config(pid(), kz_term:api_ne_binaries(), fsm_state_name()) -> 'ok'.
+-spec refresh_config(pid(), kz_json:object(), fsm_state_name()) -> 'ok'.
 refresh_config(_, 'undefined', _) -> 'ok';
-refresh_config(Srv, Qs, StateName) ->
-    gen_listener:cast(Srv, {'refresh_config', Qs, StateName}).
+refresh_config(Srv, AgentJObj, StateName) ->
+    gen_listener:cast(Srv, {'refresh_config', AgentJObj, StateName}).
 
 -spec agent_info(pid(), kz_json:path()) -> kz_json:api_json_term().
 agent_info(Srv, Field) -> gen_listener:call(Srv, {'agent_info', Field}).
@@ -359,6 +362,8 @@ init([Supervisor, Agent, Queues]) ->
     lager:debug("starting acdc agent listener"),
 
     {'ok', #state{agent_id=AgentId
+                  ,agent_priority=acdc_agent_util:agent_priority(Agent)
+                  ,skills=kz_json:get_list_value(<<"acdc_skills">>, Agent, [])
                  ,acct_id=account_id(Agent)
                  ,acct_db=account_db(Agent)
                  ,my_id=acdc_util:proc_id()
@@ -397,13 +402,34 @@ handle_call(_Request, _From, #state{}=State) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec handle_cast(any(), state()) -> kz_types:handle_cast_ret_state(state()).
-handle_cast({'refresh_config', Qs, StateName}, #state{agent_queues=Queues}=State) ->
-    {Add, Rm} = acdc_agent_util:changed(Queues, Qs),
+handle_cast({'refresh_config', JObj, StateName}, #state{agent_priority=Priority0
+                                                       ,skills=Skills0
+                                                       ,agent_queues=Queues
+                                                       }=State) ->
+    Qs = kz_json:get_list_value(<<"queues">>, JObj, []),
+
+    Priority = acdc_agent_util:agent_priority(JObj),
+    Skills = kz_json:get_list_value(<<"acdc_skills">>, JObj, []),
+    
+    {Add, Rm} = case is_prio_or_skills_updated(Priority0, Skills0, Priority, Skills) of
+                    'true' ->
+                        {_, Rm1} = acdc_agent_util:changed(Queues, Qs),
+                        %% If true, all agent's resulting queues must be updated
+                        Add1 = lists:subtract(Queues, Rm1),
+                        lists:foreach(fun(Queue) ->
+                                              lager:debug("prio/skills update for queue ~s", [Queue])
+                                      end, Queues),
+                        {Add1, Rm1};
+                    'false' -> acdc_agent_util:changed(Queues, Qs)
+                end,
 
     Self = self(),
     _ = [gen_listener:cast(Self, {'add_acdc_queue', A, StateName}) || A <- Add],
     _ = [gen_listener:cast(Self, {'rm_acdc_queue', R}) || R <- Rm],
-    {'noreply', State};
+
+    {'noreply', State#state{agent_priority=Priority
+                           ,skills=Skills
+                           }};
 
 handle_cast({'fsm_started', FSMPid}, State) ->
     lager:debug("fsm started: ~p", [FSMPid]),
@@ -415,16 +441,13 @@ handle_cast({'fsm_started', FSMPid}, State) ->
 handle_cast({'gen_listener', {'created_queue', Q}}, State) ->
     {'noreply', State#state{my_q=Q}, 'hibernate'};
 
-handle_cast({'add_acdc_queue', Q, StateName}, #state{agent_queues=Qs
-                                                    ,acct_id=AcctId
-                                                    ,agent_id=AgentId
-                                                    }=State) when is_binary(Q) ->
+handle_cast({'add_acdc_queue', Q, StateName}, #state{agent_queues=Qs}=State) when is_binary(Q) ->
     case lists:member(Q, Qs) of
         'true' ->
             lager:debug("queue ~s already added", [Q]),
             {'noreply', State};
         'false' ->
-            add_queue_binding(AcctId, AgentId, Q, StateName),
+            add_queue_binding(Q, StateName, State),
             {'noreply', State#state{agent_queues=[Q|Qs]}}
     end;
 
@@ -450,11 +473,8 @@ handle_cast({'rm_acdc_queue', Q}, #state{agent_queues=Qs
             {'noreply', State}
     end;
 
-handle_cast('bind_to_member_reqs', #state{agent_queues=Qs
-                                         ,acct_id=AcctId
-                                         ,agent_id=AgentId
-                                         }=State) ->
-    _ = [add_queue_binding(AcctId, AgentId, Q, 'ready') || Q <- Qs],
+handle_cast('bind_to_member_reqs', #state{agent_queues=Qs}=State) ->
+    _ = [add_queue_binding(Q, 'ready', State) || Q <- Qs],
     {'noreply', State};
 
 handle_cast({'rebind_events', OldCallId, NewCallId}, State) ->
@@ -738,10 +758,12 @@ handle_cast({'outbound_call', CallId}, #state{agent_id=AgentId
     {'noreply', State#state{call=kapps_call:set_call_id(CallId, kapps_call:new())}, 'hibernate'};
 
 handle_cast('send_agent_available', #state{agent_id=AgentId
+                                          ,agent_priority=Priority
+                                          ,skills=Skills
                                           ,acct_id=AcctId
                                           ,agent_queues=Qs
                                           }=State) ->
-    [send_agent_available(AcctId, AgentId, QueueId) || QueueId <- Qs],
+    [send_agent_available(AcctId, AgentId, QueueId, Priority, Skills) || QueueId <- Qs],
     {'noreply', State};
 
 handle_cast('send_agent_busy', #state{agent_id=AgentId
@@ -1095,22 +1117,27 @@ outbound_call_id(CallId, AgentId) when is_binary(CallId) ->
 outbound_call_id(Call, AgentId) ->
     outbound_call_id(kapps_call:call_id(Call), AgentId).
 
--spec add_queue_binding(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), fsm_state_name()) ->
-          'ok'.
-add_queue_binding(AcctId, AgentId, QueueId, StateName) ->
+-spec add_queue_binding(kz_term:ne_binary(), fsm_state_name(), state()) -> 'ok'.
+add_queue_binding(QueueId, StateName, #state{acct_id=AcctId
+                                            ,agent_id=AgentId
+                                            }=State) ->
     lager:debug("adding queue binding for ~s", [QueueId]),
+    % TODO: check what is this for
     Body = kz_json:from_list([{<<"agent_id">>, AgentId}
                              ,{<<"queue_id">>, QueueId}
                              ,{<<"event">>, <<"logged_into_queue">>}
                              ]),
     kz_edr:event(?APP_NAME, ?APP_VERSION, 'ok', 'info', Body, AcctId),
+    % End TODO
+    
     gen_listener:add_binding(self()
                             ,'acdc_queue'
-                            ,[{'restrict_to', ['member_connect_req']}
+                            %TODO: check 'member_connect_satisfied'
+                            ,[{'restrict_to', ['member_connect_req', 'member_connect_satisfied']}
                              ,{'queue_id', QueueId}
                              ,{'account_id', AcctId}
                              ]),
-    send_availability_update(AcctId, AgentId, QueueId, StateName).
+    send_availability_update(QueueId, StateName, State).
 
 -spec rm_queue_binding(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) -> 'ok'.
 rm_queue_binding(AcctId, AgentId, QueueId) ->
@@ -1128,18 +1155,25 @@ rm_queue_binding(AcctId, AgentId, QueueId) ->
                             ]),
     send_agent_unavailable(AcctId, AgentId, QueueId).
 
--spec send_availability_update(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), fsm_state_name()) ->
-          'ok'.
-send_availability_update(AcctId, AgentId, QueueId, 'ready') ->
-    send_agent_available(AcctId, AgentId, QueueId);
-send_availability_update(AcctId, AgentId, QueueId, _) ->
+-spec send_availability_update(kz_term:ne_binary(), fsm_state_name(), state()) -> 'ok'.
+send_availability_update(QueueId, 'ready', #state{agent_id=AgentId
+                                                 ,agent_priority=Priority
+                                                 ,skills=Skills
+                                                 ,acct_id=AcctId
+                                                 }) ->
+    send_agent_available(AcctId, AgentId, QueueId, Priority, Skills);
+send_availability_update(QueueId, _, #state{agent_id=AgentId
+                                           ,acct_id=AcctId
+                                           }) ->
     send_agent_busy(AcctId, AgentId, QueueId).
 
--spec send_agent_available(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) -> 'ok'.
-send_agent_available(AcctId, AgentId, QueueId) ->
+-spec send_agent_available(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), agent_priority(), kz_term:ne_binaries()) -> 'ok'.
+send_agent_available(AcctId, AgentId, QueueId, Priority, Skills) ->
     Prop = [{<<"Account-ID">>, AcctId}
            ,{<<"Agent-ID">>, AgentId}
            ,{<<"Queue-ID">>, QueueId}
+           ,{<<"Priority">>, Priority}
+           ,{<<"Skills">>, Skills}
            ,{<<"Change">>, <<"available">>}
             | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
            ],
@@ -1267,3 +1301,8 @@ filter_agent_calls(ACallIds, ACallId) ->
                          lager:debug("ignoring ~p", [_A]),
                          'true'
                  end, ACallIds).
+
+-spec is_prio_or_skills_updated(agent_priority(), kz_term:ne_binaries(), agent_priority(), kz_term:ne_binaries()) -> boolean().
+is_prio_or_skills_updated(Priority0, Skills0, Priority, Skills) ->
+    Priority0 =/= Priority
+        orelse Skills0 =/= Skills.
