@@ -28,7 +28,7 @@
 -include("kazoo_proper.hrl").
 -include_lib("kazoo_stdlib/include/kz_databases.hrl").
 
--define(ACCOUNT_NAMES, [<<"account_for_cdrs">>]).
+-define(ACCOUNT_NAMES, [<<?MODULE_STRING>>]).
 -define(CDRS_PER_MONTH, 4).
 
 -spec summary(pqc_cb_api:state(), kz_term:ne_binary()) -> pqc_cb_api:response().
@@ -197,6 +197,7 @@ start_key(StartKey) -> "start_key=" ++ kz_term:to_list(StartKey).
 
 -spec seq() -> 'ok'.
 seq() ->
+    kapps_config:set_default(<<"crossbar.cdrs">>, <<"should_filter_empty_strings">>, 'true'),
     _ = straight_seq(),
     _ = paginated_seq(),
     _ = task_seq(),
@@ -290,8 +291,13 @@ big_dataset_seq() ->
     lager:info("generated ~p CDRs", [length(CDRs)]),
 
     AccountMODb = kzs_util:format_account_id(AccountId, Year, Month),
-    {'ok', _Saved} = kazoo_modb:save_docs(AccountMODb, CDRs, [{'publish_change_notice', 'false'}]),
-    lager:info("saved: ~p", [_Saved]),
+    {'ok', Saved} = kazoo_modb:save_docs(AccountMODb, CDRs, [{'publish_change_notice', 'false'}]),
+
+    Fails = [S || S <- Saved, not kz_json:is_true(<<"ok">>, S)],
+    ([] =:= Fails)
+        orelse lager:warning("failed to save ~p", [Fails]),
+    [] = Fails,
+    CDRCount = length(Saved),
 
     _ = kapps_config:set_default(<<"crossbar">>, <<"request_memory_limit">>, 'null'),
     ChunkedJSON = unpaginated_summary(API, AccountId),
@@ -306,7 +312,7 @@ big_dataset_seq() ->
     lager:info("unpaginated/unchunked and unbound memory resp returned ~p CDRs", [UnChunkedCount]),
     CDRCount = UnChunkedCount,
 
-    _ = kapps_config:set_default(<<"crossbar">>, <<"request_memory_limit">>, 1024 * 1024 * 10), % cap at 10Mb
+    _ = kapps_config:set_default(<<"crossbar">>, <<"request_memory_limit">>, 8 * ?BYTES_M), % cap at 8Mb
 
     ChunkedUnpaginatedJSON = unpaginated_summary(API, AccountId),
     ChunkedUnpaginatedJObj = kz_json:decode(ChunkedUnpaginatedJSON),
@@ -357,7 +363,11 @@ seq_cdr(API, AccountId, CDR) ->
     InteractionId = kzd_cdrs:interaction_id(CDR),
 
     FetchResp = fetch(API, AccountId, CDRId),
-    'true' = cdr_exists(CDR, [kz_json:get_json_value(<<"data">>, kz_json:decode(FetchResp))]),
+    FetchedJObj = kz_json:get_json_value(<<"data">>, kz_json:decode(FetchResp)),
+    'true' = cdr_exists(CDR, [FetchedJObj]),
+
+    %% KZOO-45: Ensure empty strings have been stripped
+    'undefined' = kz_json:get_ne_binary_value(<<"media_server">>, FetchedJObj),
 
     %% Should be able to convert CDR ID to interaction_id
     LegsResp = legs(API, AccountId, CDRId),
@@ -396,7 +406,7 @@ create_owner(AccountId) ->
     OwnerId = kz_binary:rand_hex(16),
     Owner = kz_json:set_value(<<"_id">>, OwnerId, kzd_users:new()),
     {'ok', _Saved}= kz_datamgr:save_doc(AccountDb, Owner),
-    lager:info("saved owner to ~s: ~p", [AccountDb, _Saved]),
+    lager:info("saved owner to ~s", [AccountDb, _Saved]),
     OwnerId.
 
 -spec cleanup() -> 'ok'.

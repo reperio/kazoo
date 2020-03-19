@@ -60,7 +60,7 @@
 %%------------------------------------------------------------------------------
 -spec start_link() -> kz_types:startlink_ret().
 start_link() ->
-    gen_server:start_link(?SERVER, [], []).
+    gen_server:start_link({'local', ?MODULE}, ?MODULE, [], []).
 
 -spec stop() -> 'ok'.
 stop() ->
@@ -68,7 +68,7 @@ stop() ->
 
 -spec crawl_numbers() -> 'ok'.
 crawl_numbers() ->
-    kz_log:put_callid(?SERVER),
+    kz_log:put_callid(?MODULE),
     lager:debug("beginning a number crawl"),
     lists:foreach(fun(Num) ->
                           crawl_number_db(Num),
@@ -89,8 +89,8 @@ crawl_numbers() ->
 %%------------------------------------------------------------------------------
 -spec init([]) -> {'ok', state()}.
 init([]) ->
-    kz_log:put_callid(?SERVER),
-    lager:debug("started ~s", [?SERVER]),
+    kz_log:put_callid(?MODULE),
+    lager:debug("started ~s", [?MODULE]),
     {'ok', #state{cleanup_ref = cleanup_timer()}}.
 
 %%------------------------------------------------------------------------------
@@ -134,7 +134,7 @@ handle_info(_Msg, State) ->
 %%------------------------------------------------------------------------------
 -spec terminate(any(), state()) -> 'ok'.
 terminate(_Reason, _State) ->
-    lager:debug("~s terminating: ~p", [?SERVER, _Reason]).
+    lager:debug("~s terminating: ~p", [?MODULE, _Reason]).
 
 %%------------------------------------------------------------------------------
 %% @doc Convert process state when code is changed.
@@ -156,14 +156,14 @@ code_change(_OldVsn, State, _Extra) ->
 cleanup_timer() ->
     erlang:start_timer(?TIME_BETWEEN_CRAWLS, self(), 'ok').
 
--spec crawl_number_db(kz_term:ne_binary()) -> ok.
+-spec crawl_number_db(kz_term:ne_binary()) -> 'ok'.
 crawl_number_db(Db) ->
-    case kz_datamgr:all_docs(Db, [include_docs]) of
-        {error, _E} ->
+    case kz_datamgr:all_docs(Db, ['include_docs']) of
+        {'error', _E} ->
             lager:debug("failed to crawl number db ~s: ~p", [Db, _E]);
-        {ok, JObjs} ->
+        {'ok', JObjs} ->
             lager:debug("starting to crawl '~s'", [Db]),
-            _ = knm_pipe:pipe(knm_numbers:from_jobjs(JObjs)
+            _ = knm_pipe:pipe(knm_ops:from_jobjs(JObjs)
                              ,[fun maybe_edit/1
                               ,fun knm_phone_number:save/1
                               ]),
@@ -177,8 +177,8 @@ maybe_edit(T0=#{'todo' := PNs}) ->
     _ = knm_phone_number:delete(knm_pipe:set_todo(T0, ToRemove)),
     knm_pipe:set_succeeded(T0, ToSave).
 
--spec maybe_edit_fold(knm_phone_number:phone_number(), {knm_phone_number:phone_numbers(), knm_phone_number:phone_numbers()}) ->
-          {knm_phone_number:phone_numbers(), knm_phone_number:phone_numbers()}.
+-spec maybe_edit_fold(knm_phone_number:record(), {knm_phone_number:records(), knm_phone_number:records()}) ->
+          {knm_phone_number:records(), knm_phone_number:records()}.
 maybe_edit_fold(PN, {ToRemove, ToSave}=To) ->
     case knm_phone_number:state(PN) of
         ?NUMBER_STATE_DELETED ->
@@ -190,20 +190,20 @@ maybe_edit_fold(PN, {ToRemove, ToSave}=To) ->
         _ -> To
     end.
 
--spec maybe_remove(knm_phone_number:phone_number(), knm_phone_number:phone_numbers(), integer()) ->
-          knm_phone_number:phone_numbers().
+-spec maybe_remove(knm_phone_number:record(), knm_phone_number:records(), integer()) ->
+          knm_phone_number:records().
 maybe_remove(PN, ToRemove, Expiry) ->
     case is_old_enough(PN, Expiry) of
-        false -> ToRemove;
-        true -> [PN|ToRemove]
+        'false' -> ToRemove;
+        'true' -> [PN|ToRemove]
     end.
 
--spec maybe_transition_aging(knm_phone_number:phone_number(), knm_phone_number:phone_numbers(), integer()) ->
-          knm_phone_number:phone_numbers().
+-spec maybe_transition_aging(knm_phone_number:record(), knm_phone_number:records(), integer()) ->
+          knm_phone_number:records().
 maybe_transition_aging(PN, ToSave, Expiry) ->
     case is_old_enough(PN, Expiry) of
-        false -> ToSave;
-        true ->
+        'false' -> ToSave;
+        'true' ->
             lager:debug("transitioning number '~s' from ~s to ~s"
                        ,[knm_phone_number:number(PN)
                         ,?NUMBER_STATE_AGING

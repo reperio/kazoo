@@ -8895,6 +8895,9 @@
       'default': 100
       'description': blackhole ssl_workers
       'type': integer
+    'url':
+      'description': The advertised URL of the Kazoo websocket
+      'type': string
     'use_plaintext':
       'default': true
       'description': blackhole use_plaintext
@@ -9124,6 +9127,10 @@
       'default': ''
       'description': callflow singular call hook url
       'type': string
+    'vm_delete_amqp':
+      'default': false
+      'description': callflow vm_delete_amqp
+      'type': boolean
     'voicemail':
       'properties':
         'delete_after_notify':
@@ -9193,6 +9200,14 @@
           'description': callflow fastforward and rewind seek duration
           'minimum': 0
           'type': integer
+        'transcribe_default':
+          'default': false
+          'description': callflow voicemail transcribe_default
+          'type': boolean
+        'vm_delete_amqp':
+          'default': false
+          'description': send ampq message to notify about voicemail deletion
+          'type': boolean
         'vm_message_forward_type':
           'default': only_forward
           'description': |-
@@ -9410,6 +9425,13 @@
       'default': {}
       'description': cluster zones
       'type': object
+  'type': object
+'system_config.cluster_manager':
+  'description': Schema for cluster_manager system_config
+  'properties':
+    'url':
+      'description': The base URL of the 2600Hz cluster manager service
+      'type': string
   'type': object
 'system_config.cnam':
   'description': Schema for cnam system_config
@@ -9935,14 +9957,6 @@
       'minimum': 1
       'type': integer
   'type': object
-'system_config.crossbar.callflows':
-  'description': Schema for crossbar.callflows system_config
-  'properties':
-    'default_reconcile_numbers':
-      'default': false
-      'description': crossbar.callflows default reconcile numbers
-      'type': boolean
-  'type': object
 'system_config.crossbar.cdrs':
   'description': Schema for crossbar.cdrs system_config
   'properties':
@@ -9961,6 +9975,11 @@
         maximum range (in seconds) prior to the current date allowed for CDR requests
       'minimum': 1
       'type': integer
+    'should_filter_empty_strings':
+      'default': false
+      'description': |-
+        If true, API will strip keys with "" as values before sending the response (decrease payload)
+      'type': boolean
   'type': object
 'system_config.crossbar.channels':
   'description': Schema for crossbar.channels system_config
@@ -11793,6 +11812,13 @@
       'description': milliwatt tone
       'type': object
   'type': object
+'system_config.mobile':
+  'description': Schema for mobile system_config
+  'properties':
+    'url':
+      'description': The base URL of the 2600Hz mobile service
+      'type': string
+  'type': object
 'system_config.mobile_manager':
   'description': Schema for mobile_manager system_config
   'properties':
@@ -11850,6 +11876,7 @@
         - teletype_transaction
         - teletype_voicemail_full
         - teletype_voicemail_to_email
+        - teletype_voicemail_deleted
         - teletype_webhook_disabled
       'description': teletype modules to start when teletype is started
       'items':
@@ -12162,6 +12189,18 @@
     'text_content_transfer_encoding':
       'default': 7BIT
       'description': notify.transaction text content transfer encoding
+      'type': string
+  'type': object
+'system_config.notify.voicemail_deleted':
+  'description': Schema for notify.voicemail_deleted system_config
+  'properties':
+    'html_content_transfer_encoding':
+      'default': 7BIT
+      'description': notify.voicemail_deleted html content transfer encoding
+      'type': string
+    'text_content_transfer_encoding':
+      'default': 7BIT
+      'description': notify.voicemail_deleted text content transfer encoding
       'type': string
   'type': object
 'system_config.notify.voicemail_full':
@@ -12630,6 +12669,13 @@
       'description': omnipresence subscriptions sync enabled
       'type': boolean
   'type': object
+'system_config.phonebook':
+  'description': Schema for phonebook system_config
+  'properties':
+    'url':
+      'description': The base URL of the 2600Hz phonebook service
+      'type': string
+  'type': object
 'system_config.pivot':
   'description': Schema for pivot system_config
   'properties':
@@ -12706,6 +12752,10 @@
       'default': 0000000000
       'description': Default Caller ID Number should be shown for anonymous calls
       'type': string
+    'use_sip_privacy_header':
+      'default': true
+      'description': privacy use_sip_privacy_header
+      'type': boolean
   'type': object
 'system_config.provisioner':
   'description': Schema for provisioner system_config
@@ -13438,6 +13488,14 @@
       'description': tasks browse dbs interval in seconds
       'minimum': 1
       'type': integer
+    'compaction_list_dbs_chunk_size':
+      'default': 20
+      'description': How many dbs to read between pauses
+      'type': integer
+    'compaction_list_dbs_pause_ms':
+      'default': 200
+      'description': How long to pause before attempting to get the next chunk of dbs
+      'type': integer
     'crawler_delay_time_ms':
       'default': 60000
       'description': tasks crawler delay time in milliseconds
@@ -13655,6 +13713,45 @@
       'description': How many accounts to rollover services for per pass (in parallel)
       'type': integer
   'type': object
+'system_config.telemetry':
+  'description': Schema for telemetry system_config
+  'properties':
+    'cluster_id_anonymized':
+      'default': true
+      'description': telemetry cluster_id_anonymized
+      'type': boolean
+    'collection_interval_s':
+      'default': 86400
+      'description': telemetry collection_interval_s
+      'type': integer
+    'include_apps':
+      'default': true
+      'description': telemetry include_apps
+      'type': boolean
+    'include_database':
+      'default': true
+      'description': telemetry include_database
+      'type': boolean
+    'include_freeswitch':
+      'default': true
+      'description': telemetry include_freeswitch
+      'type': boolean
+    'include_kamailio':
+      'default': true
+      'description': telemetry include_kamailio
+      'type': boolean
+    'include_services':
+      'default': true
+      'description': telemetry include_services
+      'type': boolean
+  'type': object
+'system_config.telemetry.waveguide':
+  'description': Schema for telemetry.waveguide system_config
+  'properties':
+    'activation':
+      'description': telemetry waveguide activation
+      'type': integer
+  'type': object
 'system_config.teletype':
   'description': Schema for teletype system_config
   'properties':
@@ -13769,6 +13866,13 @@
       'items':
         'type': string
       'type': array
+  'type': object
+'system_config.webrtc':
+  'description': Schema for webrtc system_config
+  'properties':
+    'url':
+      'description': The advertised URL of the webrtc socket
+      'type': string
   'type': object
 'system_config.whitelabel':
   'description': Schema for whitelabel system_config
@@ -14217,7 +14321,7 @@
       'pattern': '^[.\w_-]+$'
       'type': string
     'credentials':
-      'description': A hash of the uses credentials
+      'description': A hash of the user credentials
       'maxLength': 64
       'minLength': 1
       'type': string
@@ -14575,6 +14679,11 @@
 'vmboxes':
   'description': Schema for a voicemail box
   'properties':
+    'announcement_only':
+      'default': false
+      'description': Determine if the mailbox should only play announcements
+      'type': boolean
+      'x-support_level': unsupported
     'check_if_owner':
       'default': true
       'description': |-
@@ -14591,6 +14700,18 @@
       'items':
         'type': string
       'type': array
+      'x-support_level': supported
+    'include_message_on_notify':
+      'default': true
+      'description': |-
+        Whether or not to include the attachment when sending a new voicemail to email notification
+      'type': boolean
+      'x-support_level': supported
+    'include_transcription_on_notify':
+      'default': true
+      'description': |-
+        Whether or not to include the transcription when sending a new voicemail to email notification
+      'type': boolean
       'x-support_level': supported
     'is_setup':
       'default': false
