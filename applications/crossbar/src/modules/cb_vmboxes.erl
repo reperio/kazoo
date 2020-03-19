@@ -422,6 +422,7 @@ delete(Context, BoxId) ->
     AccountId = cb_context:account_id(Context),
     Msgs = kvm_messages:get(AccountId, BoxId),
     MsgIds = [kzd_box_message:media_id(M) || M <- Msgs],
+    'ok' = maybe_publish_voicemail_deleted(AccountId, BoxId, MsgIds),
     _ = kvm_messages:change_folder(?VM_FOLDER_DELETED, MsgIds, AccountId, BoxId, add_pvt_auth_funs(Context)),
     C = crossbar_doc:delete(Context),
     update_mwi(C, BoxId).
@@ -430,6 +431,7 @@ delete(Context, BoxId) ->
 delete(Context, BoxId, ?MESSAGES_RESOURCE) ->
     AccountId = cb_context:account_id(Context),
     MsgIds = cb_context:resp_data(Context),
+    'ok' = maybe_publish_voicemail_deleted(AccountId, BoxId, MsgIds),
     Result = kvm_messages:change_folder({?VM_FOLDER_DELETED, 'true'}, MsgIds, AccountId, BoxId, add_pvt_auth_funs(Context)),
     C = crossbar_util:response(Result, Context),
     update_mwi(C, BoxId).
@@ -437,6 +439,7 @@ delete(Context, BoxId, ?MESSAGES_RESOURCE) ->
 -spec delete(cb_context:context(), path_token(), path_token(), path_token()) -> cb_context:context().
 delete(Context, BoxId, ?MESSAGES_RESOURCE, MediaId) ->
     AccountId = cb_context:account_id(Context),
+    'ok' = maybe_publish_voicemail_deleted(AccountId, BoxId, [MediaId]),
     case kvm_message:change_folder({?VM_FOLDER_DELETED, 'true'}, MediaId, AccountId, BoxId, add_pvt_auth_funs(Context)) of
         {'ok', Message} ->
             C = crossbar_util:response(Message, Context),
@@ -474,6 +477,29 @@ add_pvt_auth_funs(Context) ->
 add_pvt_auth(JObj, Context) ->
     AuthUpdates = crossbar_doc:add_pvt_auth(JObj, [], Context),
     kz_json:set_values(AuthUpdates, JObj).
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec maybe_publish_voicemail_deleted(kz_term:ne_binary(), path_token(), path_tokens()) -> 'ok'.
+maybe_publish_voicemail_deleted(AccountId, BoxId, MessageIds) ->
+    Messages = kz_json:get_list_value(<<"succeeded">>, kvm_messages:fetch(AccountId, MessageIds, BoxId), []),
+    maybe_publish_voicemail_deleted(BoxId, Messages).
+
+-spec maybe_publish_voicemail_deleted(path_token(), kz_json:objects()) -> 'ok'.
+maybe_publish_voicemail_deleted(_BoxId, []) -> 'ok';
+maybe_publish_voicemail_deleted(BoxId, JObjs) ->
+    publish_voicemail_deleted(BoxId, JObjs).
+
+-spec publish_voicemail_deleted(path_token(), kz_json:objects()) -> 'ok'.
+publish_voicemail_deleted(BoxId, JObjs) ->
+    lists:foreach(
+      fun(JObj) ->
+              kvm_util:publish_voicemail_deleted(BoxId, JObj, 'crossbar_action')
+      end,
+      JObjs
+     ).
 
 %%------------------------------------------------------------------------------
 %% @doc disallow vmbox messages array changing.
@@ -682,7 +708,19 @@ validate_unique_vmbox(VMBoxId, Context, _AccountDb) ->
 check_vmbox_schema(VMBoxId, Context) ->
     Context1 = maybe_migrate_notification_emails(Context),
     OnSuccess = fun(C) -> validate_media_extension(VMBoxId, C) end,
-    cb_context:validate_request_data(<<"vmboxes">>, Context1, OnSuccess).
+    cb_context:validate_request_data(find_schema(), Context1, OnSuccess).
+
+-spec find_schema() -> kz_json:api_object().
+find_schema() ->
+    case kz_json_schema:load(<<"vmboxes">>) of
+        {'ok', SchemaJObj} ->
+            Props = [{[<<"properties">>, <<"transcribe">>, <<"default">>]
+                     ,kvm_util:transcribe_default()
+                     }
+                    ],
+            kz_json:set_values(Props, SchemaJObj);
+        {'error', _E} -> 'undefined'
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -746,14 +784,16 @@ validate_patch(Context, BoxId)->
 %%------------------------------------------------------------------------------
 -spec load_vmbox_summary(cb_context:context()) -> cb_context:context().
 load_vmbox_summary(Context) ->
-    Context1 = crossbar_doc:load_view(?CB_LIST, [], Context, fun normalize_view_results/2),
-    CountMap = kvm_messages:count(cb_context:account_id(Context)),
-    RspData = add_counts_to_summary_results(cb_context:doc(Context1), CountMap),
-    cb_context:set_resp_data(cb_context:set_doc(Context1, RspData), RspData).
+    Context1 = crossbar_view:load(Context, ?CB_LIST, [{'mapper', crossbar_view:get_value_fun()}]),
+    load_vmbox_summary(Context, cb_context:resp_status(Context1)).
 
--spec normalize_view_results(kz_json:object(), kz_json:objects()) -> kz_json:objects().
-normalize_view_results(JObj, Acc) ->
-    [kz_json:get_json_value(<<"value">>, JObj)|Acc].
+-spec load_vmbox_summary(cb_context:cb_context(), crossbar_status()) -> cb_context:context().
+load_vmbox_summary(Context, 'success') ->
+    CountMap = kvm_messages:count(cb_context:account_id(Context)),
+    RspData = add_counts_to_summary_results(cb_context:doc(Context), CountMap),
+    cb_context:set_resp_data(cb_context:set_doc(Context, RspData), RspData);
+load_vmbox_summary(Context, _) ->
+    Context.
 
 -spec add_counts_to_summary_results(kz_json:objects(), map()) -> kz_json:objects().
 add_counts_to_summary_results(BoxSummaries, CountMap) ->
@@ -772,7 +812,11 @@ merge_summary_fold(BoxSummary, CountMap) ->
             MsgsArrayCount = kz_json:get_integer_value(?VM_KEY_MESSAGES, BoxSummary, 0),
             New = maps:get(?VM_FOLDER_NEW, BoxCountMap, 0),
             Saved = maps:get(?VM_FOLDER_SAVED, BoxCountMap, 0),
-            kz_json:set_value(?VM_KEY_MESSAGES, MsgsArrayCount + New + Saved, BoxSummary)
+            Summary = [{?VM_KEY_MESSAGES, MsgsArrayCount + New + Saved}
+                      ,{[<<"folders">>, ?VM_FOLDER_NEW], New}
+                      ,{[<<"folders">>, ?VM_FOLDER_SAVED], Saved}
+                      ],
+            kz_json:set_values(Summary, BoxSummary)
     end.
 
 %%------------------------------------------------------------------------------

@@ -11194,6 +11194,97 @@
             ],
             "type": "object"
         },
+        "kapi.callflow.action.accepted": {
+            "description": "AMQP API for callflow.action.accepted",
+            "properties": {
+                "Call-ID": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "callflow"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "action.accepted"
+                    ],
+                    "type": "string"
+                },
+                "Msg-ID": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Call-ID",
+                "Msg-ID"
+            ],
+            "type": "object"
+        },
+        "kapi.callflow.action.execute": {
+            "description": "AMQP API for callflow.action.execute",
+            "properties": {
+                "Call": {
+                    "type": "object"
+                },
+                "Call-ID": {
+                    "type": "string"
+                },
+                "Data": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "callflow"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "action.execute"
+                    ],
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Call",
+                "Call-ID"
+            ],
+            "type": "object"
+        },
+        "kapi.callflow.action.result": {
+            "description": "AMQP API for callflow.action.result",
+            "properties": {
+                "Call-ID": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "callflow"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "action.result"
+                    ],
+                    "type": "string"
+                },
+                "Msg-ID": {
+                    "type": "string"
+                },
+                "Result": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Call-ID",
+                "Msg-ID",
+                "Result"
+            ],
+            "type": "object"
+        },
         "kapi.callflow.resume": {
             "description": "AMQP API for callflow.resume",
             "properties": {
@@ -11230,6 +11321,34 @@
                 },
                 "Camping-Request": {
                     "type": "object"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "camping"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "request"
+                    ],
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Account-ID",
+                "Camping-Request"
+            ],
+            "type": "object"
+        },
+        "kapi.camping.request": {
+            "description": "AMQP API for camping.request",
+            "properties": {
+                "Account-ID": {
+                    "type": "string"
+                },
+                "Camping-Request": {
+                    "type": "string"
                 },
                 "Event-Category": {
                     "enum": [
@@ -12946,6 +13065,30 @@
         },
         "kapi.delegate.delegate": {
             "description": "AMQP API for delegate.delegate",
+            "properties": {
+                "Delegate-Message": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "delegate"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "job"
+                    ],
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Delegate-Message"
+            ],
+            "type": "object"
+        },
+        "kapi.delegate.job": {
+            "description": "AMQP API for delegate.job",
             "properties": {
                 "Delegate-Message": {
                     "type": "string"
@@ -16666,6 +16809,107 @@
             ],
             "type": "object"
         },
+        "kapi.fax.account": {
+            "description": "AMQP API for fax.account",
+            "properties": {
+                "Account-ID": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "start"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "account"
+                    ],
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Account-ID"
+            ],
+            "type": "object"
+        },
+        "kapi.fax.fax_req": {
+            "description": "AMQP API for fax.fax_req",
+            "properties": {
+                "Action": {
+                    "enum": [
+                        "receive",
+                        "transmit"
+                    ],
+                    "type": "string"
+                },
+                "Call": {
+                    "type": "object"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "dialplan"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "fax_req"
+                    ],
+                    "type": "string"
+                },
+                "Fax-T38-Option": {
+                    "type": "string"
+                },
+                "FaxBox-ID": {
+                    "type": "string"
+                },
+                "Owner-ID": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Action",
+                "Call"
+            ],
+            "type": "object"
+        },
+        "kapi.fax.job": {
+            "description": "AMQP API for fax.job",
+            "properties": {
+                "Account-ID": {
+                    "type": "string"
+                },
+                "Control-Queue": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "start"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "job"
+                    ],
+                    "type": "string"
+                },
+                "Job-ID": {
+                    "type": "string"
+                },
+                "To-Number": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Account-ID",
+                "Control-Queue",
+                "Job-ID",
+                "To-Number"
+            ],
+            "type": "object"
+        },
         "kapi.fax.query_status": {
             "description": "AMQP API for fax.query_status",
             "properties": {
@@ -17990,6 +18234,73 @@
             },
             "required": [
                 "Action",
+                "Call-ID"
+            ],
+            "type": "object"
+        },
+        "kapi.metaflow.bind": {
+            "description": "AMQP API for metaflow.bind",
+            "properties": {
+                "Binding-Digit": {
+                    "enum": [
+                        "1",
+                        "2",
+                        "3",
+                        "4",
+                        "5",
+                        "6",
+                        "7",
+                        "8",
+                        "9",
+                        "*",
+                        "0",
+                        "#"
+                    ],
+                    "type": "string"
+                },
+                "Call": {
+                    "type": "object"
+                },
+                "Call-ID": {
+                    "type": "string"
+                },
+                "Digit-Timeout": {
+                    "type": "integer"
+                },
+                "Endpoint-ID": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "metaflow"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "bind"
+                    ],
+                    "type": "string"
+                },
+                "Listen-On": {
+                    "enum": [
+                        "both",
+                        "self",
+                        "peer",
+                        "aleg",
+                        "bleg"
+                    ],
+                    "type": "string"
+                },
+                "Numbers": {
+                    "type": "string"
+                },
+                "Patterns": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Call",
                 "Call-ID"
             ],
             "type": "object"
@@ -20951,9 +21262,6 @@
                 },
                 "To": {
                     "type": "string"
-                },
-                "kapi_definitionule": {
-                    "type": "string"
                 }
             },
             "required": [
@@ -21159,6 +21467,115 @@
             ],
             "type": "object"
         },
+        "kapi.notifications.voicemail_deleted": {
+            "description": "AMQP API for notifications.voicemail_deleted",
+            "properties": {
+                "Account-DB": {
+                    "type": "string"
+                },
+                "Account-ID": {
+                    "type": "string"
+                },
+                "Attachment-URL": {
+                    "type": "string"
+                },
+                "Bcc": {
+                    "type": "string"
+                },
+                "Call-ID": {
+                    "type": "string"
+                },
+                "Caller-ID-Name": {
+                    "type": "string"
+                },
+                "Caller-ID-Number": {
+                    "type": "string"
+                },
+                "Cc": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "notification"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "voicemail_deleted"
+                    ],
+                    "type": "string"
+                },
+                "From": {
+                    "type": "string"
+                },
+                "From-Realm": {
+                    "type": "string"
+                },
+                "From-User": {
+                    "type": "string"
+                },
+                "HTML": {
+                    "type": "string"
+                },
+                "Preview": {
+                    "type": "string"
+                },
+                "Reason": {
+                    "enum": [
+                        "dtmf",
+                        "delete_after_notify",
+                        "crossbar_action"
+                    ],
+                    "type": "string"
+                },
+                "Reply-To": {
+                    "type": "string"
+                },
+                "Subject": {
+                    "type": "string"
+                },
+                "Text": {
+                    "type": "string"
+                },
+                "To": {
+                    "type": "string"
+                },
+                "To-Realm": {
+                    "type": "string"
+                },
+                "To-User": {
+                    "type": "string"
+                },
+                "Voicemail-Box": {
+                    "type": "string"
+                },
+                "Voicemail-ID": {
+                    "type": "string"
+                },
+                "Voicemail-Length": {
+                    "type": "string"
+                },
+                "Voicemail-Timestamp": {
+                    "type": "string"
+                },
+                "Voicemail-Transcription": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Account-ID",
+                "From-Realm",
+                "From-User",
+                "Reason",
+                "To-Realm",
+                "To-User",
+                "Voicemail-Box",
+                "Voicemail-ID",
+                "Voicemail-Timestamp"
+            ],
+            "type": "object"
+        },
         "kapi.notifications.voicemail_full": {
             "description": "AMQP API for notifications.voicemail_full",
             "properties": {
@@ -21282,6 +21699,9 @@
                 "Preview": {
                     "type": "string"
                 },
+                "Reason": {
+                    "type": "string"
+                },
                 "Reply-To": {
                     "type": "string"
                 },
@@ -21380,6 +21800,9 @@
                     "type": "string"
                 },
                 "Preview": {
+                    "type": "string"
+                },
+                "Reason": {
                     "type": "string"
                 },
                 "Reply-To": {
@@ -23134,6 +23557,262 @@
             },
             "type": "object"
         },
+        "kapi.registration.reg_flush": {
+            "description": "AMQP API for registration.reg_flush",
+            "properties": {
+                "Event-Category": {
+                    "enum": [
+                        "directory"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "reg_flush"
+                    ],
+                    "type": "string"
+                },
+                "Realm": {
+                    "type": "string"
+                },
+                "Username": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Realm"
+            ],
+            "type": "object"
+        },
+        "kapi.registration.reg_query": {
+            "description": "AMQP API for registration.reg_query",
+            "properties": {
+                "Count-Only": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "directory"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "reg_query"
+                    ],
+                    "type": "string"
+                },
+                "Fields": {
+                    "type": "string"
+                },
+                "Realm": {
+                    "type": "string"
+                },
+                "Username": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "kapi.registration.reg_query_error": {
+            "description": "AMQP API for registration.reg_query_error",
+            "properties": {
+                "Event-Category": {
+                    "enum": [
+                        "directory"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "reg_query_error"
+                    ],
+                    "type": "string"
+                },
+                "Registrar-Age": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "kapi.registration.reg_query_resp": {
+            "description": "AMQP API for registration.reg_query_resp",
+            "properties": {
+                "Count": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "directory"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "reg_query_resp"
+                    ],
+                    "type": "string"
+                },
+                "Fields": {
+                    "type": "string"
+                },
+                "Registrar-Age": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "kapi.registration.reg_success": {
+            "description": "AMQP API for registration.reg_success",
+            "properties": {
+                "AOR": {
+                    "type": "string"
+                },
+                "Account-DB": {
+                    "type": "string"
+                },
+                "Account-ID": {
+                    "type": "string"
+                },
+                "Authorizing-ID": {
+                    "type": "string"
+                },
+                "Call-ID": {
+                    "type": "string"
+                },
+                "Contact": {
+                    "type": "string"
+                },
+                "Custom-Channel-Vars": {
+                    "type": "object"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "directory"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "reg_success"
+                    ],
+                    "type": "string"
+                },
+                "Event-Timestamp": {
+                    "type": "string"
+                },
+                "Expires": {
+                    "type": "string"
+                },
+                "First-Registration": {
+                    "type": "string"
+                },
+                "FreeSWITCH-Hostname": {
+                    "type": "string"
+                },
+                "FreeSWITCH-Nodename": {
+                    "type": "string"
+                },
+                "From-Host": {
+                    "type": "string"
+                },
+                "From-User": {
+                    "type": "string"
+                },
+                "Network-IP": {
+                    "type": "string"
+                },
+                "Network-Port": {
+                    "type": "string"
+                },
+                "Original-Contact": {
+                    "type": "string"
+                },
+                "Presence-Hosts": {
+                    "type": "string"
+                },
+                "Profile-Name": {
+                    "type": "string"
+                },
+                "Proxy-IP": {
+                    "type": "string"
+                },
+                "Proxy-Path": {
+                    "type": "string"
+                },
+                "Proxy-Port": {
+                    "type": "string"
+                },
+                "Proxy-Protocol": {
+                    "type": "string"
+                },
+                "RPid": {
+                    "type": "string"
+                },
+                "RUID": {
+                    "type": "string"
+                },
+                "Realm": {
+                    "type": "string"
+                },
+                "Register-Overwrite-Notify": {
+                    "type": "string"
+                },
+                "Registrar-Node": {
+                    "type": "string"
+                },
+                "Source-IP": {
+                    "type": "string"
+                },
+                "Source-Port": {
+                    "type": "string"
+                },
+                "Status": {
+                    "type": "string"
+                },
+                "Suppress-Unregister-Notify": {
+                    "type": "string"
+                },
+                "To-Host": {
+                    "type": "string"
+                },
+                "To-User": {
+                    "type": "string"
+                },
+                "User-Agent": {
+                    "type": "string"
+                },
+                "Username": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Contact",
+                "Event-Timestamp",
+                "Expires",
+                "Realm",
+                "Username"
+            ],
+            "type": "object"
+        },
+        "kapi.registration.reg_sync": {
+            "description": "AMQP API for registration.reg_sync",
+            "properties": {
+                "Event-Category": {
+                    "enum": [
+                        "directory"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "reg_sync"
+                    ],
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "kapi.registration.success": {
             "description": "AMQP API for registration.success",
             "properties": {
@@ -23294,6 +23973,9 @@
                 "Application-Data": {
                     "type": "string"
                 },
+                "Application-Name": {
+                    "type": "string"
+                },
                 "Asserted-Identity-Name": {
                     "type": "string"
                 },
@@ -23382,6 +24064,13 @@
                 },
                 "Endpoint-ID": {
                     "type": "string"
+                },
+                "Endpoints": {
+                    "items": {
+                        "$ref": "#/definitions/kapi.dialplan.bridge_endpoint",
+                        "type": "object"
+                    },
+                    "type": "array"
                 },
                 "Event-Category": {
                     "enum": [
@@ -24945,6 +25634,274 @@
             ],
             "type": "object"
         },
+        "kapi.route.route_req": {
+            "description": "AMQP API for route.route_req",
+            "properties": {
+                "Body": {
+                    "type": "string"
+                },
+                "Call-Direction": {
+                    "type": "string"
+                },
+                "Call-ID": {
+                    "type": "string"
+                },
+                "Caller-ID-Name": {
+                    "type": "string"
+                },
+                "Caller-ID-Number": {
+                    "type": "string"
+                },
+                "Codecs": {
+                    "type": "string"
+                },
+                "Context": {
+                    "type": "string"
+                },
+                "Cost-Parameters": {
+                    "type": "string"
+                },
+                "Custom-Application-Vars": {
+                    "type": "object"
+                },
+                "Custom-Channel-Vars": {
+                    "type": "object"
+                },
+                "Custom-Routing-Headers": {
+                    "type": "object"
+                },
+                "Custom-SIP-Headers": {
+                    "type": "object"
+                },
+                "Destination-Number": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "dialplan"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "route_req"
+                    ],
+                    "type": "string"
+                },
+                "Event-Queue": {
+                    "type": "string"
+                },
+                "From": {
+                    "type": "string"
+                },
+                "From-Network-Addr": {
+                    "type": "string"
+                },
+                "From-Network-Port": {
+                    "type": "string"
+                },
+                "From-Tag": {
+                    "type": "string"
+                },
+                "Geo-Location": {
+                    "type": "string"
+                },
+                "Max-Call-Length": {
+                    "type": "string"
+                },
+                "Media": {
+                    "enum": [
+                        "process",
+                        "proxy",
+                        "bypass"
+                    ],
+                    "type": "string"
+                },
+                "Message-ID": {
+                    "type": "string"
+                },
+                "Orig-IP": {
+                    "type": "string"
+                },
+                "Orig-Port": {
+                    "type": "string"
+                },
+                "Origination-Call-ID": {
+                    "type": "string"
+                },
+                "Prepend-CID-Name": {
+                    "type": "string"
+                },
+                "Request": {
+                    "type": "string"
+                },
+                "Resource-Type": {
+                    "enum": [
+                        "mms",
+                        "sms",
+                        "audio",
+                        "video",
+                        "chat",
+                        "metaflow"
+                    ],
+                    "type": "string"
+                },
+                "Ringback-Media": {
+                    "type": "string"
+                },
+                "SIP-Request-Host": {
+                    "type": "string"
+                },
+                "Switch-Hostname": {
+                    "type": "string"
+                },
+                "Switch-Nodename": {
+                    "type": "string"
+                },
+                "Switch-URI": {
+                    "type": "string"
+                },
+                "Switch-URL": {
+                    "type": "string"
+                },
+                "To": {
+                    "type": "string"
+                },
+                "To-Tag": {
+                    "type": "string"
+                },
+                "Transcode": {
+                    "type": "string"
+                },
+                "Transfer-Media": {
+                    "type": "string"
+                },
+                "User-Agent": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Call-ID",
+                "From",
+                "Request",
+                "To"
+            ],
+            "type": "object"
+        },
+        "kapi.route.route_resp": {
+            "description": "AMQP API for route.route_resp",
+            "properties": {
+                "Application-Data": {
+                    "type": "string"
+                },
+                "Custom-Application-Vars": {
+                    "type": "object"
+                },
+                "Custom-Channel-Vars": {
+                    "type": "object"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "dialplan"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "route_resp"
+                    ],
+                    "type": "string"
+                },
+                "From-Realm": {
+                    "type": "string"
+                },
+                "From-URI": {
+                    "type": "string"
+                },
+                "From-User": {
+                    "type": "string"
+                },
+                "Method": {
+                    "enum": [
+                        "bridge",
+                        "park",
+                        "error",
+                        "sms",
+                        "plan",
+                        "application"
+                    ],
+                    "type": "string"
+                },
+                "Plan-Data": {
+                    "type": "string"
+                },
+                "Pre-Park": {
+                    "enum": [
+                        "none",
+                        "ring_ready",
+                        "answer"
+                    ],
+                    "type": "string"
+                },
+                "Ringback-Media": {
+                    "type": "string"
+                },
+                "Route-Error-Code": {
+                    "type": "string"
+                },
+                "Route-Error-Message": {
+                    "type": "string"
+                },
+                "Routes": {
+                    "items": {
+                        "$ref": "#/definitions/kapi.route.resp_route",
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "Transfer-Media": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Method"
+            ],
+            "type": "object"
+        },
+        "kapi.route.route_win": {
+            "description": "AMQP API for route.route_win",
+            "properties": {
+                "Call-ID": {
+                    "type": "string"
+                },
+                "Control-Queue": {
+                    "type": "string"
+                },
+                "Custom-Channel-Vars": {
+                    "type": "object"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "dialplan"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "route_win"
+                    ],
+                    "type": "string"
+                },
+                "Switch-Hostname": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Call-ID",
+                "Control-Queue"
+            ],
+            "type": "object"
+        },
         "kapi.route.win": {
             "description": "AMQP API for route.win",
             "properties": {
@@ -25807,6 +26764,37 @@
             ],
             "type": "object"
         },
+        "kapi.switch.command": {
+            "description": "AMQP API for switch.command",
+            "properties": {
+                "Args": {
+                    "type": "string"
+                },
+                "Command": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "switch_event"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "command"
+                    ],
+                    "type": "string"
+                },
+                "FreeSWITCH-Node": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Args",
+                "Command"
+            ],
+            "type": "object"
+        },
         "kapi.switch.fs_command": {
             "description": "AMQP API for switch.fs_command",
             "properties": {
@@ -25976,6 +26964,46 @@
                     "type": "string"
                 }
             },
+            "type": "object"
+        },
+        "kapi.switch.reply": {
+            "description": "AMQP API for switch.reply",
+            "properties": {
+                "Command": {
+                    "type": "string"
+                },
+                "Error": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "switch_event"
+                    ],
+                    "type": "string"
+                },
+                "Event-Data": {
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "reply"
+                    ],
+                    "type": "string"
+                },
+                "FreeSWITCH-Node": {
+                    "type": "string"
+                },
+                "Response": {
+                    "type": "string"
+                },
+                "Result": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Command",
+                "Result"
+            ],
             "type": "object"
         },
         "kapi.sysconf.flush_req": {
@@ -26417,6 +27445,9 @@
                 "Account-ID": {
                     "type": "string"
                 },
+                "Auth-Account-ID": {
+                    "type": "string"
+                },
                 "Event-Category": {
                     "enum": [
                         "websockets"
@@ -26433,6 +27464,9 @@
                     "type": "string"
                 }
             },
+            "required": [
+                "Account-ID"
+            ],
             "type": "object"
         },
         "kapi.websockets.get_resp": {
@@ -30693,6 +31727,10 @@
                     "description": "blackhole ip",
                     "type": "string"
                 },
+                "max_connections_per_ip": {
+                    "description": "blackhole max_connections_per_ip",
+                    "type": "integer"
+                },
                 "port": {
                     "default": 5555,
                     "description": "blackhole port",
@@ -30729,6 +31767,10 @@
                     "default": 100,
                     "description": "blackhole ssl_workers",
                     "type": "integer"
+                },
+                "url": {
+                    "description": "The advertised URL of the Kazoo websocket",
+                    "type": "string"
                 },
                 "use_plaintext": {
                     "default": true,
@@ -31019,6 +32061,11 @@
                     "description": "callflow singular call hook url",
                     "type": "string"
                 },
+                "vm_delete_amqp": {
+                    "default": false,
+                    "description": "callflow vm_delete_amqp",
+                    "type": "boolean"
+                },
                 "voicemail": {
                     "properties": {
                         "delete_after_notify": {
@@ -31101,6 +32148,16 @@
                             "description": "callflow fastforward and rewind seek duration",
                             "minimum": 0,
                             "type": "integer"
+                        },
+                        "transcribe_default": {
+                            "default": false,
+                            "description": "callflow voicemail transcribe_default",
+                            "type": "boolean"
+                        },
+                        "vm_delete_amqp": {
+                            "default": false,
+                            "description": "send ampq message to notify about voicemail deletion",
+                            "type": "boolean"
                         },
                         "vm_message_forward_type": {
                             "default": "only_forward",
@@ -31384,6 +32441,16 @@
                     "default": {},
                     "description": "cluster zones",
                     "type": "object"
+                }
+            },
+            "type": "object"
+        },
+        "system_config.cluster_manager": {
+            "description": "Schema for cluster_manager system_config",
+            "properties": {
+                "url": {
+                    "description": "The base URL of the 2600Hz cluster manager service",
+                    "type": "string"
                 }
             },
             "type": "object"
@@ -32049,17 +33116,6 @@
             },
             "type": "object"
         },
-        "system_config.crossbar.callflows": {
-            "description": "Schema for crossbar.callflows system_config",
-            "properties": {
-                "default_reconcile_numbers": {
-                    "default": false,
-                    "description": "crossbar.callflows default reconcile numbers",
-                    "type": "boolean"
-                }
-            },
-            "type": "object"
-        },
         "system_config.crossbar.cdrs": {
             "description": "Schema for crossbar.cdrs system_config",
             "properties": {
@@ -32079,6 +33135,11 @@
                     "description": "maximum range (in seconds) prior to the current date allowed for CDR requests",
                     "minimum": 1,
                     "type": "integer"
+                },
+                "should_filter_empty_strings": {
+                    "default": false,
+                    "description": "If true, API will strip keys with \"\" as values before sending the response (decrease payload)",
+                    "type": "boolean"
                 }
             },
             "type": "object"
@@ -34467,6 +35528,16 @@
             },
             "type": "object"
         },
+        "system_config.mobile": {
+            "description": "Schema for mobile system_config",
+            "properties": {
+                "url": {
+                    "description": "The base URL of the 2600Hz mobile service",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "system_config.mobile_manager": {
             "description": "Schema for mobile_manager system_config",
             "properties": {
@@ -34532,6 +35603,7 @@
                         "teletype_transaction",
                         "teletype_voicemail_full",
                         "teletype_voicemail_to_email",
+                        "teletype_voicemail_deleted",
                         "teletype_webhook_disabled"
                     ],
                     "description": "teletype modules to start when teletype is started",
@@ -35001,6 +36073,22 @@
                 "text_content_transfer_encoding": {
                     "default": "7BIT",
                     "description": "notify.transaction text content transfer encoding",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "system_config.notify.voicemail_deleted": {
+            "description": "Schema for notify.voicemail_deleted system_config",
+            "properties": {
+                "html_content_transfer_encoding": {
+                    "default": "7BIT",
+                    "description": "notify.voicemail_deleted html content transfer encoding",
+                    "type": "string"
+                },
+                "text_content_transfer_encoding": {
+                    "default": "7BIT",
+                    "description": "notify.voicemail_deleted text content transfer encoding",
                     "type": "string"
                 }
             },
@@ -35623,6 +36711,16 @@
             },
             "type": "object"
         },
+        "system_config.phonebook": {
+            "description": "Schema for phonebook system_config",
+            "properties": {
+                "url": {
+                    "description": "The base URL of the 2600Hz phonebook service",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "system_config.pivot": {
             "description": "Schema for pivot system_config",
             "properties": {
@@ -35719,6 +36817,11 @@
                     "default": "0000000000",
                     "description": "Default Caller ID Number should be shown for anonymous calls",
                     "type": "string"
+                },
+                "use_sip_privacy_header": {
+                    "default": true,
+                    "description": "privacy use_sip_privacy_header",
+                    "type": "boolean"
                 }
             },
             "type": "object"
@@ -36664,6 +37767,16 @@
                     "minimum": 1,
                     "type": "integer"
                 },
+                "compaction_list_dbs_chunk_size": {
+                    "default": 20,
+                    "description": "How many dbs to read between pauses",
+                    "type": "integer"
+                },
+                "compaction_list_dbs_pause_ms": {
+                    "default": 200,
+                    "description": "How long to pause before attempting to get the next chunk of dbs",
+                    "type": "integer"
+                },
                 "crawler_delay_time_ms": {
                     "default": 60000,
                     "description": "tasks crawler delay time in milliseconds",
@@ -36937,6 +38050,57 @@
             },
             "type": "object"
         },
+        "system_config.telemetry": {
+            "description": "Schema for telemetry system_config",
+            "properties": {
+                "cluster_id_anonymized": {
+                    "default": true,
+                    "description": "telemetry cluster_id_anonymized",
+                    "type": "boolean"
+                },
+                "collection_interval_s": {
+                    "default": 86400,
+                    "description": "telemetry collection_interval_s",
+                    "type": "integer"
+                },
+                "include_apps": {
+                    "default": true,
+                    "description": "telemetry include_apps",
+                    "type": "boolean"
+                },
+                "include_database": {
+                    "default": true,
+                    "description": "telemetry include_database",
+                    "type": "boolean"
+                },
+                "include_freeswitch": {
+                    "default": true,
+                    "description": "telemetry include_freeswitch",
+                    "type": "boolean"
+                },
+                "include_kamailio": {
+                    "default": true,
+                    "description": "telemetry include_kamailio",
+                    "type": "boolean"
+                },
+                "include_services": {
+                    "default": true,
+                    "description": "telemetry include_services",
+                    "type": "boolean"
+                }
+            },
+            "type": "object"
+        },
+        "system_config.telemetry.waveguide": {
+            "description": "Schema for telemetry.waveguide system_config",
+            "properties": {
+                "activation": {
+                    "description": "telemetry waveguide activation",
+                    "type": "integer"
+                }
+            },
+            "type": "object"
+        },
         "system_config.teletype": {
             "description": "Schema for teletype system_config",
             "properties": {
@@ -37083,6 +38247,16 @@
                         "type": "string"
                     },
                     "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "system_config.webrtc": {
+            "description": "Schema for webrtc system_config",
+            "properties": {
+                "url": {
+                    "description": "The advertised URL of the webrtc socket",
+                    "type": "string"
                 }
             },
             "type": "object"
@@ -37539,7 +38713,7 @@
                     "type": "string"
                 },
                 "credentials": {
-                    "description": "A hash of the uses credentials",
+                    "description": "A hash of the user credentials",
                     "maxLength": 64,
                     "minLength": 1,
                     "type": "string"
@@ -37979,6 +39153,11 @@
         "vmboxes": {
             "description": "Schema for a voicemail box",
             "properties": {
+                "announcement_only": {
+                    "default": false,
+                    "description": "Determine if the mailbox should only play announcements",
+                    "type": "boolean"
+                },
                 "check_if_owner": {
                     "default": true,
                     "description": "Determines if when the user calls their own voicemail they should be prompted to sign in",
@@ -37995,6 +39174,16 @@
                         "type": "string"
                     },
                     "type": "array"
+                },
+                "include_message_on_notify": {
+                    "default": true,
+                    "description": "Whether or not to include the attachment when sending a new voicemail to email notification",
+                    "type": "boolean"
+                },
+                "include_transcription_on_notify": {
+                    "default": true,
+                    "description": "Whether or not to include the transcription when sending a new voicemail to email notification",
+                    "type": "boolean"
                 },
                 "is_setup": {
                     "default": false,
