@@ -25,6 +25,7 @@
         ,changed/2, find_most_recent_fold/3
 
         ,status_should_auto_start/1
+        ,agent_priority/1
         ]).
 
 -include("acdc.hrl").
@@ -385,3 +386,7 @@ changed([F|From], To, Add, Rm) ->
 status_should_auto_start(<<"logged_out">>) -> 'false';
 status_should_auto_start(<<"unknown">>) -> 'false';
 status_should_auto_start(_) -> 'true'.
+
+-spec agent_priority(wh_json:object()) -> agent_priority().
+agent_priority(AgentJObj) ->
+    -1 * kz_json:get_integer_value(<<"acdc_agent_priority">>, AgentJObj, 0).

@@ -359,11 +359,11 @@ id(Srv) ->
 init([Supervisor, Agent, Queues]) ->
     AgentId = agent_id(Agent),
     kz_log:put_callid(AgentId),
-    lager:debug("starting acdc agent listener"),
+    lager:debug("starting acdc agent listener ~p", [AgentId]),
 
     {'ok', #state{agent_id=AgentId
-                  ,agent_priority=acdc_agent_util:agent_priority(Agent)
-                  ,skills=kz_json:get_list_value(<<"acdc_skills">>, Agent, [])
+                 ,agent_priority=acdc_agent_util:agent_priority(Agent)
+                 ,skills=kz_json:get_list_value(<<"acdc_skills">>, Agent, [])
                  ,acct_id=account_id(Agent)
                  ,acct_db=account_db(Agent)
                  ,my_id=acdc_util:proc_id()
@@ -1169,6 +1169,7 @@ send_availability_update(QueueId, _, #state{agent_id=AgentId
 
 -spec send_agent_available(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), agent_priority(), kz_term:ne_binaries()) -> 'ok'.
 send_agent_available(AcctId, AgentId, QueueId, Priority, Skills) ->
+    lager:debug("Sending agent ~p available with priority ~p and skills ~p", [AgentId, Priority, Skills]),
     Prop = [{<<"Account-ID">>, AcctId}
            ,{<<"Agent-ID">>, AgentId}
            ,{<<"Queue-ID">>, QueueId}
