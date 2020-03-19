@@ -1440,7 +1440,7 @@ ss_size(Strategy, #strategy_state{agents=Agents
     case Strategy of
         'rr' -> pqueue4:len(Agents);
         'mi' -> length(Agents);
-        'ring_all' -> length(Agents);
+        'all' -> length(Agents);
         'sbrr' -> pqueue4:len(maps:get('rr_queue', Agents, []))
     end + length(RingingAgents) + length(BusyAgents);
 ss_size('rr', #strategy_state{agents=Agents}=SS, 'free') ->
