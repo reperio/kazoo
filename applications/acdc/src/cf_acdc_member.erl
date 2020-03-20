@@ -43,27 +43,33 @@ handle(Data, Call) ->
 
     Priority = lookup_priority(Data, Call),
 
+    % FIXME: This should be macro from conflicting hrl
+    Skills = kz_json:get_list_value('acdc_required_skills', Data, []),
+    Call1 = kapps_call:kvs_store('acdc_required_skills', Skills, Call),
+
+
     MemberCall = props:filter_undefined(
-                   [{<<"Account-ID">>, kapps_call:account_id(Call)}
+                   [{<<"Account-ID">>, kapps_call:account_id(Call1)}
                    ,{<<"Queue-ID">>, QueueId}
-                   ,{<<"Call">>, kapps_call:to_json(Call)}
+                   ,{<<"Call">>, kapps_call:to_json(Call1)}
                    ,{<<"Member-Priority">>, Priority}
                     | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
                    ]),
 
     lager:info("loading ACDc queue: ~s", [QueueId]),
-    {'ok', QueueJObj} = kz_datamgr:open_cache_doc(kapps_call:account_db(Call), QueueId),
+    {'ok', QueueJObj} = kz_datamgr:open_cache_doc(kapps_call:account_db(Call1), QueueId),
 
     MaxWait = max_wait(kz_json:get_integer_value(<<"connection_timeout">>, QueueJObj, 3600)),
     MaxQueueSize = max_queue_size(kz_json:get_integer_value(<<"max_queue_size">>, QueueJObj, 0)),
 
-    Call1 = kapps_call:kvs_store('caller_exit_key', kz_json:get_value(<<"caller_exit_key">>, QueueJObj, <<"#">>), Call),
+    Call2 = kapps_call:kvs_store('caller_exit_key', kz_json:get_value(<<"caller_exit_key">>, QueueJObj, <<"#">>), Call1),
 
-    CurrQueueSize = kapi_acdc_queue:queue_size(kapps_call:account_id(Call1), QueueId),
+
+    CurrQueueSize = kapi_acdc_queue:queue_size(kapps_call:account_id(Call2), QueueId),
 
     lager:info("max size: ~p curr size: ~p", [MaxQueueSize, CurrQueueSize]),
 
-    maybe_enter_queue(#member_call{call=Call1
+    maybe_enter_queue(#member_call{call=Call2
                                   ,config_data=MemberCall
                                   ,queue_id=QueueId
                                   ,max_wait=MaxWait
