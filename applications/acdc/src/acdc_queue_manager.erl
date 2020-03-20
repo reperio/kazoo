@@ -38,7 +38,7 @@
         ]).
 
 %% FSM helpers
--export([pick_winner/2]).
+-export([pick_winner/3]).
 
 %% gen_server callbacks
 -export([init/1
@@ -282,14 +282,14 @@ status(Srv) -> gen_listener:call(Srv, 'status').
 refresh(Mgr, QueueJObj) -> gen_listener:cast(Mgr, {'refresh', QueueJObj}).
 
 strategy(Srv) -> gen_listener:call(Srv, 'strategy').
-next_winner(Srv) -> gen_listener:call(Srv, 'next_winner').
+next_winner(Srv, Call) -> gen_listener:call(Srv, {'next_winner', Call}).
 
 agents_available(Srv) -> gen_listener:call(Srv, 'agents_available').
 
--spec pick_winner(pid(), kz_json:objects()) ->
+-spec pick_winner(pid(), kapps_call:call(), kz_json:objects()) ->
           'undefined' |
           {kz_json:objects(), kz_json:objects()}.
-pick_winner(Srv, Resps) -> pick_winner(Srv, Resps, strategy(Srv), next_winner(Srv)).
+pick_winner(Srv, Call, Resps) -> pick_winner(Srv, Resps, strategy(Srv), next_winner(Srv, Call)).
 
 %%%=============================================================================
 %%% gen_server callbacks
@@ -393,9 +393,9 @@ handle_call('agents_available', _, #state{strategy=Strategy
 handle_call('enter_when_empty', _, #state{enter_when_empty=EnterWhenEmpty}=State) ->
     {'reply', EnterWhenEmpty, State};
 
-handle_call('next_winner', _, #state{strategy='mi'}=State) ->
+handle_call({'next_winner', _}, _, #state{strategy='mi'}=State) ->
     {'reply', 'undefined', State};
-handle_call('next_winner', _, #state{strategy='rr'
+handle_call({'next_winner', _}, _, #state{strategy='rr'
                                     ,strategy_state=#strategy_state{agents=Agents}=SS
                                     }=State) ->
     case pqueue4:pout(Agents) of
@@ -404,14 +404,19 @@ handle_call('next_winner', _, #state{strategy='rr'
         {'empty', _} ->
             {'reply', 'undefined', State}
     end;
-handle_call('next_winner', _, #state{strategy='all'}=State) ->
+handle_call({'next_winner', _}, _, #state{strategy='all'}=State) ->
     {'reply', 'undefined', State};
 
+handle_call({'next_winner', Call}, _, #state{strategy='sbrr'
+                                            ,strategy_state=#strategy_state{agents=#{call_id_map := CallIdMap}}
+                                            }=State) ->
+    CallId = kapps_call:call_id(Call),
+    {'reply', maps:get(CallId, CallIdMap, 'undefined'), State};
 handle_call('current_agents', _, #state{strategy='rr'
-                                       ,strategy_state=#strategy_state{agents=Q
-                                                                      ,ringing_agents=RingingAgents
-                                                                      ,busy_agents=BusyAgents
-                                                                      }
+                                        ,strategy_state=#strategy_state{agents=Q
+                                                                        ,ringing_agents=RingingAgents
+                                                                        ,busy_agents=BusyAgents
+                                                                       }
                                        }=State) ->
     {'reply', pqueue4:to_list(Q) ++ RingingAgents ++ BusyAgents, State};
 handle_call('current_agents', _, #state{strategy='mi'
@@ -811,15 +816,18 @@ publish_queue_member_remove(AccountId, QueueId, CallId) ->
 pick_winner(_, [], _, _) ->
     lager:debug("no agent responses are left to choose from"),
     'undefined';
-pick_winner(Mgr, CRs, 'rr', AgentId) ->
+pick_winner(_Mgr, CRs, 'rr', AgentId) ->
     case split_agents(AgentId, CRs) of
         {[], _O} ->
             lager:debug("oops, agent ~s appears to have not responded; try again", [AgentId]),
-            pick_winner(Mgr, remove_unknown_agents(Mgr, CRs), 'rr', next_winner(Mgr));
+            {[], []};
+            %FIXME: remove pick_winner(Mgr, remove_unknown_agents(Mgr, CRs), 'rr', next_winner(Mgr));
         {Winners, OtherAgents} ->
             lager:debug("found winning responders for agent: ~s", [AgentId]),
             {Winners, OtherAgents}
     end;
+pick_winner(Mgr, CRs, 'sbrr', AgentId) ->
+    pick_winner(Mgr, CRs, 'rr', AgentId);
 pick_winner(_Mgr, CRs, 'mi', _) ->
     [MostIdle | Rest] = lists:usort(fun sort_agent/2, CRs),
     AgentId = kz_json:get_value(<<"Agent-ID">>, MostIdle),
@@ -1255,15 +1263,16 @@ sort_agent(A, B) ->
 %% but then the agent logs out of their phone (removing the agent
 %% from the list in the queue manager).
 %% Otherwise CRs will never be empty
--spec remove_unknown_agents(pid(), kz_json:objects()) -> kz_json:objects().
-remove_unknown_agents(Mgr, CRs) ->
-    case gen_listener:call(Mgr, 'current_agents') of
-        [] -> [];
-        Agents ->
-            [CR || CR <- CRs,
-                   lists:member(kz_json:get_value(<<"Agent-ID">>, CR), Agents)
-            ]
-    end.
+%FIXME: Seems needs fixing or removing
+%-spec remove_unknown_agents(pid(), kz_json:objects()) -> kz_json:objects().
+%remove_unknown_agents(Mgr, CRs) ->
+%    case gen_listener:call(Mgr, 'current_agents') of
+%        [] -> [];
+%        Agents ->
+%            [CR || CR <- CRs,
+%                   lists:member(kz_json:get_value(<<"Agent-ID">>, CR), Agents)
+%            ]
+%    end.
 
 -spec split_agents(kz_term:ne_binary(), kz_json:objects()) ->
           {kz_json:objects(), kz_json:objects()}.
@@ -1374,7 +1383,8 @@ create_strategy_state('sbrr', #strategy_state{agents='undefined'}=SS, AcctDb, Qu
     create_strategy_state('sbrr', SS#strategy_state{agents=SBRRStrategyState}, AcctDb, QueueId);
 
 create_strategy_state('sbrr', SS, AcctDb, QueueId) ->
-    case kz_datamgr:get_results(AcctDb, <<"queues/agents_listing">>, [{'key', QueueId}]) of
+    case kz_datamgr:get_results(AcctDb, <<"queues/agents_listing">>,
+                                [{'key', QueueId}, {reduce, false}]) of
         {'ok', []} -> lager:debug("no agents around"), SS;
         {'ok', JObjs} -> lists:foldl(fun update_sbrrss_with_agent/2, SS, JObjs);
         {'error', _E} -> lager:debug("error creating strategy mi: ~p", [_E]), SS

@@ -16,7 +16,8 @@
                 "  for (i in doc.queues) {",
                 "    emit(doc.queues[i], {",
                 "       'id': doc._id,",
-                "       'agent_priority': doc.acdc_agent_priority",
+                "       'agent_priority': doc.acdc_agent_priority,",
+                "       'skills': doc.acdc_skills",
                 "    });",
                 "  }",
                 "}"

@@ -884,6 +884,7 @@ handle_agent_responses(#state{collect_ref=Ref
 maybe_pick_winner(#state{connect_resps=CRs
                         ,listener_proc=ListenerSrv
                         ,manager_proc=Mgr
+                        ,member_call=Call
                         ,agent_ring_timeout=RingTimeout
                         ,agent_wrapup_time=AgentWrapup
                         ,caller_exit_key=CallerExitKey
@@ -892,7 +893,7 @@ maybe_pick_winner(#state{connect_resps=CRs
                         ,recording_url=RecordUrl
                         ,notifications=Notifications
                         }=State) ->
-    case acdc_queue_manager:pick_winner(Mgr, CRs) of
+    case acdc_queue_manager:pick_winner(Mgr, Call, CRs) of
         {Winners, Rest} ->
             QueueOpts = [{<<"Ring-Timeout">>, RingTimeout}
                         ,{<<"Wrapup-Timeout">>, AgentWrapup}
