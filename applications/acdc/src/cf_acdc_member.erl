@@ -13,6 +13,10 @@
 %%% @author James Aimonetti
 %%% @author KAZOO-3596: Sponsored by GTNetwork LLC, implemented by SIPLABS LLC
 %%% @author Daniel Finke
+%%% This Source Code Form is subject to the terms of the Mozilla Public
+%%% License, v. 2.0. If a copy of the MPL was not distributed with this
+%%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
+%%%
 %%% @end
 %%%-----------------------------------------------------------------------------
 -module(cf_acdc_member).
@@ -112,7 +116,7 @@ lookup_priority(Data, Call) ->
     case {FromData, FromCall} of
         {FromData, _} when is_integer(FromData) -> FromData;
         {_, FromCall} when is_binary(FromCall) -> kz_term:to_integer(FromCall);
-        _ -> 'undefined' 
+        _ -> 'undefined'
     end.
 
 -spec maybe_enter_queue(member_call(), boolean()) -> any().
@@ -342,7 +346,7 @@ process_breakout_message(DTMF
             lager:debug("accepted callback for number ~s", [Number]),
             register_callback(MC, Number),
 
-%%            PromptVars = kz_json:from_list([{<<"var1">>, <<"breakout-callback_registered">>}]),
+            %%            PromptVars = kz_json:from_list([{<<"var1">>, <<"breakout-callback_registered">>}]),
             kapps_call_command:prompt(callback_registered(BreakoutMedia), kapps_call:language(Call), Call),
             kapps_call_command:queued_hangup(Call),
             'callback_registered';
