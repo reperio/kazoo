@@ -686,12 +686,12 @@ handle_cast({'add_queue_member', JObj}, #state{account_id=AccountId
                          'undefined'
                  end,
     _ = acdc_stats:call_waiting(AccountId, QueueId, Position
-                           ,kapps_call:call_id(Call1)
-                           ,CIDName
-                           ,CIDNumber
-                           ,Priority
-                           ,StatSkills
-                           ),
+                               ,kapps_call:call_id(Call1)
+                               ,CIDName
+                               ,CIDNumber
+                               ,Priority
+                               ,StatSkills
+                               ),
 
     publish_queue_member_add(AccountId, QueueId, Call1, Priority
                             ,kz_json:is_true(<<"Enter-As-Callback">>, JObj1)
@@ -1632,10 +1632,10 @@ callback_flag(AccountId, QueueId, Call) ->
     Call1 = prepend_cid_name(<<"CB:">>, Call),
     {_, CIDName} = acdc_util:caller_id(Call1),
     _ = acdc_stats:call_marked_callback(AccountId
-                                   ,QueueId
-                                   ,kapps_call:call_id(Call)
-                                   ,CIDName
-                                   ),
+                                       ,QueueId
+                                       ,kapps_call:call_id(Call)
+                                       ,CIDName
+                                       ),
     Call1.
 
 -spec prepend_cid_name(kz_term:ne_binary(), kapps_call:call()) -> kapps_call:call().
