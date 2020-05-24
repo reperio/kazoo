@@ -816,7 +816,8 @@ handle_event(_JObj, #state{enter_when_empty=EnterWhenEmpty
 -spec terminate(any(), mgr_state()) -> 'ok'.
 terminate(_Reason, #state{queue_id = QueueId}) ->
     lager:debug("queue manager terminating: ~p", [_Reason]),
-    gen_listener:rm_queue(self(), ?SECONDARY_QUEUE_NAME(QueueId)).
+    gen_listener:rm_queue(self(), ?SECONDARY_QUEUE_NAME(QueueId)),
+    ok.
 
 %%------------------------------------------------------------------------------
 %% @private
