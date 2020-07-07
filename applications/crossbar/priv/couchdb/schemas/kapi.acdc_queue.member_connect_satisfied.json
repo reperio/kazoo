@@ -3,8 +3,14 @@
     "_id": "kapi.acdc_queue.member_connect_satisfied",
     "description": "AMQP API for acdc_queue.member_connect_satisfied",
     "properties": {
+        "Accept-Agent-ID": {
+            "type": "string"
+        },
+        "Agent-ID": {
+            "type": "string"
+        },
         "Agent-Process-IDs": {
-            "type": "array"
+            "type": "string"
         },
         "Call": {
             "type": "object"
@@ -12,14 +18,12 @@
         "Event-Category": {
             "enum": [
                 "member"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "connect_satisfied"
-            ],
-            "type": "string"
+            ]
         },
         "Process-ID": {
             "type": "string"
@@ -29,6 +33,8 @@
         }
     },
     "required": [
+        "Accept-Agent-ID",
+        "Agent-ID",
         "Call",
         "Queue-ID"
     ],

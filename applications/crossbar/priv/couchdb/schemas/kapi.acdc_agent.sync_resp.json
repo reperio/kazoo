@@ -15,28 +15,27 @@
         "Event-Category": {
             "enum": [
                 "agent"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "sync_resp"
-            ],
-            "type": "string"
+            ]
         },
         "Process-ID": {
             "type": "string"
         },
         "Status": {
             "enum": [
-                "init",
-                "sync",
-                "ready",
-                "waiting",
-                "ringing",
                 "answered",
-                "wrapup",
-                "paused"
+                "awaiting_callback",
+                "outbound",
+                "paused",
+                "ready",
+                "ringing",
+                "ringing_callback",
+                "sync",
+                "wrapup"
             ],
             "type": "string"
         },

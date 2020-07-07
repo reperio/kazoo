@@ -12,14 +12,12 @@
         "Event-Category": {
             "enum": [
                 "member"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "connect_retry"
-            ],
-            "type": "string"
+            ]
         },
         "Process-ID": {
             "type": "string"

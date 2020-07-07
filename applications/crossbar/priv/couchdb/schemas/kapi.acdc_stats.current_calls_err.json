@@ -9,14 +9,12 @@
         "Event-Category": {
             "enum": [
                 "acdc_stat"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "current_calls_err"
-            ],
-            "type": "string"
+            ]
         }
     },
     "required": [

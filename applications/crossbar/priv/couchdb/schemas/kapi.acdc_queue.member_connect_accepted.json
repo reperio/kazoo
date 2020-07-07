@@ -15,13 +15,14 @@
         "Event-Category": {
             "enum": [
                 "member"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "connect_accepted"
-            ],
+            ]
+        },
+        "Old-Call-ID": {
             "type": "string"
         },
         "Process-ID": {

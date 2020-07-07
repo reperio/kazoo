@@ -9,17 +9,18 @@
         "Agent-ID": {
             "type": "string"
         },
+        "Call-ID": {
+            "type": "string"
+        },
         "Event-Category": {
             "enum": [
                 "agent"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "stats_req"
-            ],
-            "type": "string"
+            ]
         }
     },
     "required": [

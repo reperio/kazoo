@@ -12,14 +12,12 @@
         "Event-Category": {
             "enum": [
                 "agent"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "resume"
-            ],
-            "type": "string"
+            ]
         },
         "Presence-ID": {
             "type": "string"

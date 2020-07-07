@@ -10,18 +10,22 @@
         "Event-Category": {
             "enum": [
                 "acdc_stat"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "average_wait_time_req"
-            ],
-            "type": "string"
+            ]
         },
         "Queue-ID": {
             "minLength": 1,
             "type": "string"
+        },
+        "Skills": {
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
         },
         "Window": {
             "type": "integer"

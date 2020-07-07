@@ -21,20 +21,18 @@
         "Event-Category": {
             "enum": [
                 "acdc_status_stat"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "outbound"
-            ],
+            ]
+        },
+        "Pause-Alias": {
             "type": "string"
         },
         "Pause-Time": {
             "type": "integer"
-        },
-        "Queue-ID": {
-            "type": "string"
         },
         "Timestamp": {
             "type": "string"

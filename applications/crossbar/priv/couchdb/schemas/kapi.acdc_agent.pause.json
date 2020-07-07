@@ -9,17 +9,18 @@
         "Agent-ID": {
             "type": "string"
         },
+        "Alias": {
+            "type": "string"
+        },
         "Event-Category": {
             "enum": [
                 "agent"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "pause"
-            ],
-            "type": "string"
+            ]
         },
         "Presence-ID": {
             "type": "string"

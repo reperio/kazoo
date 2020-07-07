@@ -15,14 +15,12 @@
         "Event-Category": {
             "enum": [
                 "acdc_call_stat"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "missed"
-            ],
-            "type": "string"
+            ]
         },
         "Miss-Reason": {
             "type": "string"

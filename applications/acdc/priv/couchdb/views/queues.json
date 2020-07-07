@@ -4,6 +4,9 @@
         "view_map": [
             {
                 "classification": "account"
+            },
+            {
+                "database": "acdc"
             }
         ]
     },
@@ -14,7 +17,11 @@
                 "function(doc) {",
                 "  if (doc.pvt_type !== 'user' || doc.pvt_deleted || typeof doc.queues !== 'object') return;",
                 "  for (i in doc.queues) {",
-                "    emit([doc.queues[i], doc._id], doc._id);",
+                "    emit(doc.queues[i], {",
+                "      'id': doc._id,",
+                "      'agent_priority': doc.acdc_agent_priority || 0,",
+                "      'skills': doc.acdc_skills || []",
+                "    });",
                 "  }",
                 "}"
             ],
@@ -26,8 +33,7 @@
                 "  if (doc.pvt_type != 'queue' || doc.pvt_deleted) return;",
                 "  emit(doc._id, {",
                 "    'id': doc._id,",
-                "    'name': doc.name,",
-                "    'strategy': doc.strategy",
+                "    'name': doc.name",
                 "  });",
                 "}"
             ]

@@ -4,7 +4,7 @@
     "description": "AMQP API for acdc_queue.member_connect_win",
     "properties": {
         "Agent-Process-IDs": {
-            "type": "array"
+            "type": "string"
         },
         "CDR-Url": {
             "type": "string"
@@ -12,20 +12,21 @@
         "Call": {
             "type": "object"
         },
+        "Callback-Details": {
+            "type": "string"
+        },
         "Caller-Exit-Key": {
             "type": "string"
         },
         "Event-Category": {
             "enum": [
                 "member"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "connect_win"
-            ],
-            "type": "string"
+            ]
         },
         "Notifications": {
             "type": "object"

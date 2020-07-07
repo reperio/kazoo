@@ -15,14 +15,12 @@
         "Event-Category": {
             "enum": [
                 "acdc_stat"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "status_req"
-            ],
-            "type": "string"
+            ]
         },
         "Limit": {
             "type": "string"

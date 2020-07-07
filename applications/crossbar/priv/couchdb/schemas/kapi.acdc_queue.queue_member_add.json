@@ -9,17 +9,24 @@
         "Call": {
             "type": "object"
         },
+        "Callback-Number": {
+            "type": "string"
+        },
+        "Enter-As-Callback": {
+            "type": "boolean"
+        },
         "Event-Category": {
             "enum": [
                 "queue"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "member_add"
-            ],
-            "type": "string"
+            ]
+        },
+        "Member-Priority": {
+            "type": "integer"
         },
         "Queue-ID": {
             "type": "string"
@@ -28,6 +35,7 @@
     "required": [
         "Account-ID",
         "Call",
+        "Enter-As-Callback",
         "Queue-ID"
     ],
     "type": "object"

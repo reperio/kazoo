@@ -6,6 +6,9 @@
         "Account-ID": {
             "type": "string"
         },
+        "Agent-Call-IDs": {
+            "type": "string"
+        },
         "Current-Calls": {
             "type": "string"
         },
@@ -18,14 +21,12 @@
         "Event-Category": {
             "enum": [
                 "agent"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "stats_resp"
-            ],
-            "type": "string"
+            ]
         },
         "Stats": {
             "type": "object"

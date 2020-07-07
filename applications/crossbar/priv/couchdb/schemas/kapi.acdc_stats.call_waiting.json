@@ -18,23 +18,30 @@
         "Caller-Priority": {
             "type": "string"
         },
+        "Entered-Position": {
+            "type": "string"
+        },
         "Entered-Timestamp": {
             "type": "string"
         },
         "Event-Category": {
             "enum": [
                 "acdc_call_stat"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "waiting"
-            ],
-            "type": "string"
+            ]
         },
         "Queue-ID": {
             "type": "string"
+        },
+        "Required-Skills": {
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
         }
     },
     "required": [

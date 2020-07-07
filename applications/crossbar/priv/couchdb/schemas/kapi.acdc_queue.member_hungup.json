@@ -9,14 +9,12 @@
         "Event-Category": {
             "enum": [
                 "member"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "hungup"
-            ],
-            "type": "string"
+            ]
         },
         "Process-ID": {
             "type": "string"

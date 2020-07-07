@@ -15,14 +15,12 @@
         "Event-Category": {
             "enum": [
                 "member"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "call_success"
-            ],
-            "type": "string"
+            ]
         },
         "Process-ID": {
             "type": "string"

@@ -18,14 +18,12 @@
         "Event-Category": {
             "enum": [
                 "acdc_call_stat"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "abandoned"
-            ],
-            "type": "string"
+            ]
         },
         "Queue-ID": {
             "type": "string"

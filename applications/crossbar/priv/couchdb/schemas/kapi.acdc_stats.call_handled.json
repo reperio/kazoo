@@ -15,14 +15,12 @@
         "Event-Category": {
             "enum": [
                 "acdc_call_stat"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "handled"
-            ],
-            "type": "string"
+            ]
         },
         "Handled-Timestamp": {
             "type": "string"

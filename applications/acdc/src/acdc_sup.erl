@@ -2,7 +2,6 @@
 %%% @copyright (C) 2012-2020, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
-%%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
 %%% file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -24,7 +23,6 @@
 -define(SERVER, ?MODULE).
 
 -define(CHILDREN, [?CACHE(?CACHE_NAME)
-                  ,?WORKER('acdc_presence_realm_lookup')
                   ,?SUPER('acdc_recordings_sup')
                   ,?SUPER('acdc_agents_sup')
                   ,?SUPER('acdc_queues_sup')
@@ -35,21 +33,21 @@
                   ,?WORKER('acdc_listener')
                   ]).
 
-%%==============================================================================
+%% ===================================================================
 %% API functions
-%%==============================================================================
+%% ===================================================================
 
 %%------------------------------------------------------------------------------
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec start_link() -> kz_types:startlink_ret().
+-spec start_link() -> kz_term:startlink_ret().
 start_link() ->
     supervisor:start_link({'local', ?SERVER}, ?MODULE, []).
 
-%%==============================================================================
+%% ===================================================================
 %% Supervisor callbacks
-%%==============================================================================
+%% ===================================================================
 
 %%------------------------------------------------------------------------------
 %% @doc

@@ -3,8 +3,8 @@
     "_id": "kapi.acdc_queue.agent_timeout",
     "description": "AMQP API for acdc_queue.agent_timeout",
     "properties": {
-        "Agent-Process-IDs": {
-            "type": "array"
+        "Agent-Process-ID": {
+            "type": "string"
         },
         "Call-ID": {
             "type": "string"
@@ -12,14 +12,12 @@
         "Event-Category": {
             "enum": [
                 "agent"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "connect_timeout"
-            ],
-            "type": "string"
+            ]
         },
         "Queue-ID": {
             "type": "string"

@@ -9,14 +9,12 @@
         "Event-Category": {
             "enum": [
                 "queue"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "sync_req"
-            ],
-            "type": "string"
+            ]
         },
         "Process-ID": {
             "type": "string"

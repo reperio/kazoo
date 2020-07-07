@@ -12,14 +12,12 @@
         "Event-Category": {
             "enum": [
                 "acdc_call_stat"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "flush"
-            ],
-            "type": "string"
+            ]
         },
         "Queue-ID": {
             "type": "string"

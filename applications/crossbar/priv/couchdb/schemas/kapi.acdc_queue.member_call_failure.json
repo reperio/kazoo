@@ -15,14 +15,12 @@
         "Event-Category": {
             "enum": [
                 "member"
-            ],
-            "type": "string"
+            ]
         },
         "Event-Name": {
             "enum": [
                 "call_fail"
-            ],
-            "type": "string"
+            ]
         },
         "Failure-Reason": {
             "type": "string"
