@@ -9,7 +9,7 @@
 
 -include("stepswitch.hrl").
 
--define(DEFAULT_URL, <<"https://data.telnyx.com/cnam/v1/caller-information?tn={{phone_number}}">>).
+-define(DEFAULT_URL, <<"https://api.telnyx.com/v2/number_lookup/{{phone_number}}?type=caller-name">>).
 
 -define(HTTP_ACCEPT_HEADER, "application/json").
 -define(HTTP_CONTENT_TYPE, "application/json").
@@ -61,18 +61,57 @@ maybe_enable_auth(Props) ->
     Token = kapps_config:get_string(?CNAM_CONFIG_CAT, <<"http_token_auth_token">>, <<>>),
     case kz_term:is_empty(Token) of
         'true' -> Props;
-        'false' -> [{"Authorization", lists:flatten(["Token ", Token])} | Props]
+        'false' -> [{"Authorization", lists:flatten(["Bearer ", Token])} | Props]
     end.
 
 -spec handle_ok_resp(kz_term:ne_binary()) -> kz_term:api_binary().
 handle_ok_resp(ResponseBody) ->
     JObj = kz_json:decode(ResponseBody),
-    case kz_json:get_binary_value(<<"callerInformation">>, JObj) of
-        'undefined' -> 'undefined';
-        CallerInformation -> maybe_truncate(CallerInformation)
+
+    %% Pull the nested caller_name in a type-tolerant way
+    RawCallerName = kz_json:get_value([<<"data">>, <<"caller_name">>, <<"caller_name">>], JObj),
+
+    %% Normalize "absent" caller names: undefined, null (atom), <<"null">> (binary), or non-binaries
+    CallerName =
+        case RawCallerName of
+            'WIRELESS CALLER'   -> 'undefined';
+            'Unknown'           -> 'undefined';
+            'undefined'         -> 'undefined';
+            null                -> 'undefined';
+            <<"null">>          -> 'undefined';
+            B when is_binary(B) -> B;            %% actual string value
+            _Other              -> 'undefined'
+        end,
+
+    case CallerName of
+        'undefined' ->
+            %% No CNAM available: fall back to the calling number.
+            %% Prefer national_format if present; else use E.164 phone_number.
+            case kz_json:get_binary_value([<<"data">>, <<"national_format">>], JObj) of
+                'undefined' ->
+                    case kz_json:get_binary_value([<<"data">>, <<"phone_number">>], JObj) of
+                        'undefined' ->
+                            lager:debug("cnam lookup: no caller name; no number fields to fall back to"),
+                            'undefined';
+                        E164 ->
+                            lager:debug("cnam lookup: no caller name; falling back to E.164 ~p", [E164]),
+                            E164
+                    end;
+                Nat ->
+                    lager:debug("cnam lookup: no caller name; falling back to national format ~p", [Nat]),
+                    Nat
+            end;
+        Name ->
+            %% We have a real name; log and truncate to 18 chars (CNAM spec)
+            lager:debug("cnam lookup: CallerName(raw)=~p (~p bytes)", [Name, size(Name)]),
+            maybe_truncate(Name)
     end.
 
 -spec maybe_truncate(binary()) -> binary().
-maybe_truncate(CallerInformation) when size(CallerInformation) > 18 ->
-    kz_binary:truncate_right(CallerInformation, 18);
-maybe_truncate(CallerInformation) -> CallerInformation.
+maybe_truncate(CallerName) when size(CallerName) > 18 ->
+    lager:debug("cnam lookup: truncating CallerName from ~p (~p bytes) to 18",
+                [CallerName, size(CallerName)]),
+    kz_binary:truncate_right(CallerName, 18);
+maybe_truncate(CallerName) ->
+    lager:debug("cnam lookup: CallerName not truncated (~p bytes)", [size(CallerName)]),
+    CallerName.
