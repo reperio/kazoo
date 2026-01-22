@@ -34,6 +34,7 @@ DEPS = amqp_client \
 	nklib \
 	plists \
 	poolboy \
+        pqueue \
 	proper \
 	ranch \
 	recon \
@@ -108,6 +109,8 @@ dep_reloader = git https://github.com/lazedo/reloader v0.1
 dep_parse_trans = git https://github.com/lazedo/parse_trans
 
 dep_horse = git https://github.com/ninenines/horse
+
+dep_pqueue = git https://github.com/okeuday/pqueue.git v1.7.0
 
 dep_proper = git https://github.com/manopapad/proper v1.2
 
